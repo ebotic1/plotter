@@ -8,5 +8,4 @@ Ideja je da se grafikom moze brzo manipulisati koristenjem samo misa i usput dod
 
 Sa obzirom da se sve operacije vrse direktnim proracunom na tackama kod nije pregledan ali nisam nasao nacin da to zaobidem (bez zrtvovanja izgleda/funkcionalnosti).
 
-
-[<img src="https://i.imgur.com/eUXcnIT.mp4"/>](https://imgur.com/eUXcnIT)
+https://imgur.com/eUXcnIT
