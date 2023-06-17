@@ -549,7 +549,7 @@ bool Canvas::onKeyPressed(const gui::Key& key){
     }
 
     if (key.getVirtual() == gui::Key::Virtual::F1) {
-        showAlert("Uputstvo", "f - fit to window\nv - dodaj vertikalnu liniju\nh - dodaj horizontalnu liniju\ni - prikazi informacije o vertiklanim i horizontalnim linijama");
+        showAlert("Uputstvo", "f - fit to window\nv - dodaj vertikalnu liniju\nh - dodaj horizontalnu liniju\ni - prikazi informacije o vertiklanim i horizontalnim linijama\nDesni klik - zoom out\nDesni drag (mis) - pomjeranje grafika\nLijevi drag (mis) - povecavanje na zabiljezeni prozor");
         return true;
     }
 
