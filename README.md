@@ -1,8 +1,10 @@
-Equation editor:
+**Equation editor:**
+
 folder "modelSolver" koji sadrzi "modelSolver.exe" staviti u home folder
 
 
-Kanvas:
+**Kanvas:**
+
 Kanvas koristi direktno niz gui::Coordinate tipa ali moze prihvatiti i vektor istog tipa za dodavanje tacaka.
 
 Trenutno podrzava opcije fit to window, dodavanje vertikla/horizontala, povecavanja grafika za zabiljezeni prostor i pomjeranje grafika. 
