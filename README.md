@@ -2,6 +2,7 @@
 
 folder "modelSolver" koji sadrzi "modelSolver.exe" staviti u home folder
 
+https://prnt.sc/xe160ir7sHrQ
 
 **Kanvas:**
 
