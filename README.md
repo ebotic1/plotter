@@ -1,6 +1,6 @@
 **Equation editor:**
 
-Folder "modelSolver" koji sadrzi "modelSolver.exe" treba staviti u home folder da bi se generisao test.xml i rezultati.xml
+Folder "modelSolver" koji sadrzi "modelSolver.exe" treba staviti u home folder da bi se generisao test.xml i rezultati.txt
 
 https://prnt.sc/xe160ir7sHrQ
 
