@@ -47,8 +47,8 @@ int View::uzmiKomentar(int pocetak, td::String& str,td::String& komentar)
 	return kraj;
 }
 
-View::View() : hLayout(1), vLayout(13), jednacinaLabel("Jednacina:"), konstLabel("Konstatne velicine: "), varLabel("Varijable: "), _generisi("Generisi XML i rezultat.txt"), dugmadi(1), opcije(5), tipLabel("Tip: "), domenaLabel("Domena: "), timeLayout(7), 
-starLabel("pocetno vrijeme simulacije"), endLabel("krajnje vrijeme simulacije"), korakLabel("korak: "), _start(td::DataType::decimal2), _end(td::DataType::decimal2), _step(td::DataType::decimal2)
+View::View() : hLayout(1), vLayout(13), jednacinaLabel("Jednacina:"), konstLabel("Konstatne velicine: "), varLabel("Varijable: "), _generisiXML("Kreiraj XML"), dugmadi(2), opcije(5), tipLabel("Tip: "), domenaLabel("Domena: "), timeLayout(7), 
+starLabel("pocetno vrijeme simulacije"), endLabel("krajnje vrijeme simulacije"), korakLabel("korak: "), _start(td::DataType::decimal2), _end(td::DataType::decimal2), _step(td::DataType::decimal2), _generisiTXT("Kreiraj rezultat.txt")
 {
 
 
@@ -95,7 +95,8 @@ starLabel("pocetno vrijeme simulacije"), endLabel("krajnje vrijeme simulacije"),
 
 	_jednacineText.setText("x'=c");
 
-	dugmadi.append(_generisi);
+	dugmadi << _generisiXML << _generisiTXT;
+
 
 	vLayout.appendSpace(50);
 	vLayout.appendLayout(dugmadi);
@@ -113,7 +114,7 @@ starLabel("pocetno vrijeme simulacije"), endLabel("krajnje vrijeme simulacije"),
 bool View::onClick(gui::Button* pBtn)
 {
 
-	if (pBtn == &_generisi) {
+	if (pBtn == &_generisiXML) {
 		td::Variant v;
 		_jednacineText.getValue(v);
 
@@ -124,8 +125,13 @@ bool View::onClick(gui::Button* pBtn)
 		err = dodajParametre(_konstText, _konst, true);
 		err = dodajParametre(_variablesText, _vars, false);
 
-
 		generisiXml();
+
+	}
+
+	if (pBtn == &_generisiTXT) {
+		pokreniSolver();
+
 	}
 	return false;
 }
@@ -261,7 +267,6 @@ void View::generisiXml(){
 	w.endDocument();
 	w.close();
 
-	pokreniSolver();
 
 }
 

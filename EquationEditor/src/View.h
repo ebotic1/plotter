@@ -27,7 +27,7 @@ class View : public gui::View {
 	
 
 	gui::HorizontalLayout dugmadi;
-	gui::Button _generisi;
+	gui::Button _generisiXML, _generisiTXT;
 
 	struct parametar{
 		td::String ime;
