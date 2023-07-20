@@ -1,19 +1,8 @@
 #include "gui/Canvas.h"
 #include "gui/Shape.h"
 #include <vector>
-#pragma once
 
-#ifdef EXPORT
-	#ifdef MU_WINDOWS
-		#define IMPEXP __declspec(dllexport) 
-	#else
-		#define IMPEXP __attribute__((visibility("default"))) 
-	#endif
-#else
-	#ifdef MU_WINDOWS
-		#define IMPEXP  __declspec(dllimport) 
-	#endif
-#endif
+#include "./../../common/defineExportImport.h"
 
 struct  kriva {
 	gui::CoordType*  x;

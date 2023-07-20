@@ -12,7 +12,7 @@ target_link_libraries(${CANVAS_DLL} 		debug ${MU_LIB_DEBUG} 		optimized ${MU_LIB
 
 set(APPWNDMENUANDwST  ${CMAKE_CURRENT_LIST_DIR}/src/Info.plist)
 
-setTargetPropertiesForGUIApp(${CANVAS_DLL} $(APPWNDMENUANDwST)) #sranje stvar
+setTargetPropertiesForGUIApp(${CANVAS_DLL} $(APPWNDMENUANDwST))
 
 target_compile_definitions(${CANVAS_DLL} PRIVATE EXPORT)
 

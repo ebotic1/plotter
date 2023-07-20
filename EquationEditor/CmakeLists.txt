@@ -18,8 +18,6 @@ include(${WORK_ROOT}/DevEnv/natGUI.cmake)
 
 
 
-
-
 file(GLOB SOURCES  ${CMAKE_CURRENT_LIST_DIR}/src/*.cpp)
 file(GLOB INCS  ${CMAKE_CURRENT_LIST_DIR}/src/*.h)
 
@@ -30,8 +28,11 @@ source_group("src"            FILES ${SOURCES})
 # add executable
 add_executable(${SOLUTION_NAME} ${INCS} ${SOURCES})
 
+include("${SOURCE_ROOT}/../EquationToXML/EqToXML.cmake")
+
 target_link_libraries(${SOLUTION_NAME}	debug ${MU_LIB_DEBUG}   	optimized ${MU_LIB_RELEASE}
-					debug ${NATGUI_LIB_DEBUG}   optimized ${NATGUI_LIB_RELEASE})
+					debug ${NATGUI_LIB_DEBUG}   optimized ${NATGUI_LIB_RELEASE}
+					${EqToXML_lib})
 
 
 setTargetPropertiesForGUIApp(${SOLUTION_NAME} ${CMAKE_CURRENT_LIST_DIR}/src/Info.plist) 
