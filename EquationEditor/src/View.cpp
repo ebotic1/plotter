@@ -41,7 +41,7 @@ starLabel("pocetno vrijeme simulacije"), endLabel("krajnje vrijeme simulacije"),
 	vLayout.append(jednacinaLabel, td::HAlignment::Left);
 	vLayout.append(_jednacineText);
 
-	_jednacineText.setText("c=5\nx'=c");
+	_jednacineText.setText("Model:\ntype = NR;\ndomain = real;\nname = trn;\nvars:\nx = 0;\nparams:\nk = 1;\nNL:\nx = k;");
 
 	dugmadi.append(_generisiXML, td::HAlignment::Center);
 	dugmadi.append(_generisiTXT, td::HAlignment::Center);
@@ -97,14 +97,14 @@ bool View::onClick(gui::Button* pBtn)
 
 void View::pokreniSolver(){
 
-	td::String s;
+	td::String s; //treba string builder ali ovo je samo privremeno dok ne bude API
 	const char* userProfile = getenv("USERPROFILE");
 	s = "cd ";
 	s += userProfile;
 	s += "\\modelSolver & .\\modelSolver.exe ";
-	//s += tip.getSelectedText();
+	s += "NR";
 	s += " ";
-	//s += domena.getSelectedText();
+	s += "real";
 	s += " test.xml";
 	s += " rezultat.txt ";
 	td::Variant v;

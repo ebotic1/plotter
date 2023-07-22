@@ -2,8 +2,11 @@
 #include <vector>
 #include <cnt/PushBackVector.h>
 #include "td/String.h"
-#include "main.h"
+#include "xml/Writer.h"
+#include <stdexcept>
+#include <array>
 
+/*
 class model {
 public:
 	static const td::String  oznakeJednacina[];
@@ -29,93 +32,314 @@ private:
 	};
 
 	td::String ime;
-	domene domena;
+	domene domena = domene::real;
 
 	std::vector<vrijednost> parametri;
 	std::vector<vrijednost> varijable;
 
+	model* parentModel;
+	bool init_block = false;
+	bool post_block = false;
 
-} mainModel;
+
+	friend void processLine(td::String equation, const td::String& comment);
+
+public:
+
+	std::vector<model> init_children;
+	std::vector<model> post_children;
+
+	model(model* parent) {
+		parentModel = parent;
+		if (parent == nullptr) return;
+		domena = parent->domena;
+	}
+
+};
 
 const td::String model::oznakeJednacina[] = { "ODEqs", "DAEqs" , "NLEqs", "MeasEqs", "DIFqs" };
 const td::String model::oznakeModel[] = { "ODE", "DAE", "NR", "WLS", "DIFF" };
 const td::String model::oznakeDomene[] = { "real", "cmplx" };
 
 
-int uzmiKomentar(int pocetak, td::String& str, td::String& komentar)
-{
-	int komentarPoz = str.findCI("//", pocetak);
-	int kraj = str.findCI("\n", pocetak);
-	if (kraj == -1)
-		kraj = str.length() + 1;
-	if (komentarPoz < kraj && komentarPoz != -1)
-		komentar = str.subStr(komentarPoz, kraj);
-	else
-		komentarPoz = kraj;
 
+model* rootModel = nullptr;
 
-	return komentarPoz;
-}
-
-void processLine(td::String equation) {
-	int jednako = equation.find("=", 0);
-	td::String s;
-	if (jednako) {
-		if (equation.find("=", jednako + 1))
-			throw std::exception();
-	}
-
+void processLine(td::String equation, const td::String &comment) {
 	cnt::PushBackVector<td::String> tokeni;
 	equation.split("-/+*", tokeni, true, true);
 
+	static model* currentModel = nullptr;
+
+	if (tokeni.size() > 0){
+		if (tokeni[0] == "Model:") {
+			if (rootModel == nullptr) {
+				rootModel = new model(nullptr);
+				currentModel = rootModel;
+				return;
+			}
+			else if (currentModel->init_block || currentModel->post_block) {
+				std::vector<model>& kontener(currentModel->init_block ? currentModel->init_children : currentModel->post_children);
+				kontener.emplace_back(currentModel);
+				currentModel = &(kontener.back());
+				return;
+			}
+			else
+				throw std::logic_error("Submodels can only be created inside Init and PostProc blocks");
+		}
+	}
+
+
+
+	for (int i = 0; i < tokeni.size(); ++i){
+
+	}
 
 }
 
-void generateXML(td::String equations, td::String output_path) {
+td::UTF8 toUpper(td::UTF8 c) {
+	
+}
 
-	td::UTF8 jen(' ');
-	const td::UTF8* jenn = &jen;
-	td::UTF8 dva(' ');
+*/
+void splitComment(td::String& equation, td::String& comment)
+{
+	int komentarPoz = equation.find("//");
+	if (komentarPoz == -1) {
+		comment.clean();
+		return;
+	}
+	int kraj = equation.find("\n");
+	if (kraj == -1)
+		kraj = equation.length() - 1;
+
+	comment = std::move(equation.subStr(komentarPoz + 2, kraj));
+	if(komentarPoz != 0)
+		equation = std::move(equation.subStr(0, komentarPoz - 1));
+	else
+		equation.clean();
+}
+
+bool startsWith(td::String& string, const td::String& word) {
+	if (string.length() < word.length())
+		return false;
+
+	int kraj = string.find(word.getLastChar());
+	if (kraj == -1)
+		return false;
+	td::String copy = string.subStr(0, word.length()-1);
+	copy.setAt(word.length()-1, word.getLastChar());
+	copy.toUpper();
+	const char* kopp = copy.c_str();
+	const char* workk = word.c_str();
+	if(copy.compare(word) != 0)
+		return false;
+	string = std::move(string.subStr(kraj+1, string.length()-1));
+	return true;
+
+}
 
 
-	equations.removeWhiteSpaces(jenn, dva);
-	const char* test = equations.c_str();
-
-	int i = 3 + 2;
-
-	return;
+void generateXML(const td::String &equations, const td::String &output_path) {
 
 	cnt::PushBackVector<td::String> linije;
 	equations.split("\n;", linije, true, true);
+	td::String comment;
+	bool rootModel = false;
+	bool closeNode = false;
+	bool attributeInput = false;
 
-	for (int i = 0; i < linije.size(); i++){
-		processLine(linije[i]);
-	}
-	
-
-	
-
-	/*
-	* 
-	* 	xml::Writer w(path);
+	xml::Writer w(output_path);
 	w.startDocument();
 
-	w.startNode("Model");
+	static const td::String keywords[] = {"IF(", "MODEL:", "ENDMODEL", "TYPE=", "DOMAIN=", "NAME=", "EPS=", "METHOD=", "VARS:", "VARIABLES:", "PARS:", "PARAMATERS:", "PARAMS:", "INIT:", "ENDINIT", "ODE:", "NL:", "POSTPROC:", "MEAS:"};
+	enum{iff, model, endmodel, type, domain, name, eps, method, vars, variables, pars, paramaters, params, init, endinit, ode, nl, postproc, meas};
 
-	
-	w.attribute("type", tip.getSelectedText());
-	w.attribute("domain", domena.getSelectedText());
-	w.attribute("name", "test");
-	cnt::PushBackVector<td::String> token;
-	td::String komentar;
+	enum class inputModes{none, variables, paramaters, equations};
+	inputModes inputMode = inputModes::none;
 
-	//jednacine.removeWhiteSpaces("3", 2); ne razumijem na koji nacin radi funckija ali treba ukinit white spaces
+	for (int i = 0; i < linije.size(); i++){
+		splitComment(linije[i], comment);
 
-	while (pocetak < jednacine.length()) {
-		komentar = "";
-		//kraj = uzmiKomentar(pocetak, jednacine, komentar);
+		linije[i] = std::move(linije[i].trim());
 
-		jednacine.split("-/*+", token, true, true);
+		const char* smece = linije[i].c_str();
+		const char* smece2 = comment.c_str();
+
+		if (linije[i].isNull())
+			if(comment.isNull())
+				continue;
+			else {
+				if(!attributeInput) 
+					/* modelSolver ne podrzava komentare unutar elemenata tako da ovi komentari se bacaju.
+					Inace bi samo islo bez newLine.
+					Npr ovo radi <Model type = "NR" domain = "real" name = "trn">
+					ovo ne radi <Model type="NR" <!--wow fable--> domain="real" name="trn">
+					alternativno ako se podrska za ovo nece uvesti mogu sabirati komentare sve pa ih ispisati cim se steknu uslovi
+					*/
+					w.commentInNewLine(comment.c_str());
+				continue;
+			}
+
+		 auto openNode = [&w, &closeNode, &inputMode, &attributeInput](const char *name, inputModes mod) {
+			if (closeNode)
+				w.endElement();
+			else
+				closeNode = true;
+		w.startElement(name);
+		attributeInput = true;
+		inputMode = mod;
+		};
+
+// keywords that change input mode
+
+		if (startsWith(linije[i], keywords[vars]) || startsWith(linije[i], keywords[variables])) {
+			openNode("Vars", inputModes::variables);
+			--i; continue;
+		}
+
+		if (startsWith(linije[i], keywords[init])) {
+			openNode("Init", inputModes::none);
+			--i; continue;
+		}
+
+		if (startsWith(linije[i], keywords[postproc])) {
+			openNode("PostProc", inputModes::none);
+			--i; continue;
+		}
+
+		if (startsWith(linije[i], keywords[pars]) || startsWith(linije[i], keywords[params]) || startsWith(linije[i], keywords[paramaters])) {
+			openNode("Params", inputModes::paramaters);
+			--i; continue;
+		}
+
+		if (startsWith(linije[i], keywords[ode])) {
+			openNode("ODEqs", inputModes::equations);
+			--i; continue;
+		}
+
+		if (startsWith(linije[i], keywords[nl])) {
+			openNode("NLEqs", inputModes::equations);
+			--i; continue;
+		}
+
+		if (startsWith(linije[i], keywords[meas])) {
+			openNode("MEASEqs", inputModes::equations);
+			--i; continue;
+		}
+
+		if (startsWith(linije[i], keywords[model])) {
+			if (!rootModel){
+				rootModel = true;
+				//pronadi koristi li se conj
+			}
+			closeNode = false;
+			w.startElement("Model");
+			inputMode = inputModes::none;
+			attributeInput = true;
+			--i; continue;
+		}
+
+		if (startsWith(linije[i], keywords[endmodel])) {
+			w.endElement();
+			closeNode = true;
+			inputMode = inputModes::none;
+			continue;
+		}
+
+		if (startsWith(linije[i], keywords[endinit])) {
+			closeNode = false;
+			w.endElement();
+			inputMode = inputModes::none;
+			continue;
+		}
+
+
+		//atribute keywords
+		
+
+
+		/*
+		moze ovo umjesto puno ifova ali sporije je
+
+		static const std::array<int, 5> atributi = {type, domain, name, eps, method};
+		for (int j = 0; j <atributi.size() ; ++j)
+		{
+			if (startsWith(linije[i], keywords[atributi[j]])) {
+				td::String s(keywords[atributi[j]]);
+				s.setAt(s.length() - 2, '\0');
+				s.toLower();
+				w.attribute(s.c_str(), linije[i].trimLeft());
+				j = atributi.size()+1
+			}
+			if(j == (atributi.size()+1))
+				continue;
+		}
+		*/
+
+		if (startsWith(linije[i], keywords[type])) {
+			w.attribute("type", linije[i].trimLeft());
+			continue;
+		}
+
+		if (startsWith(linije[i], keywords[domain])) {
+			w.attribute("domain", linije[i].trimLeft());
+			continue;
+		}
+
+		if (startsWith(linije[i], keywords[name])) {
+			w.attribute("name", linije[i].trimLeft());
+			continue;
+		}
+
+		if (startsWith(linije[i], keywords[eps])) {
+			w.attribute("eps", linije[i].trimLeft());
+			continue;
+		}
+
+		if (startsWith(linije[i], keywords[method])) {
+			w.attribute("method", linije[i].trimLeft());
+			continue;
+		}
+
+		//other 
+
+		if (inputMode == inputModes::none)
+				throw std::logic_error(td::String("unknown keyword \"").c_str());
+
+		attributeInput = false;
+
+		if (inputMode == inputModes::variables || inputMode == inputModes::paramaters) {
+			int poz = linije[i].find("=", 0);
+			w.startElement((inputMode == inputModes::variables) ? "Var" : "Param");
+			if (poz == -1) {
+				w.attribute("name", linije[i].trim());
+			}
+			else {
+				w.attribute("name", linije[i].subStr(0, poz-1).trim());
+				w.attribute("val", linije[i].subStr(poz+1, linije[i].length()-1).trim());
+			}
+			w.endElement();
+			if(!comment.isNull())
+				w.comment(comment.c_str());
+			continue;
+		}
+		
+		if (inputMode == inputModes::equations) {
+			w.startElement("Eq");
+			w.attribute("fx", linije[i]);
+			w.endElement();
+			if (!comment.isNull())
+				w.comment(comment.c_str());
+			continue;
+		}
+
 	}
-*/
+	
+
+	w.endDocument();
+	w.close();
+
+
+
 }

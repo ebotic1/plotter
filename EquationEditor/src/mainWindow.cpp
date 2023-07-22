@@ -6,7 +6,7 @@
 
 
 MainWindow::MainWindow()
-    : gui::Window(gui::Geometry(600, 100, 1500, 1500))
+    : gui::Window(gui::Geometry(100, 10, 1100, 800))
 {
     setTitle("Equation Editor");
 
