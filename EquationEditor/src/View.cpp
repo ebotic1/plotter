@@ -137,6 +137,30 @@ void View::loadXML(td::String path){
 		return;
 	}
 
+	_jednacineText.clean();
+
+	auto model = par.getRootNode();
+
+	if (model->getName().cCompare("Model") != 0) {
+		showAlert("error", "File not valid");
+		return;
+	}
+	else {
+		_jednacineText.appendString("Model:\n");
+		auto atribut = model->attribs(0);
+		const char* smece = atribut.getName().c_str();
+		int h = 3;
+		3 + 3;
+	}
+
+	auto it = model.getChildNode();
+
+	while (it.isOk()) {
+
+	}
+
+	
+
 }
 
 
