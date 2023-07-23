@@ -32,6 +32,7 @@ public:
 
 	View();
 	virtual bool onClick(gui::Button* pBtn);
+	void loadXML(td::String path);
 
 	
 };

@@ -6,7 +6,7 @@
 #include "gui/NumericEdit.h"
 #include "./../../EquationToXML/src/main.h"
 
-#include "xml/Writer.h"
+#include "xml/DOMParser.h"
 
 #include <cstdlib>
 #include <Windows.h>
@@ -127,6 +127,16 @@ void View::pokreniSolver(){
 
 
 	
+}
+
+void View::loadXML(td::String path){
+	xml::FileParser par;
+
+	if (!par.parseFile(path)) {
+		showAlert("error", "Cant open file");
+		return;
+	}
+
 }
 
 
