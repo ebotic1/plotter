@@ -16,9 +16,13 @@ protected:
     View _mainView;
 public:
     MainWindow();
+
+    virtual bool onClick(gui::FileDialog* pDlg, td::UINT4 dlgID) override;
+    virtual bool onActionItem(td::BYTE menuID, td::BYTE firstSubMenuID, td::BYTE lastSubMenuID, td::BYTE actionID, gui::ActionItem* pMenuAI) override;
+    virtual void onInitialAppearance() override;
+    
+
     ~MainWindow();
-
-
 };
 
 

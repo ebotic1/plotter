@@ -105,15 +105,16 @@ td::UTF8 toUpper(td::UTF8 c) {
 void splitComment(td::String& equation, td::String& comment)
 {
 	int komentarPoz = equation.find("//");
-	if (komentarPoz == -1) {
-		comment.clean();
+	if (komentarPoz == -1)
 		return;
-	}
 	int kraj = equation.find("\n");
 	if (kraj == -1)
 		kraj = equation.length() - 1;
 
-	comment = std::move(equation.subStr(komentarPoz + 2, kraj));
+	if (comment.isNull())
+		comment = std::move(equation.subStr(komentarPoz + 2, kraj));
+	else
+		comment += equation.subStr(komentarPoz + 2, kraj);
 	if(komentarPoz != 0)
 		equation = std::move(equation.subStr(0, komentarPoz - 1));
 	else
@@ -124,7 +125,7 @@ bool startsWith(td::String& string, const td::String& word) {
 	if (string.length() < word.length())
 		return false;
 
-	int kraj = string.find(word.getLastChar());
+	int kraj = string.findCI(word.end()-1);
 	if (kraj == -1)
 		return false;
 	td::String copy = string.subStr(0, word.length()-1);
@@ -152,44 +153,45 @@ void generateXML(const td::String &equations, const td::String &output_path) {
 	xml::Writer w(output_path);
 	w.startDocument();
 
-	static const td::String keywords[] = {"IF(", "MODEL:", "ENDMODEL", "TYPE=", "DOMAIN=", "NAME=", "EPS=", "METHOD=", "VARS:", "VARIABLES:", "PARS:", "PARAMATERS:", "PARAMS:", "INIT:", "ENDINIT", "ODE:", "NL:", "POSTPROC:", "MEAS:"};
-	enum{iff, model, endmodel, type, domain, name, eps, method, vars, variables, pars, paramaters, params, init, endinit, ode, nl, postproc, meas};
+	static const td::String keywords[] = {"IF", "ELSE", "ENDIF", "SIGNAL", "THEN:", "MODEL:", "ENDMODEL", "TYPE=", "DOMAIN=", "NAME=", "EPS=", "METHOD=", "VARS:", "VARIABLES:", "PARS:", "PARAMATERS:", "PARAMS:", "INIT:", "ENDINIT", "ODE:", "NL:", "POSTPROC:", "MEAS:"};
+	enum{iff, elsee, endiff, signal, then, model, endmodel, type, domain, name, eps, method, vars, variables, pars, paramaters, params, init, endinit, ode, nl, postproc, meas};
 
 	enum class inputModes{none, variables, paramaters, equations};
 	inputModes inputMode = inputModes::none;
 
+
+	auto openNode = [&w, &closeNode, &inputMode, &attributeInput](const char* name, inputModes mod) {
+		if (closeNode)
+			w.endElement();
+		else
+			closeNode = true;
+		w.startElement(name);
+		attributeInput = true;
+		inputMode = mod;
+	};
+
 	for (int i = 0; i < linije.size(); i++){
 		splitComment(linije[i], comment);
 
-		linije[i] = std::move(linije[i].trim());
 
 		const char* smece = linije[i].c_str();
 		const char* smece2 = comment.c_str();
+
+		linije[i] = std::move(linije[i].trim());
 
 		if (linije[i].isNull())
 			if(comment.isNull())
 				continue;
 			else {
-				if(!attributeInput) 
-					/* modelSolver ne podrzava komentare unutar elemenata tako da ovi komentari se bacaju.
-					Inace bi samo islo bez newLine.
-					Npr ovo radi <Model type = "NR" domain = "real" name = "trn">
-					ovo ne radi <Model type="NR" <!--wow fable--> domain="real" name="trn">
-					alternativno ako se podrska za ovo nece uvesti mogu sabirati komentare sve pa ih ispisati cim se steknu uslovi
-					*/
+				if (attributeInput)
+					comment += ", ";
+				else {
 					w.commentInNewLine(comment.c_str());
+					comment.clean();
+				}
 				continue;
 			}
 
-		 auto openNode = [&w, &closeNode, &inputMode, &attributeInput](const char *name, inputModes mod) {
-			if (closeNode)
-				w.endElement();
-			else
-				closeNode = true;
-		w.startElement(name);
-		attributeInput = true;
-		inputMode = mod;
-		};
 
 // keywords that change input mode
 
@@ -276,36 +278,77 @@ void generateXML(const td::String &equations, const td::String &output_path) {
 				continue;
 		}
 		*/
+		bool isAtribute = false;
+		bool commentIsNull = comment.isNull() ? true : false;
 
 		if (startsWith(linije[i], keywords[type])) {
 			w.attribute("type", linije[i].trimLeft());
-			continue;
+			isAtribute = true;
 		}
 
 		if (startsWith(linije[i], keywords[domain])) {
 			w.attribute("domain", linije[i].trimLeft());
-			continue;
+			isAtribute = true;
 		}
 
 		if (startsWith(linije[i], keywords[name])) {
 			w.attribute("name", linije[i].trimLeft());
-			continue;
+			isAtribute = true;
 		}
 
 		if (startsWith(linije[i], keywords[eps])) {
 			w.attribute("eps", linije[i].trimLeft());
-			continue;
+			isAtribute = true;;
 		}
 
 		if (startsWith(linije[i], keywords[method])) {
 			w.attribute("method", linije[i].trimLeft());
+			isAtribute = true;;
+		}
+
+		if (isAtribute) {
+			if (!commentIsNull && !comment.isNull())
+				comment += ", ";
 			continue;
 		}
 
-		//other 
 
-		if (inputMode == inputModes::none)
-				throw std::logic_error(td::String("unknown keyword \"").c_str());
+		//other
+
+
+
+		if (startsWith(linije[i], keywords[iff])) {
+			w.startElement("Eq");
+			w.attribute("cond", linije[i].trimLeft());
+			w.startElement("Then");
+		}
+
+		if (startsWith(linije[i], keywords[signal])) {
+			if (linije[i].trimLeft().getAt(0) == '=')
+				w.attribute("signal", linije[i].trimLeft().subStr(1, linije[i].length() - 1).trimLeft());
+			else
+				w.attribute("signal", "LowLimit");
+			
+			
+		}
+
+		if (startsWith(linije[i], keywords[elsee])) {
+			w.endElement();
+			w.startElement("Else");
+		}
+
+		if (startsWith(linije[i], keywords[endiff])) {
+			w.endElement();
+		}
+
+		if (startsWith(linije[i], keywords[then])) {
+			
+		}
+
+		//user didnt enter a keyword
+
+//		if (inputMode == inputModes::none)
+//				throw std::logic_error(td::String("unknown keyword \"").c_str());
 
 		attributeInput = false;
 
@@ -320,23 +363,21 @@ void generateXML(const td::String &equations, const td::String &output_path) {
 				w.attribute("val", linije[i].subStr(poz+1, linije[i].length()-1).trim());
 			}
 			w.endElement();
-			if(!comment.isNull())
-				w.comment(comment.c_str());
-			continue;
 		}
 		
 		if (inputMode == inputModes::equations) {
 			w.startElement("Eq");
 			w.attribute("fx", linije[i]);
-			w.endElement();
-			if (!comment.isNull())
-				w.comment(comment.c_str());
-			continue;
+		}
+
+		if (!comment.isNull()) {
+			w.comment(comment.c_str());
+			comment.clean();
 		}
 
 	}
 	
-
+	
 	w.endDocument();
 	w.close();
 

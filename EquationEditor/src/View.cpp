@@ -7,6 +7,7 @@
 #include "./../../EquationToXML/src/main.h"
 
 #include "xml/DOMParser.h"
+#include "cnt/StringBuilder.h"
 
 #include <cstdlib>
 #include <Windows.h>
@@ -129,37 +130,106 @@ void View::pokreniSolver(){
 	
 }
 
+typedef cnt::StringBuilder<td::String, 1024*64> StringBuilder;
+
+
+
+
+void printNode(StringBuilder &result, xml::FileParser::node_iterator &node, int tabs = 0) {
+
+	const char* smece = node->getName().c_str();
+
+	static std::string *tab_storage = new std::string; //u sustini ovaj string se nikad ne brise iz memorije ali mozda bolje to nego da se nanovo memorija rezervise svaki put kad pozivamo funkciju
+	tab_storage->resize(tabs+1, '\t');
+	(*tab_storage)[tabs] = '\0';
+
+	result << tab_storage->c_str();
+
+	bool skipAttrib = false;
+	bool ifType = false;
+	
+	if (node->getName().cCompareNoCase("Var") == 0 || node->getName().cCompareNoCase("Param") == 0) {
+		tab_storage[tabs] = '\t';
+		for each (auto & var in node->attribs)
+			if (var.getName().cCompareNoCase("name") == 0) {
+				result << tab_storage->c_str() << var.getValue() << " = ";
+				break;
+			}
+		bool found = false;
+		for each (auto & var in node->attribs)
+			if (var.getName().cCompareNoCase("val") == 0) {
+				result << var.value << "\n";
+				found = true;
+				break;
+			}
+		if (!found)
+			result << "0\n";
+		skipAttrib = true;
+	}else if (node->getName().cCompareNoCase("Eq") == 0) { // ako se radi o uslovnoj jednacini ispisati kao if
+		for each (auto & var in node->attribs) {
+			if (var.getName().cCompareNoCase("cond") == 0) {
+				result << "if " << var.value << "\n";
+				ifType = true;
+			}
+		}
+
+	}
+	else if (node->getName().cCompareNoCase("Then") == 0); //then je implicitno ne ispisuje se
+	else
+		result << tab_storage->c_str() << node->getName() << ":\n";
+	
+	if (!skipAttrib) {
+		tab_storage[tabs] = '\t';
+		for each (auto & var in node->attribs) {
+			if (ifType && var.getName().cCompareNoCase("cond") == 0)
+				continue;
+			if (var.getName().cCompareNoCase("fx") == 0)
+				result << tab_storage->c_str() << var.value << "\n";
+			else
+				result << tab_storage->c_str() << var.getName() << " = " << var.value << "\n";
+		}
+	}
+
+	
+
+	auto &it = node.getChildNode();
+	while (it.isOk()) {
+		printNode(result, it, tabs);
+		++it;
+	}
+	return;
+}
+
 void View::loadXML(td::String path){
 	xml::FileParser par;
+	StringBuilder s;
 
 	if (!par.parseFile(path)) {
 		showAlert("error", "Cant open file");
 		return;
 	}
 
-	_jednacineText.clean();
+	
 
-	auto model = par.getRootNode();
+	auto &model = par.getRootNode();
+
+	
+	
 
 	if (model->getName().cCompare("Model") != 0) {
 		showAlert("error", "File not valid");
 		return;
 	}
 	else {
-		_jednacineText.appendString("Model:\n");
-		auto atribut = model->attribs(0);
-		const char* smece = atribut.getName().c_str();
-		int h = 3;
-		3 + 3;
-	}
-
-	auto it = model.getChildNode();
-
-	while (it.isOk()) {
-
+		printNode(s, model);
 	}
 
 	
+
+	_jednacineText.clean();
+	td::String temp;
+	s.getString(temp);//moglo bi bez temp da getString vraca string pa da se direktno std::move
+	_jednacineText.setText(std::move(temp));
 
 }
 

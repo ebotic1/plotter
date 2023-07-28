@@ -1,5 +1,6 @@
 #include "gui/Window.h"
 #include "mainWindow.h"
+#include "gui/FileDialog.h"
 
 
 
@@ -14,6 +15,39 @@ MainWindow::MainWindow()
     setCentralView(&_mainView);
 
 }
+
+bool MainWindow::onClick(gui::FileDialog* pDlg, td::UINT4 dlgID)
+{
+    if (dlgID == 1) {
+        _mainView.loadXML(pDlg->getFileName());
+        //delete pDlg; crash aplikacije ?
+    }
+
+
+    return false;
+}
+
+bool MainWindow::onActionItem(td::BYTE menuID, td::BYTE firstSubMenuID, td::BYTE lastSubMenuID, td::BYTE actionID, gui::ActionItem* pMenuAI)
+{
+    if (menuID == 1 && actionID == 2) {
+
+        gui::OpenFileDialog *p = new gui::OpenFileDialog(this, "Open model", { "*.xml" }, "Open");
+        
+        
+        p->openModal(1, this);
+
+        
+
+        return true;
+    }
+    return false;
+}
+
+void MainWindow::onInitialAppearance(){
+    _mainView.loadXML("C:\\Users\\Bill Gates\\modelSolver\\test.xml");
+}
+
+
 
 
 MainWindow::~MainWindow(){}
