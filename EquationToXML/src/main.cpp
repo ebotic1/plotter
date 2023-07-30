@@ -113,8 +113,10 @@ void splitComment(td::String& equation, td::String& comment)
 
 	if (comment.isNull())
 		comment = std::move(equation.subStr(komentarPoz + 2, kraj));
-	else
+	else {
+		comment += ", ";
 		comment += equation.subStr(komentarPoz + 2, kraj);
+	}
 	if(komentarPoz != 0)
 		equation = std::move(equation.subStr(0, komentarPoz - 1));
 	else
@@ -149,8 +151,9 @@ void generateXML(const td::String &equations, const td::String &output_path) {
 	bool rootModel = false;
 	bool closeNode = false;
 	bool attributeInput = false;
-
-	xml::Writer w(output_path);
+	td::String bacaj(output_path.subStr(0,output_path.length()-5));
+	bacaj += "2.xml";
+	xml::Writer w(bacaj);
 	w.startDocument();
 
 	static const td::String keywords[] = {"IF", "ELSE", "ENDIF", "SIGNAL", "THEN:", "MODEL:", "ENDMODEL", "TYPE=", "DOMAIN=", "NAME=", "EPS=", "METHOD=", "VARS:", "VARIABLES:", "PARS:", "PARAMATERS:", "PARAMS:", "INIT:", "ENDINIT", "ODE:", "NL:", "POSTPROC:", "MEAS:"};
@@ -158,7 +161,6 @@ void generateXML(const td::String &equations, const td::String &output_path) {
 
 	enum class inputModes{none, variables, paramaters, equations};
 	inputModes inputMode = inputModes::none;
-
 
 	auto openNode = [&w, &closeNode, &inputMode, &attributeInput](const char* name, inputModes mod) {
 		if (closeNode)
@@ -183,9 +185,7 @@ void generateXML(const td::String &equations, const td::String &output_path) {
 			if(comment.isNull())
 				continue;
 			else {
-				if (attributeInput)
-					comment += ", ";
-				else {
+				if (!attributeInput){
 					w.commentInNewLine(comment.c_str());
 					comment.clean();
 				}
@@ -239,6 +239,7 @@ void generateXML(const td::String &equations, const td::String &output_path) {
 			w.startElement("Model");
 			inputMode = inputModes::none;
 			attributeInput = true;
+
 			--i; continue;
 		}
 
@@ -308,7 +309,6 @@ void generateXML(const td::String &equations, const td::String &output_path) {
 
 		if (isAtribute) {
 			if (!commentIsNull && !comment.isNull())
-				comment += ", ";
 			continue;
 		}
 
@@ -368,6 +368,7 @@ void generateXML(const td::String &equations, const td::String &output_path) {
 		if (inputMode == inputModes::equations) {
 			w.startElement("Eq");
 			w.attribute("fx", linije[i]);
+			w.endElement();
 		}
 
 		if (!comment.isNull()) {

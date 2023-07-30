@@ -21,11 +21,11 @@ class View : public gui::View {
 	
 
 	gui::HorizontalLayout dugmadi;
-	gui::Button _generisiXML, _generisiTXT;
-
+	gui::Button _generisiTXT;
 
 
 	void pokreniSolver();
+	td::String currentPath;
 
 
 public:
@@ -33,6 +33,7 @@ public:
 	View();
 	virtual bool onClick(gui::Button* pBtn);
 	void loadXML(td::String path);
-
+	bool saveXML();
+	bool saveAsXML(const td::String &path);
 	
 };

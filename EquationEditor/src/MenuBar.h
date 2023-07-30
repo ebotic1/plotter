@@ -6,12 +6,13 @@
 class MenuBar : public gui::MenuBar {
 	gui::SubMenu model;
 public:
-	MenuBar() : gui::MenuBar(1), model(1, "Model", 3)
+	MenuBar() : gui::MenuBar(1), model(1, "Model", 4)
 	{
 		auto &items = model.getItems();
-		items[0].initAsActionItem("Save", 1, "s");
-		items[1].initAsActionItem("Open", 2, "o");
-		items[2].initAsActionItem("New", 3, "n");
+		items[0].initAsActionItem("New", 1, "n");//submenu
+		items[1].initAsActionItem("Save", 2, "s");
+		items[2].initAsActionItem("Save as", 3, "sa");
+		items[3].initAsActionItem("Open", 4, "o");
 	
 		_menus[0] = &model;
 	
