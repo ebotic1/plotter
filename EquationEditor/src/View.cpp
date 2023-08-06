@@ -114,173 +114,229 @@ void View::pokreniSolver(){
 
 typedef cnt::StringBuilder<td::String, 1024*64> StringBuilder;
 
+
+
 bool getComment(td::String& comment, bool &alone, const char* path = nullptr) {
 	static std::ifstream file;
+	static std::string line;
+
 	if (path != nullptr) {
 		file.close();
 		file.open(path);
 		std::getline(file, std::string());
+		std::getline(file, line);
 		return file.is_open();
 	}
-	if (!file.is_open())
-		return false;
-
-	std::string line;
-	if (!std::getline(file, line)) {
-		comment.clean();
+	if (!file.is_open() || file.eof()) {
 		alone = false;
 		return false;
 	}
 
-	td::String TDline(line);
-	TDline = std::move(TDline.trim());
-
-	{ //ako je linija samo zatvaranje elementa i eventualno komentar onda se ona preskace u xml parseru pa se vraca i rezultat iduce line
-		int poz1 = TDline.find("<!--");
-		int poz2 = TDline.find("-->");
-		bool commentPresent = false;
-		if (poz1 != -1 && poz2 != -1) {
-			//TDline = TDline.subStr(0, poz1) + TDline.subStr(poz2, TDline.length() - 1); compiler error?
-			td::String s1 = TDline.subStr(0, poz1);
-			td::String s2 = TDline.subStr(poz2, TDline.length() - 1);
-			s1 += s2;
-			TDline = std::move(s1);
-			commentPresent = true;
-		}
-		if (TDline.find("</") == 0 && TDline.find(">") == (TDline.length() - 1)) {
-			comment.clean();
-			if(commentPresent)
-				comment += td::String(line).trim().subStr(poz1+4, poz2);
-			td::String comment2;
-			bool getSucces = getComment(comment2, alone);
-			comment += comment2;
-			return getSucces;
-		}
-	}
-		
-	int poz = td::String(line).trimLeft().find("<!--");
-	if (poz == -1) {
-		comment = "\0";
-		alone = false;
-		return true;
-	}
-	if (poz == 0)
-		alone = true;
-	else
-		alone = false;
-	poz = line.find("<!--") + 4;
-	int poz2;
 	comment.clean();
+
+	//check if multiple elements are on the same line, only the last one registers as having a comment
+	int pozComment, pozStart, pozEnd;
+	static int poz = 0;
+	while (true) {
+		if (file.eof()) {
+			alone = false;
+			return true;
+		}
+		
+		pozComment = line.find("<!--", poz);
+		pozStart = line.find("<", poz);
+		pozEnd = line.find(">", poz);
+
+		if (pozStart != -1 && line[pozStart + 1] == '/') {//closing tag (comment is independent, ignore)
+
+			if (pozComment != -1) {
+				poz = pozComment;
+				bool getSucces = getComment(comment, alone);
+				alone = true;
+				return getSucces;
+			}
+
+			//komentara nema, samo nadi kraj elementa i zapocni ponovo
+			while (poz = line.find(">", poz), (poz != -1 && !file.eof()))
+				std::getline(file, line);
+
+
+			if (file.eof()) {
+				alone = false;
+				comment.clean();
+				return false;
+			}
+
+			poz += 1;
+			continue;
+		}
+
+		if (pozComment == -1) { //nema komentara
+			if (pozEnd == -1) { //nema elementa
+				std::getline(file, line);
+				poz = 0;
+				continue;
+			}
+			else {//ima elementa
+				poz = pozEnd + 1;
+				alone = true;
+				return true;
+			}
+
+		}
+
+		if (pozComment < pozStart) { //komenatar prije pocetka elementa
+			alone = true;
+			break;
+		}
+		//komentar iza elementa
+
+		alone = false;
+		break;
+
+	}
+
+
+	pozComment += 4;
+	int poz2;
+	
+
 	while ((poz2 = line.find("-->")), poz2 == -1) {
-		comment += line.substr(poz);
-		poz = 0;
+		comment += line.substr(pozComment);
+		//if (line.size() != 0) 
+			comment += "\n//";
+		pozComment = 0;
 		if (!std::getline(file, line))
 			return false;
 	}
-	comment += line.substr(poz, poz2-poz);
+	comment += line.substr(pozComment, poz2 - pozComment);
+
+	poz = poz2 + 3;
 
 	return true;
 }
 
 
+
+
 void printNode(StringBuilder &result, xml::FileParser::node_iterator &node, int tabs = 0) {
 
-	const char* smece = node->getName().c_str();
 	td::String comment;
 
-	auto finishLine = [&comment, &result]() {
-		if (comment.isNull())
-			result << '\n';
-		else
-			result << "\t//" << comment << '\n';
-	};
-
 	bool alone;
-		getComment(comment, alone);
-	while(alone){
+	getComment(comment, alone);
+
+	while (alone) {
 		result << "//" << comment << '\n';
 		getComment(comment, alone);
 	}
 
 	static std::string *tab_storage = new std::string; //u sustini ovaj string se nikad ne brise iz memorije ali mozda bolje to nego da se nanovo memorija rezervise svaki put kad pozivamo funkciju
-	tab_storage->resize(tabs+1, '\t');
-	(*tab_storage)[tabs] = '\0';
+	tab_storage->resize(tabs, '\t');
 
 	result << tab_storage->c_str();
 
-	bool ifType = false;
 	bool special_case = false;
+	bool skip_newline = false;
+	enum class closeTags{none, model, group, iff} closeTag = closeTags::none;
+
+
+	if (node->getName().cCompareNoCase("Model") == 0)
+		closeTag = closeTags::model;
+
+	if (node->getName().cCompareNoCase("Group") == 0)
+		closeTag = closeTags::group;
 	
 	if (node->getName().cCompareNoCase("Var") == 0 || node->getName().cCompareNoCase("Param") == 0) {
-		tab_storage[tabs] = '\t';
-		for each (auto & var in node->attribs)
-			if (var.getName().cCompareNoCase("name") == 0) {
-				result << tab_storage->c_str() << var.getValue() << " = ";
-				break;
-			}
-		bool found = false;
-		for each (auto & var in node->attribs)
-			if (var.getName().cCompareNoCase("val") == 0) {
-				result << var.value;
-				found = true;
-				break;
-			}
-		if (!found)
-			result << '0';
-		finishLine();
+		result << tab_storage->c_str() << '\t';
+
+		auto atrib = node.getAttrib("name");
+		if (atrib != nullptr)
+			result << atrib->getValue();
+		else
+			result << "name_not_specified";
+		result << " = ";
+
+
+		atrib = node.getAttrib("val");
+		if (atrib != nullptr)
+			result << atrib->getValue();
+		else
+			result << "0";
+
 		goto PRINT_CHILDREN;
 	}
 	
 	
-	if (node->getName().cCompareNoCase("Then") == 0) { //then je implicitno ne ispisuje se
-		finishLine();
-		goto PRINT_CHILDREN;
+	if (node->getName().cCompareNoCase("Then") == 0) {
+		special_case = true;
+		skip_newline = true;
 	}
 
 
-	if (node->getName().cCompareNoCase("Eq") == 0) { // ako se radi o uslovnoj jednacini ispisati kao if
-		td::String eq;
-		for each (auto & var in node->attribs) {
-			if (var.getName().cCompareNoCase("cond") == 0) {
-				result << "if " << var.value;
-				ifType = true;
-			}
-			if (var.getName().cCompareNoCase("fx") == 0)
-				eq = var.value;
-		}
-		if (!ifType) {
-			tab_storage[tabs] = '\t';
-			result << tab_storage->c_str() << eq;
-			finishLine();
-			goto PRINT_CHILDREN;
-		}
+	if (node->getName().cCompareNoCase("Else") == 0) {
+		result << tab_storage->c_str() << "else";
 		special_case = true;
 	}
 
-	if (!special_case)
+	bool ifType = false;
+
+	if (node->getName().cCompareNoCase("Eq") == 0) { // ako se radi o uslovnoj jednacini ispisati kao if
+		auto atr = node.getAttrib("cond");
+		if(atr != nullptr){
+			result << "if " << atr->getValue();
+			special_case = true;
+			closeTag = closeTags::iff;
+			ifType = true;
+		}
+	}
+	else if(!special_case) 
 		result << tab_storage->c_str() << node->getName() << ':';
-	
 
 		
-	tab_storage[tabs] = '\t';
+	//printanje argumenata
 
-	finishLine();
-		
+	auto atr = node.getAttrib("fx");
+	if (atr != nullptr) {
+		if (ifType)
+			result << '\n';
+		result << tab_storage->c_str() << atr->getValue();
+		atr = node.getAttrib("w");
+		if (atr != nullptr)
+			result << " [" << atr->getValue() << ']';
+	}
+
+
 	for each (auto & var in node->attribs) {
 		if (ifType && var.getName().cCompareNoCase("cond") == 0)
-			continue;			
-		result << tab_storage->c_str() << var.getName() << " = " << var.value << '\n';
+			continue;		
+		if (var.getName().cCompareNoCase("fx") == 0)
+			continue;
+		if (var.getName().cCompareNoCase("w") == 0)
+			continue;
+		result << '\n' << tab_storage->c_str() << '\t' << var.getName() << " = " << var.value;
 	}
 
 	
 	
 PRINT_CHILDREN:
+	if (!comment.isNull()) 
+		result << "\t//" << comment;
+	if (!skip_newline)
+		result << '\n';
+	
+
 	auto &it = node.getChildNode();
 	while (it.isOk()) {
 		printNode(result, it, tabs);
 		++it;
 	}
-	return;
+
+
+
+	static const char* closingTagNames[] = { "" , "endmodel\n", "endgroup\n", "endif\n"};
+	result << closingTagNames[int(closeTag)];
+
 }
 
 void View::loadXML(td::String path){
@@ -330,8 +386,8 @@ bool View::saveXML()
 	catch (const std::exception& e)
 	{
 		showAlert("Could not save file", e.what());
-		return true;
 	}
+	return true;
 }
 
 bool View::saveAsXML(const td::String& path)
@@ -343,7 +399,7 @@ bool View::saveAsXML(const td::String& path)
 	catch (const std::exception& e)
 	{
 		showAlert("Could not save file", e.what());
-		return true;
 	}
+	return true;
 }
 

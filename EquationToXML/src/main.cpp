@@ -152,14 +152,14 @@ void generateXML(const td::String &equations, const td::String &output_path) {
 	bool closeNode = false;
 	bool attributeInput = false;
 	td::String bacaj(output_path.subStr(0,output_path.length()-5));
-	bacaj += "2.xml";
+	bacaj += "test.xml";
 	xml::Writer w(bacaj);
 	w.startDocument();
 
-	static const td::String keywords[] = {"IF", "ELSE", "ENDIF", "SIGNAL", "THEN:", "MODEL:", "ENDMODEL", "TYPE=", "DOMAIN=", "NAME=", "EPS=", "METHOD=", "VARS:", "VARIABLES:", "PARS:", "PARAMATERS:", "PARAMS:", "INIT:", "ENDINIT", "ODE:", "NL:", "POSTPROC:", "MEAS:"};
-	enum{iff, elsee, endiff, signal, then, model, endmodel, type, domain, name, eps, method, vars, variables, pars, paramaters, params, init, endinit, ode, nl, postproc, meas};
+	static const td::String keywords[] = {"IF", "ELSE", "ENDIF", "SIGNAL", "THEN:", "MODEL:", "ENDMODEL", "TYPE=", "DOMAIN=", "NAME=", "EPS=", "DT", "METHOD=", "VARS:", "VARIABLES:", "PARS:", "PARAMATERS:", "PARAMS:", "INIT:", "ENDINIT", "ODE:", "NL:", "POSTPROC:", "MEAS:", "GROUP:", "ENDGROUP"};
+	enum{iff, elsee, endiff, signal, then, model, endmodel, type, domain, name, eps, dt, method, vars, variables, pars, paramaters, params, init, endinit, ode, nl, postproc, meas, group, endgroup};
 
-	enum class inputModes{none, variables, paramaters, equations};
+	enum class inputModes{none, variables, paramaters, equations, equationsMeas};
 	inputModes inputMode = inputModes::none;
 
 	auto openNode = [&w, &closeNode, &inputMode, &attributeInput](const char* name, inputModes mod) {
@@ -206,7 +206,7 @@ void generateXML(const td::String &equations, const td::String &output_path) {
 		}
 
 		if (startsWith(linije[i], keywords[postproc])) {
-			openNode("PostProc", inputModes::none);
+			openNode("PostProc", inputModes::equations);
 			--i; continue;
 		}
 
@@ -226,7 +226,7 @@ void generateXML(const td::String &equations, const td::String &output_path) {
 		}
 
 		if (startsWith(linije[i], keywords[meas])) {
-			openNode("MEASEqs", inputModes::equations);
+			openNode("MEASEqs", inputModes::equationsMeas);
 			--i; continue;
 		}
 
@@ -244,6 +244,9 @@ void generateXML(const td::String &equations, const td::String &output_path) {
 		}
 
 		if (startsWith(linije[i], keywords[endmodel])) {
+			if (closeNode) {
+				w.endElement();
+			}
 			w.endElement();
 			closeNode = true;
 			inputMode = inputModes::none;
@@ -257,13 +260,22 @@ void generateXML(const td::String &equations, const td::String &output_path) {
 			continue;
 		}
 
+		if (startsWith(linije[i], keywords[group])) {
+			openNode("Group", inputMode);
+			continue;
+		}
+
+		if (startsWith(linije[i], keywords[endgroup])) {
+			w.endElement();
+			continue;
+		}
 
 		//atribute keywords
 		
 
 
 		/*
-		moze ovo umjesto puno ifova ali sporije je
+		moze ovo umjesto puno ifova jer ime atributa se uvijek poklapa sa komandom ali sporije je
 
 		static const std::array<int, 5> atributi = {type, domain, name, eps, method};
 		for (int j = 0; j <atributi.size() ; ++j)
@@ -289,6 +301,11 @@ void generateXML(const td::String &equations, const td::String &output_path) {
 
 		if (startsWith(linije[i], keywords[domain])) {
 			w.attribute("domain", linije[i].trimLeft());
+			isAtribute = true;
+		}
+
+		if (startsWith(linije[i], keywords[dt])) {
+			w.attribute("dT", linije[i].trimLeft());
 			isAtribute = true;
 		}
 
@@ -321,6 +338,7 @@ void generateXML(const td::String &equations, const td::String &output_path) {
 			w.startElement("Eq");
 			w.attribute("cond", linije[i].trimLeft());
 			w.startElement("Then");
+			goto ADD_COMMENT;
 		}
 
 		if (startsWith(linije[i], keywords[signal])) {
@@ -328,21 +346,23 @@ void generateXML(const td::String &equations, const td::String &output_path) {
 				w.attribute("signal", linije[i].trimLeft().subStr(1, linije[i].length() - 1).trimLeft());
 			else
 				w.attribute("signal", "LowLimit");
-			
+			goto ADD_COMMENT;
 			
 		}
 
 		if (startsWith(linije[i], keywords[elsee])) {
 			w.endElement();
 			w.startElement("Else");
+			goto ADD_COMMENT;
 		}
 
 		if (startsWith(linije[i], keywords[endiff])) {
 			w.endElement();
+			goto ADD_COMMENT;
 		}
 
 		if (startsWith(linije[i], keywords[then])) {
-			
+			goto ADD_COMMENT;
 		}
 
 		//user didnt enter a keyword
@@ -370,6 +390,21 @@ void generateXML(const td::String &equations, const td::String &output_path) {
 			w.attribute("fx", linije[i]);
 			w.endElement();
 		}
+		if (inputMode == inputModes::equationsMeas) {
+			w.startElement("Eq");
+			int poz1 = linije[i].find("[");
+			int poz2 = linije[i].find("]");
+			if (poz1 == -1 || poz2 == -1)
+				throw("Meas equations must contain [weight] in equation line");
+			td::String rest(linije[i].subStr(poz2, linije[i].length()-1));
+			w.attribute("w", linije[i].subStr(poz1,poz2));
+			linije[i] = linije[i].subStr(0, poz1 - 1);
+			linije[i] += rest;
+			w.attribute("fx", linije[i]);
+			w.endElement();
+		}
+
+		ADD_COMMENT:
 
 		if (!comment.isNull()) {
 			w.comment(comment.c_str());
