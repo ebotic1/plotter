@@ -61,7 +61,7 @@ bool MainWindow::onActionItem(td::BYTE menuID, td::BYTE firstSubMenuID, td::BYTE
 }
 
 void MainWindow::onInitialAppearance(){
-    _mainView.loadXML("C:\\Users\\Bill Gates\\modelSolver\\test.xml");
+    _mainView.loadXML("C:\\Users\\eb\\modelSolver\\test.xml");
 }
 
 

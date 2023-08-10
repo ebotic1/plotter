@@ -1,9 +1,9 @@
 set(EqToXML_lib EquationToXML)
 
 file(GLOB SOURCES  ${CMAKE_CURRENT_LIST_DIR}/src/*.cpp)
-file(GLOB HEADERS  ${CMAKE_CURRENT_LIST_DIR}/src/*.h)
+file(GLOB HEADERS  ${CMAKE_CURRENT_LIST_DIR}/inc/*.h)
 
-source_group("headers"        FILES ${HEADERS})
+source_group("inc"        FILES ${HEADERS})
 source_group("src"            FILES ${SOURCES})
 
 add_library(${EqToXML_lib} STATIC ${HEADERS} ${SOURCES})

@@ -1,107 +1,310 @@
-#include "main.h"
+#include "../inc/generateXML.h"
+#include "../inc/nodes.h"
 #include <vector>
 #include <cnt/PushBackVector.h>
+
+
 #include "td/String.h"
+
+
 #include "xml/Writer.h"
 #include <stdexcept>
 #include <array>
 
-/*
-class model {
+#include<unordered_map>
+#include<map>
+#include <utility>
+
+
+void baseNode::printNode(xml::Writer& w) {
+	w.startNode(this->getName());
+	for each (auto &at in this->attribs)
+		w.attribute(at.first.c_str(), at.second);
+
+
+
+	if (nodes.size() == 0)
+		w.endNode();
+
+	if (!comment.isNull()) {
+		cnt::PushBackVector<td::String> coms;
+		comment.split("\n", coms, true, true);
+		w.comment(coms[0].c_str());
+		for (int i = 1; i < coms.size(); ++i)
+			w.commentInNewLine(coms[i].c_str());
+	}
+
+	if (nodes.size() != 0) {
+
+		for each (baseNode * var in nodes)
+			var->printNode(w);
+
+		w.endNode();
+	}
+
+	
+
+
+}
+
+size_t baseNode::addLine(std::vector<std::pair<td::String, td::String>> lines, size_t startLine){
+	while (startLine < lines.size()) {
+		if (lines[startLine].first.isNull()) {
+			addComment(lines[startLine].second);
+			++startLine;
+			continue;
+		}
+
+		int pozEq = lines[startLine].first.find("=");
+		
+		bool found = false;
+		if (pozEq != -1) {
+			td::String keyword = lines[startLine].first.subStr(0, pozEq - 1).trimRight();
+			for each (auto & var in attributeKeywords) {
+				if (var == keyword) {
+					setAttrib(lines[startLine].first.subStr(0, pozEq - 1).trimRight(), lines[startLine].first.subStr(pozEq + 1, -1).trimLeft());
+					addComment(lines[startLine].second);
+					found = true;
+					break;
+				}
+			}
+		}
+		if (found) {
+			++startLine;
+			continue;
+		}
+		baseNode* child = nullptr;
+		if (nodeAction(lines[startLine].first, child)) {
+			if (child != nullptr) {
+				child->addComment(lines[startLine].second);
+				startLine = child->addLine(lines, startLine+1);
+				continue;
+			}
+			addComment(lines[startLine].second);
+			++startLine;
+			continue;
+		}
+
+		if (child != nullptr) {
+			startLine = child->addLine(lines, startLine);
+			continue;
+		}
+
+		return startLine;
+		
+	}
+}
+
+void baseNode::addComment(const td::String& comment){
+	if (comment.isNull())
+		return;
+	if (!this->comment.isNull())
+			this->comment += "\n";
+	this->comment += comment;
+}
+
+void baseNode::addComment(td::String&& comment){
+	if (comment.isNull())
+		return;
+	if (this->comment.isNull()) 
+		this->comment = comment;
+	else {
+		this->comment += "\n";
+		this->comment += comment;
+	}
+}
+
+void baseNode::processCommands(const td::String& text) {
+	std::vector<std::pair<td::String, td::String>> lines;
+	cnt::PushBackVector<td::String> l;
+	text.split("\n;", l, true, true);
+	int poz;
+	for (int i = 0; i < l.size(); ++i){
+		poz = l[i].find("//");
+		if(poz == -1)
+			lines.emplace_back<std::pair<td::String, td::String>>({l[i].trim(), ""});
+		else if(poz != 0)
+			lines.emplace_back<std::pair<td::String, td::String>>({ l[i].subStr(0,poz-1).trim(), l[i].subStr(poz + 2, -1)});
+		else
+			lines.emplace_back<std::pair<td::String, td::String>>({ "", l[i].subStr(poz + 2, -1) });
+	}
+	addLine(lines);
+}
+
+
+class nameNode : public baseNode {
+	td::String name;
 public:
-	static const td::String  oznakeJednacina[];
-	static const td::String  oznakeModel[];
-	static const td::String  oznakeDomene[];
-private:
+	nameNode(const td::String &name) : name(name) {}
+	nameNode(td::String &&name) : name(name) {}
 
-	struct vrijednost {
-		td::String ime, komentar;
-		double pocetna_vrijednost;
-	};
+	bool nodeAction(const td::String& command, baseNode*& newChild) override {
+		return false;
+	}
 
-	enum class tipoviModel {
-		ODE, DAE, NR, WLS, DIFF
-	};
-
-	enum class tipoviJednacina {
-		ODE, DAE, NLE, Meas, DIF
-	};
-
-	enum class domene {
-		real, complex
-	};
-
-	td::String ime;
-	domene domena = domene::real;
-
-	std::vector<vrijednost> parametri;
-	std::vector<vrijednost> varijable;
-
-	model* parentModel;
-	bool init_block = false;
-	bool post_block = false;
+	inline const char* getName() override{
+		return name.c_str();
+	}
+};
 
 
-	friend void processLine(td::String equation, const td::String& comment);
 
+template<typename containerName, typename nodeType>
+class containerNode : public baseNode {
 public:
+	bool nodeAction(const td::String& command, baseNode*& newChild) override{
 
-	std::vector<model> init_children;
-	std::vector<model> post_children;
+			if (command.getLastChar() == ':') return false;
+			if (command.beginsWithCI("end")) return false;
 
-	model(model* parent) {
-		parentModel = parent;
-		if (parent == nullptr) return;
-		domena = parent->domena;
+			newChild = new nodeType;
+			nodes.push_back(newChild);
+
+			return false;
+	}
+	
+	inline const char* getName() override {
+		return containerName::val;
 	}
 
 };
 
-const td::String model::oznakeJednacina[] = { "ODEqs", "DAEqs" , "NLEqs", "MeasEqs", "DIFqs" };
-const td::String model::oznakeModel[] = { "ODE", "DAE", "NR", "WLS", "DIFF" };
-const td::String model::oznakeDomene[] = { "real", "cmplx" };
+template<typename variableName>
+class variableNode : public baseNode {
+	bool added = false;
+public:
+	bool nodeAction(const td::String& command, baseNode*& newChild) override {
+		if (added) return false;
+		added = true;
 
+		const char* smece = command.c_str();
 
-
-model* rootModel = nullptr;
-
-void processLine(td::String equation, const td::String &comment) {
-	cnt::PushBackVector<td::String> tokeni;
-	equation.split("-/+*", tokeni, true, true);
-
-	static model* currentModel = nullptr;
-
-	if (tokeni.size() > 0){
-		if (tokeni[0] == "Model:") {
-			if (rootModel == nullptr) {
-				rootModel = new model(nullptr);
-				currentModel = rootModel;
-				return;
-			}
-			else if (currentModel->init_block || currentModel->post_block) {
-				std::vector<model>& kontener(currentModel->init_block ? currentModel->init_children : currentModel->post_children);
-				kontener.emplace_back(currentModel);
-				currentModel = &(kontener.back());
-				return;
-			}
-			else
-				throw std::logic_error("Submodels can only be created inside Init and PostProc blocks");
+		int pozEq = command.find("=");
+		if (pozEq == -1) {
+			setAttrib("name", command);
+			return true;
 		}
+
+		setAttrib("name", command.subStr(0, pozEq - 1).trimRight());
+		setAttrib("val", command.subStr(pozEq + 1, -1).trimLeft());
+		
+		return true;
 	}
 
-
-
-	for (int i = 0; i < tokeni.size(); ++i){
-
+	inline const char* getName() override {
+		return variableName::val;
 	}
+};
 
+class singleEquation : public baseNode {
+	bool added = false;
+public:
+	virtual bool nodeAction(const td::String& command, baseNode*& newChild) override {
+		if (added)
+			return false;
+		//dodaj provjeru da li se radi o if-u
+		setAttrib("fx", command);
+		added = true;
+		return true;
+	}
+	inline const char* getName() override {
+		return "Eq";
+	}
+};
+
+struct varsName { static const char* val; };
+const char* varsName::val = "Vars";
+
+struct varName { static const char* val; };
+const char* varName::val = "Var";
+
+struct paramsName { static const char* val; };
+const char* paramsName::val = "Params";
+
+struct paramName { static const char* val; };
+const char* paramName::val = "Param";
+
+struct NLEName { static const char* val; };
+const char* NLEName::val = "NLEqs";
+
+struct ODEName { static const char* val; };
+const char* ODEName::val = "ODEqs";
+
+struct postProcName { static const char* val; };
+const char* postProcName::val = "PostProc";
+
+typedef containerNode<varsName, variableNode<varName>> varsNode;
+typedef containerNode<paramsName, variableNode<paramName>> paramsNode;
+typedef containerNode<NLEName, singleEquation> NLEquationsNode;
+typedef containerNode<ODEName, singleEquation> ODEquationsNode;
+typedef containerNode<postProcName, singleEquation> postProcNode;
+
+
+class initNode : public baseNode {
+public:
+	virtual bool nodeAction(const td::String& command, baseNode*& newChild) override {
+
+		if (command.cCompareNoCase("model:") == 0) {
+			nodes.push_back(new modelNode());
+			newChild = nodes.back();
+			return true;
+		}
+		
+		return false;
+	}
+	inline const char* getName() override {
+		return "Init";
+	}
+};
+
+
+modelNode::modelNode(td::String text){
+	processCommands(text);
 }
 
-td::UTF8 toUpper(td::UTF8 c) {
+bool modelNode::nodeAction(const td::String& command, baseNode*& newChild){
+
+	if (command.beginsWithCI("end")) return false;
+
+
+	if (command.getLastChar() == ':') { //radi se o novom elementu
+		if (command.cCompareNoCase("Vars:") == 0)
+			nodes.push_back(new varsNode());
+		else if (command.cCompareNoCase("Params:") == 0)
+			nodes.push_back(new paramsNode());
+		else if (command.cCompareNoCase("model:") == 0) 
+			return true;
+		else if (command.cCompareNoCase("NLEqs:") == 0)
+			nodes.push_back(new NLEquationsNode());
+		else if (command.cCompareNoCase("ODEqs:") == 0)
+			nodes.push_back(new ODEquationsNode());
+		else
+			nodes.push_back(new nameNode(command.subStr(0, command.length() - 2)));
+
+		newChild = nodes.back();
+		return true;
+	}
+
 	
 }
 
-*/
+
+
+void generateXML(const td::String& equations, const td::String& output_path) {
+	modelNode m(equations);
+
+	td::String bacaj(output_path.subStr(0, output_path.length() - 5));
+	bacaj += "test.xml";
+	xml::Writer w(bacaj);
+	w.startDocument();
+
+	m.printNode(w);
+
+	w.endDocument();
+	w.close();
+}
+
+/*
 void splitComment(td::String& equation, td::String& comment)
 {
 	int komentarPoz = equation.find("//");
@@ -143,6 +346,9 @@ bool startsWith(td::String& string, const td::String& word) {
 }
 
 
+
+
+
 void generateXML(const td::String &equations, const td::String &output_path) {
 
 	cnt::PushBackVector<td::String> linije;
@@ -156,7 +362,7 @@ void generateXML(const td::String &equations, const td::String &output_path) {
 	xml::Writer w(bacaj);
 	w.startDocument();
 
-	static const td::String keywords[] = {"IF", "ELSE", "ENDIF", "SIGNAL", "THEN:", "MODEL:", "ENDMODEL", "TYPE=", "DOMAIN=", "NAME=", "EPS=", "DT", "METHOD=", "VARS:", "VARIABLES:", "PARS:", "PARAMATERS:", "PARAMS:", "INIT:", "ENDINIT", "ODE:", "NL:", "POSTPROC:", "MEAS:", "GROUP:", "ENDGROUP"};
+	static const td::String keywords[] = {"IF", "ELSE", "ENDIF", "SIGNAL", "THEN:", "MODEL:", "ENDMODEL", "TYPE=", "DOMAIN=", "NAME=", "EPS=", "DT=", "METHOD=", "VARS:", "VARIABLES:", "PARS:", "PARAMATERS:", "PARAMS:", "INIT:", "ENDINIT", "ODE:", "NL:", "POSTPROC:", "MEAS:", "GROUP:", "ENDGROUP"};
 	enum{iff, elsee, endiff, signal, then, model, endmodel, type, domain, name, eps, dt, method, vars, variables, pars, paramaters, params, init, endinit, ode, nl, postproc, meas, group, endgroup};
 
 	enum class inputModes{none, variables, paramaters, equations, equationsMeas};
@@ -207,6 +413,7 @@ void generateXML(const td::String &equations, const td::String &output_path) {
 
 		if (startsWith(linije[i], keywords[postproc])) {
 			openNode("PostProc", inputModes::equations);
+			closeNode = false;
 			--i; continue;
 		}
 
@@ -291,8 +498,8 @@ void generateXML(const td::String &equations, const td::String &output_path) {
 				continue;
 		}
 		*/
+		/*
 		bool isAtribute = false;
-		bool commentIsNull = comment.isNull() ? true : false;
 
 		if (startsWith(linije[i], keywords[type])) {
 			w.attribute("type", linije[i].trimLeft());
@@ -325,9 +532,14 @@ void generateXML(const td::String &equations, const td::String &output_path) {
 		}
 
 		if (isAtribute) {
-			if (!commentIsNull && !comment.isNull())
-			continue;
+			goto ADD_COMMENT;
 		}
+
+
+
+		attributeInput = false;
+			
+
 
 
 		//other
@@ -358,6 +570,7 @@ void generateXML(const td::String &equations, const td::String &output_path) {
 
 		if (startsWith(linije[i], keywords[endiff])) {
 			w.endElement();
+			w.endElement();
 			goto ADD_COMMENT;
 		}
 
@@ -370,7 +583,7 @@ void generateXML(const td::String &equations, const td::String &output_path) {
 //		if (inputMode == inputModes::none)
 //				throw std::logic_error(td::String("unknown keyword \"").c_str());
 
-		attributeInput = false;
+		
 
 		if (inputMode == inputModes::variables || inputMode == inputModes::paramaters) {
 			int poz = linije[i].find("=", 0);
@@ -386,9 +599,12 @@ void generateXML(const td::String &equations, const td::String &output_path) {
 		}
 		
 		if (inputMode == inputModes::equations) {
+			if (closeNode)
+				w.endElement();
+			closeNode = true;
 			w.startElement("Eq");
 			w.attribute("fx", linije[i]);
-			w.endElement();
+			attributeInput = true;
 		}
 		if (inputMode == inputModes::equationsMeas) {
 			w.startElement("Eq");
@@ -420,3 +636,4 @@ void generateXML(const td::String &equations, const td::String &output_path) {
 
 
 }
+*/

@@ -4,7 +4,7 @@
 #include "td/Variant.h"
 #include "td/StringConverter.h"
 #include "gui/NumericEdit.h"
-#include "./../../EquationToXML/src/main.h"
+#include "./../../EquationToXML/inc/generateXML.h"
 
 #include "xml/DOMParser.h"
 #include "cnt/StringBuilder.h"
@@ -88,7 +88,8 @@ void View::pokreniSolver(){
 	s += root.getAttrib("type")->getValue();
 	s += " ";
 	s += root.getAttrib("domain")->getValue();
-	s += " test.xml";
+	s += " ";
+	s += currentPath;
 	s += " rezultat.txt ";
 	td::Variant v;
 
@@ -139,25 +140,28 @@ bool getComment(td::String& comment, bool &alone, const char* path = nullptr) {
 	static int poz = 0;
 	while (true) {
 		if (file.eof()) {
-			alone = false;
+			pozComment = line.find("<!--", poz);
+			if(pozComment != -1)
+				break;
 			return true;
 		}
 		
 		pozComment = line.find("<!--", poz);
 		pozStart = line.find("<", poz);
+		if (pozStart == pozComment && pozComment != -1) pozStart = line.find("<", pozComment + 1);
 		pozEnd = line.find(">", poz);
 
-		if (pozStart != -1 && line[pozStart + 1] == '/') {//closing tag (comment is independent, ignore)
+		if (pozStart != -1 && line[pozStart + 1] == '/') {//element is closing tag (comment is independent, ignore)
 
 			if (pozComment != -1) {
 				poz = pozComment;
 				bool getSucces = getComment(comment, alone);
-				alone = true;
+				alone = false;
 				return getSucces;
 			}
 
 			//komentara nema, samo nadi kraj elementa i zapocni ponovo
-			while (poz = line.find(">", poz), (poz != -1 && !file.eof()))
+			while (poz = line.find(">", poz), (poz == -1 && !file.eof()))
 				std::getline(file, line);
 
 
@@ -179,13 +183,13 @@ bool getComment(td::String& comment, bool &alone, const char* path = nullptr) {
 			}
 			else {//ima elementa
 				poz = pozEnd + 1;
-				alone = true;
+				alone = false;
 				return true;
 			}
 
 		}
 
-		if (pozComment < pozStart) { //komenatar prije pocetka elementa
+		if (pozComment < pozStart || pozStart == -1) { //komenatar prije pocetka elementa
 			alone = true;
 			break;
 		}
@@ -234,10 +238,8 @@ void printNode(StringBuilder &result, xml::FileParser::node_iterator &node, int 
 	static std::string *tab_storage = new std::string; //u sustini ovaj string se nikad ne brise iz memorije ali mozda bolje to nego da se nanovo memorija rezervise svaki put kad pozivamo funkciju
 	tab_storage->resize(tabs, '\t');
 
-	result << tab_storage->c_str();
-
 	bool special_case = false;
-	bool skip_newline = false;
+	bool skip_newline = false, dont_indent = false;;
 	enum class closeTags{none, model, group, iff} closeTag = closeTags::none;
 
 
@@ -248,7 +250,7 @@ void printNode(StringBuilder &result, xml::FileParser::node_iterator &node, int 
 		closeTag = closeTags::group;
 	
 	if (node->getName().cCompareNoCase("Var") == 0 || node->getName().cCompareNoCase("Param") == 0) {
-		result << tab_storage->c_str() << '\t';
+		result << tab_storage->c_str();
 
 		auto atrib = node.getAttrib("name");
 		if (atrib != nullptr)
@@ -269,22 +271,25 @@ void printNode(StringBuilder &result, xml::FileParser::node_iterator &node, int 
 	
 	
 	if (node->getName().cCompareNoCase("Then") == 0) {
+		dont_indent = true;
 		special_case = true;
 		skip_newline = true;
 	}
 
 
+	bool ifType = false;
+
 	if (node->getName().cCompareNoCase("Else") == 0) {
 		result << tab_storage->c_str() << "else";
 		special_case = true;
+		ifType = true;
 	}
 
-	bool ifType = false;
 
 	if (node->getName().cCompareNoCase("Eq") == 0) { // ako se radi o uslovnoj jednacini ispisati kao if
 		auto atr = node.getAttrib("cond");
 		if(atr != nullptr){
-			result << "if " << atr->getValue();
+			result << tab_storage->c_str() << "if " << atr->getValue();
 			special_case = true;
 			closeTag = closeTags::iff;
 			ifType = true;
@@ -299,11 +304,12 @@ void printNode(StringBuilder &result, xml::FileParser::node_iterator &node, int 
 	auto atr = node.getAttrib("fx");
 	if (atr != nullptr) {
 		if (ifType)
-			result << '\n';
+			result << "\n";
 		result << tab_storage->c_str() << atr->getValue();
 		atr = node.getAttrib("w");
 		if (atr != nullptr)
 			result << " [" << atr->getValue() << ']';
+		skip_newline = false;
 	}
 
 
@@ -324,18 +330,27 @@ PRINT_CHILDREN:
 		result << "\t//" << comment;
 	if (!skip_newline)
 		result << '\n';
-	
 
 	auto &it = node.getChildNode();
 	while (it.isOk()) {
-		printNode(result, it, tabs);
+		if(dont_indent)
+			printNode(result, it, tabs);
+		else
+			printNode(result, it, tabs+1);
 		++it;
 	}
 
 
 
 	static const char* closingTagNames[] = { "" , "endmodel\n", "endgroup\n", "endif\n"};
-	result << closingTagNames[int(closeTag)];
+	
+	tab_storage->resize(tabs, '\t');
+
+	if (closeTag != closeTags::none) {
+		result << tab_storage->c_str() << closingTagNames[int(closeTag)];
+	}
+
+
 
 }
 
@@ -364,6 +379,7 @@ void View::loadXML(td::String path){
 		printNode(s, model);
 		td::String comment;
 		while (getComment(comment, x))
+			if(!comment.isNull())
 			s << "//" << comment << '\n';
 	}
 
@@ -386,6 +402,10 @@ bool View::saveXML()
 	catch (const std::exception& e)
 	{
 		showAlert("Could not save file", e.what());
+	}
+	catch (const char *e)
+	{
+		showAlert("Could not save file", e);
 	}
 	return true;
 }
