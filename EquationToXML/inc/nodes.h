@@ -39,11 +39,11 @@ public:
 
 };
 
-const td::String baseNode::attributeKeywords[] = { "type", "domain", "name", "eps", "dT" };
+const td::String baseNode::attributeKeywords[] = { "type", "domain", "name", "eps", "dT", "signal"};
 
 class modelNode : public baseNode {
 	std::map<td::String, td::String> attribs;
-	bool skippedItself = false;
+	bool done = false;
 
 public:
 	static const td::String attributeKeywords[];

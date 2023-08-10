@@ -280,6 +280,7 @@ void printNode(StringBuilder &result, xml::FileParser::node_iterator &node, int 
 	bool ifType = false;
 
 	if (node->getName().cCompareNoCase("Else") == 0) {
+		tab_storage->resize(--tabs, '\t');
 		result << tab_storage->c_str() << "else";
 		special_case = true;
 		ifType = true;
@@ -320,7 +321,12 @@ void printNode(StringBuilder &result, xml::FileParser::node_iterator &node, int 
 			continue;
 		if (var.getName().cCompareNoCase("w") == 0)
 			continue;
-		result << '\n' << tab_storage->c_str() << '\t' << var.getName() << " = " << var.value;
+		if (!skip_newline)
+			result << '\n';
+		else 
+			skip_newline = false;
+			
+		result << tab_storage->c_str() << '\t' << var.getName() << " = " << var.value;
 	}
 
 	

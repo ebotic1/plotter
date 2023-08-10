@@ -26,12 +26,19 @@ void baseNode::printNode(xml::Writer& w) {
 	if (nodes.size() == 0)
 		w.endNode();
 
+	cnt::PushBackVector<td::String> comSides;
+
 	if (!comment.isNull()) {
 		cnt::PushBackVector<td::String> coms;
-		comment.split("\n", coms, true, true);
-		w.comment(coms[0].c_str());
+		comment.split("~", comSides, true, true);
+
+		comSides[0].split("\n", coms, true, true);
+		if(!coms[0].isNull())
+			w.comment(coms[0].c_str());
 		for (int i = 1; i < coms.size(); ++i)
-			w.commentInNewLine(coms[i].c_str());
+			if (!coms[i].isNull())
+				w.comment(coms[i].c_str()); //treba commentInNewLine ali kad se popravi funkcija
+
 	}
 
 	if (nodes.size() != 0) {
@@ -41,16 +48,28 @@ void baseNode::printNode(xml::Writer& w) {
 
 		w.endNode();
 	}
-
 	
-
+	//'~' oznacava da se komentar printa na kraju elementa
+		cnt::PushBackVector<td::String> coms;
+		for (int i = 1; i < comSides.size(); ++i)
+			comSides[i].split("\n", coms, true, false);
+		for (int i = 0; i < coms.size(); ++i)
+			if (!coms[i].isNull())
+				w.commentInNewLine(coms[i].c_str());
 
 }
 
 size_t baseNode::addLine(std::vector<std::pair<td::String, td::String>> lines, size_t startLine){
 	while (startLine < lines.size()) {
-		if (lines[startLine].first.isNull()) {
-			addComment(lines[startLine].second);
+		if (lines[startLine].first.isNull() && !lines[startLine].second.isNull()) {
+			if (nodes.size() != 0) {
+				nodes.back()->addComment("~");
+				nodes.back()->addComment(lines[startLine].second);
+			}
+			else {
+				addComment("\n");
+				addComment(lines[startLine].second);
+			}
 			++startLine;
 			continue;
 		}
@@ -90,16 +109,14 @@ size_t baseNode::addLine(std::vector<std::pair<td::String, td::String>> lines, s
 			continue;
 		}
 
-		return startLine;
-		
+		break;
 	}
+	return startLine;
 }
 
 void baseNode::addComment(const td::String& comment){
 	if (comment.isNull())
 		return;
-	if (!this->comment.isNull())
-			this->comment += "\n";
 	this->comment += comment;
 }
 
@@ -109,7 +126,6 @@ void baseNode::addComment(td::String&& comment){
 	if (this->comment.isNull()) 
 		this->comment = comment;
 	else {
-		this->comment += "\n";
 		this->comment += comment;
 	}
 }
@@ -151,16 +167,29 @@ public:
 
 template<typename containerName, typename nodeType>
 class containerNode : public baseNode {
+	bool done = false;
 public:
 	bool nodeAction(const td::String& command, baseNode*& newChild) override{
+		if (done) return false;
 
-			if (command.getLastChar() == ':') return false;
-			if (command.beginsWithCI("end")) return false;
+		if (command.cCompareNoCase("Group:") == 0) {
+			nodes.push_back(new GroupNode);
+			newChild = nodes.back();
+			return true;
+		}
+		if (command.getLastChar() == ':') return false;
+		if (command.beginsWithCI("end")) {
+			done = true;
+			return true;
+		}
 
-			newChild = new nodeType;
-			nodes.push_back(newChild);
 
-			return false;
+
+		newChild = new nodeType;
+		nodes.push_back(newChild);
+
+		return false;
+
 	}
 	
 	inline const char* getName() override {
@@ -196,21 +225,91 @@ public:
 	}
 };
 
+class conditionNode : public baseNode {
+public:
+	enum class type { thenn, elsee };
+private:
+	type tip;
+public:
+	conditionNode(type);
+	virtual bool nodeAction(const td::String& command, baseNode*& newChild) override;
+	inline const char* getName() override {
+		return (tip == type::thenn) ? "Then" : "Else";
+	}
+};
+
+conditionNode::conditionNode(type t): tip(t){}
+
 class singleEquation : public baseNode {
 	bool added = false;
+	bool consumeEnd = false;
 public:
 	virtual bool nodeAction(const td::String& command, baseNode*& newChild) override {
+		if (command.beginsWithCI("then"))
+			return true;
+
+
+		if (command.beginsWithCI("end")) {
+			if (consumeEnd) {
+				added = true;
+				consumeEnd = false;
+				return true;
+			}
+			return false;
+		}
+
 		if (added)
 			return false;
-		//dodaj provjeru da li se radi o if-u
-		setAttrib("fx", command);
+
+		if (command.beginsWithCI("else")) {
+			nodes.push_back(new conditionNode(conditionNode::type::elsee));
+			newChild = nodes.back();
+			added = true;
+			consumeEnd = true;
+			return true;
+		}
+
+		if (command.beginsWithCI("if")) {
+			setAttrib("cond", command.subStr(2,-1).trimLeft());
+			nodes.push_back(new conditionNode(conditionNode::type::thenn));
+			newChild = nodes.back();
+			consumeEnd = true;
+			return true;
+		}
+
 		added = true;
+		int wPoz = command.find("[");
+		
+		if (wPoz != -1 && command.getLastChar() == ']') {
+			setAttrib("fx", command.subStr(0, wPoz - 1).trimRight());
+			setAttrib("w", command.subStr(wPoz + 1, command.length() - 2));
+		}
+		else 
+			setAttrib("fx", command);
+		
+		
+
 		return true;
 	}
 	inline const char* getName() override {
 		return "Eq";
 	}
 };
+
+bool conditionNode::nodeAction(const td::String& command, baseNode*& newChild){
+
+	if (command.beginsWithCI("end"))
+		return false;
+	
+	
+	if (command.findCI("else") != -1)
+		return false;
+	
+	nodes.push_back(new singleEquation());
+	newChild = nodes.back();
+
+	return false;
+}
 
 struct varsName { static const char* val; };
 const char* varsName::val = "Vars";
@@ -233,11 +332,27 @@ const char* ODEName::val = "ODEqs";
 struct postProcName { static const char* val; };
 const char* postProcName::val = "PostProc";
 
+struct MeasEqName { static const char* val; };
+const char* MeasEqName::val = "MeasEqs";
+
+struct GroupName { static const char* val; };
+const char* GroupName::val = "Group";
+
+struct LimitName { static const char* val; };
+const char* LimitName::val = "Limits";
+
+struct ECsName { static const char* val; };
+const char* ECsName::val = "ECs";
+
 typedef containerNode<varsName, variableNode<varName>> varsNode;
 typedef containerNode<paramsName, variableNode<paramName>> paramsNode;
 typedef containerNode<NLEName, singleEquation> NLEquationsNode;
 typedef containerNode<ODEName, singleEquation> ODEquationsNode;
 typedef containerNode<postProcName, singleEquation> postProcNode;
+typedef containerNode<MeasEqName, singleEquation> MeasEqNode;
+typedef containerNode<GroupName, singleEquation> GroupNode;
+typedef containerNode<LimitName, singleEquation> LimitNode;
+typedef containerNode<ECsName, singleEquation> ECsNode;
 
 
 class initNode : public baseNode {
@@ -263,8 +378,12 @@ modelNode::modelNode(td::String text){
 }
 
 bool modelNode::nodeAction(const td::String& command, baseNode*& newChild){
+	if (done) return false;
 
-	if (command.beginsWithCI("end")) return false;
+	if (command.beginsWithCI("end")) {
+		done = true;
+		return true;
+	}
 
 
 	if (command.getLastChar() == ':') { //radi se o novom elementu
@@ -278,6 +397,16 @@ bool modelNode::nodeAction(const td::String& command, baseNode*& newChild){
 			nodes.push_back(new NLEquationsNode());
 		else if (command.cCompareNoCase("ODEqs:") == 0)
 			nodes.push_back(new ODEquationsNode());
+		else if (command.cCompareNoCase("Init:") == 0)
+			nodes.push_back(new initNode);
+		else if (command.cCompareNoCase("PostProc:") == 0)
+			nodes.push_back(new postProcNode);
+		else if (command.cCompareNoCase("MeasEqs:") == 0)
+			nodes.push_back(new MeasEqNode); 
+		else if (command.cCompareNoCase("Limits:") == 0)
+			nodes.push_back(new LimitNode);
+		else if (command.cCompareNoCase("ECs:") == 0)
+			nodes.push_back(new ECsNode);
 		else
 			nodes.push_back(new nameNode(command.subStr(0, command.length() - 2)));
 
