@@ -23,6 +23,7 @@ source_group("src"            FILES ${SOURCES})
 source_group("header"            FILES ${HEADERS})
 
 
+
 # add executable
 add_executable(${SOLUTION_NAME} ${HEADERS} ${SOURCES})
 

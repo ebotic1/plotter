@@ -1,3 +1,4 @@
+#pragma once
 #include "gui/Application.h"
 #include "gui/WinMain.h"
 #include "mainWindow.h"
