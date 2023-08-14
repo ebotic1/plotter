@@ -18,10 +18,8 @@ include(${WORK_ROOT}/DevEnv/natGUI.cmake)
 file(GLOB SOURCES  ${CMAKE_CURRENT_LIST_DIR}/src/*.cpp)
 file(GLOB HEADERS ${CMAKE_CURRENT_LIST_DIR}/src/*.h)
 
-
 source_group("src"            FILES ${SOURCES})
 source_group("header"            FILES ${HEADERS})
-
 
 
 # add executable
