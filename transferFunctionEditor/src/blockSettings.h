@@ -6,7 +6,7 @@
 
 class blockSettings : public gui::View {
 	gui::VerticalLayout v;
-	property num, dem;
+	elementProperty num, dem;
 public:
 
 	blockSettings();

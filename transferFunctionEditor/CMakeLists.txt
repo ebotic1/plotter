@@ -22,7 +22,7 @@ source_group("src"            FILES ${SOURCES})
 source_group("header"            FILES ${HEADERS})
 
 
-# add executable
+
 add_executable(${SOLUTION_NAME} ${HEADERS} ${SOURCES})
 
 
@@ -38,6 +38,7 @@ setTargetPropertiesForGUIApp(${SOLUTION_NAME} $(APPWNDMENUANDTB_PLIST))
 setIDEPropertiesForExecutable(${SOLUTION_NAME})
 
 setPlatformDLLPath(${SOLUTION_NAME})
+
 
 
 #MU_DEBUG, MU_RELEASE, MU_64BIT, MU_32BIT

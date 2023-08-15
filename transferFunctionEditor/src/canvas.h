@@ -2,7 +2,7 @@
 #include "tBlock.h"
 #include "gui/Canvas.h"
 #include <vector>
-//#include "globals.cpp"
+#include "globals.h"
 
 #define BLOCK_COLOR td::ColorID::Black
 
@@ -45,10 +45,16 @@ void kanvas::onDraw(const gui::Rect& rect){
 }
 
 inline void kanvas::onPrimaryButtonPressed(const gui::InputDevice& inputDevice){
+	bool found = false;
 	for (int i = 0; i < blocks.size(); ++i)
 		if (blocks[i]->intersectsBlock(inputDevice.getModelPoint())) {
-			//globals::block_properties.showBlock(blocks[i]);
+			globals::block_properties->showBlock(blocks[i]);
+			found = true;
+			break;
 		}
+	if (!found) {
+		globals::switcher->showView(0, false);
+	}
 	
 }
 

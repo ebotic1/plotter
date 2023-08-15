@@ -6,14 +6,17 @@
 #include "gui/TextEdit.h"
 #include "blockSettings.h"
 #include "property.h"
-//#include "globals.cpp"
+#include "globals.h"
+#include "blockSettings.h"
 
+blockSettings* globals::block_properties = nullptr;
+gui::ViewSwitcher* globals::switcher = nullptr;
 
 
 
 class modelSettings : public gui::View {
 	gui::VerticalLayout v;
-	property name;
+	elementProperty name;
 	
 
 public:
@@ -28,22 +31,23 @@ public:
 
 class properties : public gui::ViewSwitcher {
 	modelSettings modSettings;
+	blockSettings bSettings;
 public:
 	properties() {
+		globals::switcher = this;
+		globals::block_properties = &bSettings;
 		addView(&modSettings);
-		//addView(&globals::block_properties);
+		addView(globals::block_properties);
 		showView(0, true);
 	}
-
+	
 };
 
 
 class mainView : public gui::View {
 	gui::SplitterLayout spliter;
-	kanvas _canvas;
-
 	properties props;
-
+	kanvas _canvas;
 
 public:
 	mainView(): spliter(gui::SplitterLayout::Orientation::Horizontal) {

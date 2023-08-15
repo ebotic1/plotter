@@ -1,11 +1,11 @@
 #pragma once
 #include "property.h"
 
-inline void property::append(Control& ctrl, td::HAlignment hAlign, td::VAlignment vAlign) {
+inline void elementProperty::append(Control& ctrl, td::HAlignment hAlign, td::VAlignment vAlign) {
 	((gui::HorizontalLayout*)this)->append(ctrl, hAlign, vAlign);
 }
 
-property::property(const td::String& name, td::DataType type, const td::String& tooltip, td::Variant defaultValue) : gui::HorizontalLayout(2), p_name(name) {
+elementProperty::elementProperty(const td::String& name, td::DataType type, const td::String& tooltip, td::Variant defaultValue) : gui::HorizontalLayout(2), p_name(name) {
 	append(p_name);
 	td::Variant v(type);
 	bool numeric = v.isNumeric();
@@ -27,7 +27,7 @@ property::property(const td::String& name, td::DataType type, const td::String& 
 
 }
 
-void property::setLabelMinSize(int width) {
+void elementProperty::setLabelMinSize(int width) {
 	gui::Size sz;
 	p_name.getSize(sz);
 	if (sz.width < width) {
