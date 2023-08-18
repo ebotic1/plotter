@@ -11,11 +11,10 @@ class contextMenuModel : public gui::ContextMenu{
 private:
 	gui::SubMenu sub;
 public:
-	contextMenuModel(): sub(100, "cm1", 2)
+	contextMenuModel(): sub(100, "cm1", 1)
 	{
 		auto& items = sub.getItems();
-		items[0].initAsActionItem("one", 10); 
-		items[1].initAsActionItem("two", 20, "d");
+		items[0].initAsActionItem("new block", 10); 
 		setItem(&sub);
 	}
 };

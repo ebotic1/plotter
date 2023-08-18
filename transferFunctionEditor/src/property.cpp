@@ -1,29 +1,25 @@
 #pragma once
 #include "property.h"
 
-inline void elementProperty::append(Control& ctrl, td::HAlignment hAlign, td::VAlignment vAlign) {
-	((gui::HorizontalLayout*)this)->append(ctrl, hAlign, vAlign);
-}
 
-elementProperty::elementProperty(const td::String& name, td::DataType type, const td::String& tooltip, td::Variant defaultValue) : gui::HorizontalLayout(2), p_name(name) {
-	append(p_name);
+elementProperty::elementProperty(const td::String& name, td::DataType type, const td::String& tooltip, td::Variant defaultValue) : layout(2), p_name(name) {
+	layout << p_name;
 	td::Variant v(type);
-	bool numeric = v.isNumeric();
+	numeric = v.isNumeric();
 	if (numeric)
 		edit = new gui::NumericEdit(type, gui::LineEdit::Messages::Send, true, tooltip);
 	else
 		edit = new gui::LineEdit(tooltip, gui::LineEdit::Messages::Send);
 
 	if (defaultValue.getType() != td::DataType::TD_NONE)
-		if (numeric)
-			((gui::NumericEdit*)edit)->setValue(defaultValue);
-		else
-			((gui::LineEdit*)edit)->setValue(defaultValue);
-
+		setValue(defaultValue, false);
+		
+	
 	gui::Size sz;
 	edit->getSize(sz);
 	edit->setSize(gui::Size(100, sz.height)); // naknadno postavljanje velicine ne radi (dok za label radi)
-	append(*edit);
+	layout << *edit;
+	setLayout(&layout);
 
 }
 
@@ -34,4 +30,38 @@ void elementProperty::setLabelMinSize(int width) {
 		p_name.setSize(gui::Size(width, sz.height));
 	}
 	this->reMeasure(gui::CellInfo());
+}
+
+td::Variant elementProperty::getValue(){
+	td::Variant val;
+
+	if (numeric)
+		val = ((gui::NumericEdit*)edit)->getValue();
+	else
+		((gui::LineEdit*)edit)->getValue(val);
+	
+	return val;
+}
+
+void elementProperty::setValue(const td::Variant &value, bool doAction){
+
+	if (numeric)
+		((gui::NumericEdit*)edit)->setValue(value, doAction);
+	else
+		((gui::LineEdit*)edit)->setValue(value, doAction);
+
+}
+
+bool elementProperty::onFinishEdit(gui::LineEdit* pCtrl){
+	
+
+	if (Action != nullptr) {
+		td::Variant v;
+		pCtrl->getValue(v);
+		Action(v);
+	}
+	else
+		return false;
+
+	return true;
 }

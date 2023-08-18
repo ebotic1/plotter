@@ -21,7 +21,7 @@ class modelSettings : public gui::View {
 
 public:
 	modelSettings() : v(1), name("model name", td::DataType::string8, "name of the model that will be generated") {
-		v.appendLayout(name);
+		v.append(name);
 		setLayout(&v);
 
 	}
@@ -43,36 +43,38 @@ public:
 	
 };
 
+kanvas* ptr;
+
 
 class mainView : public gui::View {
 	gui::SplitterLayout spliter;
 	properties props;
+
+	gui::ViewScroller scroller;
+
 	kanvas _canvas;
 
 public:
-	mainView(): spliter(gui::SplitterLayout::Orientation::Horizontal) {
-
-		spliter.setContent(_canvas, props);		
+	mainView(): spliter(gui::SplitterLayout::Orientation::Horizontal), scroller(gui::ViewScroller::Type::ScrollAndAutoHide, gui::ViewScroller::Type::ScrollAndAutoHide){
+		ptr = &_canvas;
+		scroller.setContentView(&_canvas);
+		spliter.setContent(scroller, props);		
+		
 		setLayout(&spliter);
+		
 	}
 
 	void switchToView(int number) {
 		props.showView(number, true);
 	}
 
-	bool onActionItem(td::BYTE menuID, td::BYTE firstSubMenuID, td::BYTE lastSubMenuID, td::BYTE actionID, gui::ActionItem* pMenuAI) {
-		
-		
-		return true;
-	}
-
-	virtual bool onSpecialChar(gui::Object* pSender, char key) {
-
-		return true;
-	}
-
 
 };
+
+
+void globals::refreshCanvas() {
+	ptr->reDraw();
+}
 
 
 
