@@ -21,31 +21,44 @@ class Block {
 	std::vector<Block*> connectedTo, connectedFrom;
 	std::vector<gui::Shape> connectionLines;
 
+	td::String ulazName, izlazName;
+	gui::DrawableString drawUlaz, drawIzlaz;
+	gui::Rect inputRect, outputRect;
+
+	bool disableSetUp = false;
+
 public:
-	Block(const gui::Point &position);
+	Block(const gui::Point &position, const td::String &inputName, const td::String& outputName);
 	const gui::Rect& getRect() const;
 	const bool getInputSwitched() const;
-	const gui::Point getMostRightPoint() const;
 	const gui::Point &getOutput() const;
 	const gui::Point &getInput() const;
+	const gui::Point& getLocation() const;
+	const std::vector<Block*>& getConnectedBlocks() const;
 
 	void setUpAll();
-	void setUpWires();
+	void setUpWires(bool refreshCanvas);
 	void switchInput();
 	void setPosition(const gui::Point &position);
+	void removeConnections();
 
 	bool intersectsBlock(const gui::Point &);
 	bool intersectsInput(const gui::Point &);
 	bool intersectsOutput(const gui::Point&);
 
-	void getAllProps(td::String& nominator, td::String &denominator, bool& connected, bool& switchedInput);
+	void getAllProps(td::String& nominator, td::String &denominator, bool& connected, bool& switchedInput, td::String &inputName, td::String &outputName);
 
 	void setNominator(const td::String& nominator);
 	void setDenominator(const td::String& denominator);
+	void setInputName(const td::String& name);
+	void setOutputName(const td::String& name);
 
 	void connectTo(Block* block);
 
 	void drawBlock(td::ColorID color);
+	void disableLogic(bool disable);
+
+	~Block();
 
 };
 

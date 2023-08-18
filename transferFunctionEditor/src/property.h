@@ -24,7 +24,7 @@ public:
 	void setValue(const td::Variant &value, bool doAction = false);
 
 	bool onFinishEdit(gui::LineEdit* pCtrl);
-	std::function<void(td::Variant)> Action = nullptr;
+	std::function<void(const td::Variant &)> Action = nullptr;
 
 };
 

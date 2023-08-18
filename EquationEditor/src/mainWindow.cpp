@@ -52,7 +52,7 @@ bool MainWindow::onActionItem(td::BYTE menuID, td::BYTE firstSubMenuID, td::BYTE
     }
 
     if (menuID == 1 && actionID == 3) { //save as
-        gui::OpenFileDialog* p = new gui::OpenFileDialog(this, "Open model", { "*.xml" /*nekako omoguciti otvaranje foldera*/}, "Save as");
+        gui::OpenFileDialog* p = new gui::OpenFileDialog(this, "Save model", { "*.xml" /*nekako omoguciti otvaranje foldera*/}, "Save as");
         p->openModal(2, this);
         return true;
     }

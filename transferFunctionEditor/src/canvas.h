@@ -3,6 +3,10 @@
 #include "gui/Canvas.h"
 #include <vector>
 #include "globals.h"
+#include "arch/ArchiveIn.h"
+#include "arch/ArchiveOut.h"
+#include "arch/FileSerializer.h"
+#include "gui/FileDialog.h"
 
 #define BLOCK_COLOR td::ColorID::Black
 #define BLOCK_COLOR_SELECTED td::ColorID::DeepSkyBlue
@@ -16,12 +20,18 @@ class kanvas : public gui::Canvas {
 
 	enum class Actions{none, wiring, dragging} lastAction = Actions::none;
 	Block* tempCurrentBlock = nullptr;
+	int cntBlock = 0;
+
+	td::String currentPath;
 
 public:
 	kanvas();
 	void onDraw(const gui::Rect& rect) override;
 	inline void createBlock(const gui::Point&p) {
-		blocks.push_back(new Block(p));
+		td::String ul, izl;
+		ul.format("tf%d_in", cntBlock);
+		izl.format("tf%d_out", cntBlock++);
+		blocks.push_back(new Block(p, ul, izl));
 	}
 	void onPrimaryButtonPressed(const gui::InputDevice& inputDevice);
 	void onCursorDragged(const gui::InputDevice& inputDevice);
@@ -32,6 +42,10 @@ public:
 	bool getModelSize(gui::Size& size) const override;
 
 	bool onActionItem(td::BYTE menuID, td::BYTE firstSubMenuID, td::BYTE lastSubMenuID, td::BYTE actionID, gui::ActionItem* pMenuAI);
+	virtual bool onClick(gui::FileDialog* pDlg, td::UINT4 dlgID);
+
+	bool saveState(const td::String &file);
+	bool restoreState(const td::String &file);
 
 	~kanvas();
 
@@ -45,14 +59,12 @@ inline bool kanvas::getModelSize(gui::Size& size) const{
 	int best = -1;
 	for (int i = 0; i < blocks.size(); ++i) {
 		if (blocks[i]->getRect().right > size.width)
-			best = i;
+			size.width = blocks[i]->getRect().right;
 		if (blocks[i]->getRect().bottom > size.height)
 			size.height = blocks[i]->getRect().bottom;
 
 	}
 
-	if (best != -1)
-		size.width = blocks[best]->getMostRightPoint().x;
 
 	size.height += 1500;
 	size.width += 1500;
@@ -148,13 +160,102 @@ inline bool kanvas::onZoom(const gui::InputDevice& inputDevice){
 	return true;
 }
 
-inline bool kanvas::onActionItem(td::BYTE menuID, td::BYTE firstSubMenuID, td::BYTE lastSubMenuID, td::BYTE actionID, gui::ActionItem* pMenuAI){
 
-	if (menuID == 100) {
-		if (actionID == 10) {
-			createBlock(lastMousePos);
+
+inline bool kanvas::saveState(const td::String& file){
+
+	arch::FileSerializerOut temp;
+	if (!temp.open(file))
+		return false;
+
+	arch::ArchiveOut out("TFv1", temp);
+	try {
+		out << int(blocks.size());
+		for each (Block * var in blocks) {
+			td::String nom, dem, inputName, outputName;
+			bool connected, switched;
+			var->getAllProps(nom, dem, connected, switched, inputName, outputName);
+			double x, y;
+			x = var->getLocation().x;
+			y = var->getLocation().y;
+			out << x << y;
+			out << nom << dem << switched << inputName << outputName;
 		}
+
+		for (int i = 0; i < blocks.size(); ++i) {
+			auto& vec = blocks[i]->getConnectedBlocks();
+			out << int(vec.size());
+
+			for each (Block * var in vec) {
+				auto it = std::find(blocks.begin(), blocks.end(), var);
+				out << int(it - blocks.begin());
+			}
+		}
+		out << globals::model_settings->name.getValue().strVal();
 	}
+	catch (...){
+		return false;
+	}
+
+	return true;
+}
+
+inline bool kanvas::restoreState(const td::String& file){
+	arch::FileSerializerIn temp;
+	if (!temp.open(file))
+		return false;
+
+	arch::ArchiveIn in(temp);
+	in.setSupportedMajorVersion("TFv1");
+	std::vector<Block*> kopija;
+
+
+	try {
+		int size = 0;
+		in >> size;
+		kopija.resize(size, nullptr);
+		for (int i = 0; i < size; ++i) {
+			td::String nom, dem, inputName, outputName;
+			bool connected, switched;
+			double x, y;
+
+			in >> x >> y;
+			in >> nom >> dem >> switched >> inputName >> outputName;
+
+			kopija[i] = new Block({ x,y }, inputName, outputName);
+			kopija[i]->disableLogic(true);
+			if(switched)
+				kopija[i]->switchInput();
+			kopija[i]->setNominator(nom);
+			kopija[i]->setDenominator(dem);
+		}
+		for (int i = 0; i < size; ++i) {
+			int connectionsCnt;
+			in >> connectionsCnt;
+			for (int j = 0; j < connectionsCnt; ++j) {
+				int broj;
+				in >> broj;
+				kopija[i]->connectTo(kopija[broj]);
+			}
+			kopija[i]->disableLogic(false);
+			kopija[i]->setUpAll();
+		}
+		td::String titl;
+		in >> titl;
+		globals::model_settings->name.setValue(titl);
+	}
+	catch (...) {
+		for (int i = 0; i < kopija.size(); ++i)
+			delete kopija[i];
+		return false;
+	}
+
+
+	for (int i = 0; i < blocks.size(); ++i)
+		delete blocks[i];
+	blocks = std::move(kopija);
+	
+	currentPath = file;
 
 	return true;
 }
@@ -165,6 +266,75 @@ void kanvas::onSecondaryButtonPressed(const gui::InputDevice& inputDevice){
 	openContextMenu(100, inputDevice);
 }
 
+inline bool kanvas::onActionItem(td::BYTE menuID, td::BYTE firstSubMenuID, td::BYTE lastSubMenuID, td::BYTE actionID, gui::ActionItem* pMenuAI) {
+
+	if (menuID == 100) {
+		if (actionID == 10) {
+			createBlock(lastMousePos);
+			return true;
+		}
+	}
+
+
+	if (menuID == 1) { //new
+		if (actionID == 1) {
+			for (int i = 0; i < blocks.size(); ++i)
+				delete blocks[i];
+			blocks.clear();
+			globals::switcher->showView(0);
+			cntBlock = 0;
+			return true;
+		}
+
+		if (actionID == 2) { // open
+			gui::OpenFileDialog* p = new gui::OpenFileDialog(this, "Open model", { "*.tfstate" }, "Open");
+			p->openModal(2,this);
+			return true;
+		}
+
+
+		if (actionID == 3) { // save
+
+			if (currentPath.isNull()) {
+				showAlert("error", "No file is currently open (use 'save as')");
+				return true;
+			}
+
+			if (!saveState(currentPath))
+				showAlert("error", "cannot save file");
+			return true;
+			
+		}
+
+		if (actionID == 4) { // save as
+			gui::FileDialog* p = new gui::FileDialog(this, gui::FileDialog::Type::SaveFile, "Save as", ".tfstate", "Save");
+			p->openModal(4, this);
+			return true;
+		}
+	}
+
+	return false;
+}
+
+
+inline bool kanvas::onClick(gui::FileDialog* pDlg, td::UINT4 dlgID){
+
+	if (dlgID == 2) {//open
+		if (!restoreState(pDlg->getFileName()))
+			showAlert("error", "cannot open file");
+		return true;
+	}
+
+	if (dlgID == 4) {//save as
+		if (!saveState(pDlg->getFileName()))
+			showAlert("error", "cannot open file");
+		else
+			currentPath = pDlg->getFileName();
+		return true;
+	}
+
+	return false;
+}
 
 
 inline kanvas::~kanvas(){

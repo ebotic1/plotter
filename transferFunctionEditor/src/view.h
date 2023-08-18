@@ -8,25 +8,12 @@
 #include "property.h"
 #include "globals.h"
 #include "blockSettings.h"
+#include "modelSettings.h"
 
 blockSettings* globals::block_properties = nullptr;
 gui::ViewSwitcher* globals::switcher = nullptr;
+modelSettings *globals::model_settings = nullptr;
 
-
-
-class modelSettings : public gui::View {
-	gui::VerticalLayout v;
-	elementProperty name;
-	
-
-public:
-	modelSettings() : v(1), name("model name", td::DataType::string8, "name of the model that will be generated") {
-		v.append(name);
-		setLayout(&v);
-
-	}
-
-};
 
 
 class properties : public gui::ViewSwitcher {
@@ -37,10 +24,11 @@ public:
 		globals::switcher = this;
 		globals::block_properties = &bSettings;
 		addView(&modSettings);
-		addView(globals::block_properties);
+		addView(&bSettings);
 		showView(0, true);
 	}
-	
+
+
 };
 
 kanvas* ptr;
@@ -61,6 +49,8 @@ public:
 		spliter.setContent(scroller, props);		
 		
 		setLayout(&spliter);
+
+		
 		
 	}
 
@@ -68,6 +58,9 @@ public:
 		props.showView(number, true);
 	}
 
+	gui::Consumer* getCanvas() {
+		return &_canvas;
+	}
 
 };
 
