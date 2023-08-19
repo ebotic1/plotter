@@ -32,7 +32,7 @@ public:
 
 	View();
 	virtual bool onClick(gui::Button* pBtn);
-	void loadXML(td::String path);
+	bool loadXML(const td::String &path);
 	bool saveXML();
 	bool saveAsXML(const td::String &path);
 	
