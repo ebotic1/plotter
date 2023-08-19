@@ -19,20 +19,19 @@ MainWindow::MainWindow()
 bool MainWindow::onClick(gui::FileDialog* pDlg, td::UINT4 dlgID)
 {
     if (dlgID == 1) {
-        _mainView.loadXML(pDlg->getFileName());
-        //delete pDlg; crash aplikacije ?
+        if (!_mainView.loadXML(pDlg->getFileName()))
+            showAlert("Error", "Cant load file");
+
+            //delete pDlg; crash aplikacije ?
+        return true;
     }
 
     if (dlgID == 2) {
         td::String path = pDlg->getFileName();
-        if (path.subStr(path.length() - 5, path.length() - 1).cCompare(".xml") == 0)
-            _mainView.saveAsXML(path);
-        else {
-            path += "model.xml";
-            _mainView.saveAsXML(path);
-        }
-            
-        
+
+        if(!_mainView.saveAsXML(path))
+            showAlert("Error", "Cant save file");
+        return true;
     }
 
     return false;
@@ -41,18 +40,20 @@ bool MainWindow::onClick(gui::FileDialog* pDlg, td::UINT4 dlgID)
 bool MainWindow::onActionItem(td::BYTE menuID, td::BYTE firstSubMenuID, td::BYTE lastSubMenuID, td::BYTE actionID, gui::ActionItem* pMenuAI)
 {
     if (menuID == 1 && actionID == 4) {//open
-        gui::OpenFileDialog *p = new gui::OpenFileDialog(this, "Open model", { "*.xml" }, "Open");               
+        gui::OpenFileDialog *p = new gui::OpenFileDialog(this, "Open model", { "*.xml", "*.txt"}, "Open");
         p->openModal(1, this);
         return true;
     }
 
     if (menuID == 1 && actionID == 2) {//save
-        _mainView.saveXML();
+        if (!_mainView.saveXML())
+            showAlert("Error", "Cant save file");
         return true;
+       
     }
 
     if (menuID == 1 && actionID == 3) { //save as
-        gui::OpenFileDialog* p = new gui::OpenFileDialog(this, "Save model", { "*.xml" /*nekako omoguciti otvaranje foldera*/}, "Save as");
+        gui::OpenFileDialog* p = new gui::OpenFileDialog(this, "Open model", {"*.txt"}, "Save as");
         p->openModal(2, this);
         return true;
     }

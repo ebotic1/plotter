@@ -39,7 +39,7 @@ public:
 
 };
 
-const td::String baseNode::attributeKeywords[] = { "type", "domain", "name", "eps", "dT", "signal"};
+const td::String baseNode::attributeKeywords[] = { "type", "domain", "name", "eps", "dT", "signal", "out", "desc" };
 
 class modelNode : public baseNode {
 	std::map<td::String, td::String> attribs;

@@ -242,6 +242,7 @@ void printNode(StringBuilder &result, xml::FileParser::node_iterator &node, int 
 	bool skip_newline = false, dont_indent = false;;
 	enum class closeTags{none, model, group, iff} closeTag = closeTags::none;
 
+	std::vector<td::String> skipAtribs;
 
 	if (node->getName().cCompareNoCase("Model") == 0)
 		closeTag = closeTags::model;
@@ -266,7 +267,9 @@ void printNode(StringBuilder &result, xml::FileParser::node_iterator &node, int 
 		else
 			result << "0";
 
-		goto PRINT_CHILDREN;
+		special_case = true;
+		skipAtribs.push_back("val");
+		skipAtribs.push_back("name");
 	}
 	
 	
@@ -288,6 +291,7 @@ void printNode(StringBuilder &result, xml::FileParser::node_iterator &node, int 
 
 
 	if (node->getName().cCompareNoCase("Eq") == 0) { // ako se radi o uslovnoj jednacini ispisati kao if
+		skipAtribs.push_back("cond");
 		auto atr = node.getAttrib("cond");
 		if(atr != nullptr){
 			result << tab_storage->c_str() << "if " << atr->getValue();
@@ -303,11 +307,13 @@ void printNode(StringBuilder &result, xml::FileParser::node_iterator &node, int 
 	//printanje argumenata
 
 	auto atr = node.getAttrib("fx");
+	skipAtribs.push_back("fx");
 	if (atr != nullptr) {
 		if (ifType)
 			result << "\n";
 		result << tab_storage->c_str() << atr->getValue();
 		atr = node.getAttrib("w");
+		skipAtribs.push_back("w");
 		if (atr != nullptr)
 			result << " [" << atr->getValue() << ']';
 		skip_newline = false;
@@ -315,18 +321,20 @@ void printNode(StringBuilder &result, xml::FileParser::node_iterator &node, int 
 
 
 	for each (auto & var in node->attribs) {
-		if (ifType && var.getName().cCompareNoCase("cond") == 0)
-			continue;		
-		if (var.getName().cCompareNoCase("fx") == 0)
-			continue;
-		if (var.getName().cCompareNoCase("w") == 0)
-			continue;
+
+		for each (auto &atSkip in skipAtribs)
+			if (atSkip.cCompareNoCase(var.getName().c_str()) == 0)
+				goto END_LOOP;
+		
+
 		if (!skip_newline)
 			result << '\n';
 		else 
 			skip_newline = false;
 			
 		result << tab_storage->c_str() << '\t' << var.getName() << " = " << var.value;
+	END_LOOP:
+		;
 	}
 
 	
@@ -360,72 +368,90 @@ PRINT_CHILDREN:
 
 }
 
-void View::loadXML(td::String path){
+bool View::loadXML(const td::String &path){
 	xml::FileParser par;
 	StringBuilder s;
 	bool x;
 
-	if (!par.parseFile(path) || !getComment(td::String(), x, path.c_str())) {
-		showAlert("error", "Cant open file");
-		return;
+
+	if (path.endsWithCI(".txt", 4)) {
+		std::ifstream input(path.c_str());
+		if (!input.is_open())
+			return false;
+		while (input >> s);
+		input.close();
+		currentPath = path;
 	}
 
-	
-
-	auto &model = par.getRootNode();
-
-	
-	
-
-	if (model->getName().cCompare("Model") != 0) {
-		showAlert("error", "File not valid");
-		return;
-	}
+	if (!path.endsWithCI(".xml", 4))
+		return false;
 	else {
-		printNode(s, model);
-		td::String comment;
-		while (getComment(comment, x))
-			if(!comment.isNull())
-			s << "//" << comment << '\n';
-	}
+		if (!par.parseFile(path) || !getComment(td::String(), x, path.c_str()))
+			return false;
 
+
+		auto& model = par.getRootNode();
+
+		if (model->getName().cCompare("Model") != 0)
+			return false;
+		
+		else {
+			printNode(s, model);
+			td::String comment;
+			while (getComment(comment, x))
+				if (!comment.isNull())
+					s << "//" << comment << '\n';
+		}
+
+		if (currentPath.isNull()) {
+			currentPath = path.subStr(0, currentPath.length() - 4);
+			currentPath += ".txt";
+		}
+
+	}
 	
 
 	_jednacineText.clean();
-	currentPath = path;
 	td::String temp;
 	s.getString(temp);//moglo bi bez temp da getString vraca string pa da se direktno std::move
 	_jednacineText.setText(std::move(temp));
-
-}
-
-bool View::saveXML()
-{
-	try
-	{
-		generateXML(_jednacineText.getText(), currentPath);
-	}
-	catch (const std::exception& e)
-	{
-		showAlert("Could not save file", e.what());
-	}
-	catch (const char *e)
-	{
-		showAlert("Could not save file", e);
-	}
 	return true;
 }
 
-bool View::saveAsXML(const td::String& path)
-{
-	try
-	{
+bool View::saveXML(){
+	if (currentPath.isNull()) {
+		showAlert("Error", "No file is opened, use 'open' or 'save as'");
+		return true;
+	}
+	saveAsXML(currentPath);
+	return true;
+}
+
+bool View::saveAsXML(const td::String& path){
+
+	if (path.endsWith(".txt", 4)) {
+		std::ofstream output(path.c_str());
+		if (!output.is_open())
+			return false;
+		td::Variant v;
+		_jednacineText.getValue(v);
+		output << v.strVal().c_str();
+		output.close();
+		currentPath = path;
+		return true;
+	}
+
+
+	try{
 		generateXML(_jednacineText.getText(), path);
 	}
-	catch (const std::exception& e)
-	{
+	catch (const std::exception& e){
 		showAlert("Could not save file", e.what());
+		return false;
 	}
+
+	currentPath = path;
 	return true;
+
 }
 

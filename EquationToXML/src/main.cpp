@@ -344,6 +344,9 @@ const char* LimitName::val = "Limits";
 struct ECsName { static const char* val; };
 const char* ECsName::val = "ECs";
 
+struct TfName { static const char* val; };
+const char* TfName::val = "TFs";
+
 typedef containerNode<varsName, variableNode<varName>> varsNode;
 typedef containerNode<paramsName, variableNode<paramName>> paramsNode;
 typedef containerNode<NLEName, singleEquation> NLEquationsNode;
@@ -353,6 +356,7 @@ typedef containerNode<MeasEqName, singleEquation> MeasEqNode;
 typedef containerNode<GroupName, singleEquation> GroupNode;
 typedef containerNode<LimitName, singleEquation> LimitNode;
 typedef containerNode<ECsName, singleEquation> ECsNode;
+typedef containerNode<TfName, singleEquation> TFsNode;
 
 
 class initNode : public baseNode {
@@ -391,7 +395,7 @@ bool modelNode::nodeAction(const td::String& command, baseNode*& newChild){
 			nodes.push_back(new varsNode());
 		else if (command.cCompareNoCase("Params:") == 0)
 			nodes.push_back(new paramsNode());
-		else if (command.cCompareNoCase("model:") == 0) 
+		else if (command.cCompareNoCase("model:") == 0)
 			return true;
 		else if (command.cCompareNoCase("NLEqs:") == 0)
 			nodes.push_back(new NLEquationsNode());
@@ -402,11 +406,13 @@ bool modelNode::nodeAction(const td::String& command, baseNode*& newChild){
 		else if (command.cCompareNoCase("PostProc:") == 0)
 			nodes.push_back(new postProcNode);
 		else if (command.cCompareNoCase("MeasEqs:") == 0)
-			nodes.push_back(new MeasEqNode); 
+			nodes.push_back(new MeasEqNode);
 		else if (command.cCompareNoCase("Limits:") == 0)
 			nodes.push_back(new LimitNode);
 		else if (command.cCompareNoCase("ECs:") == 0)
 			nodes.push_back(new ECsNode);
+		else if (command.cCompareNoCase("TFs:") == 0)
+			nodes.push_back(new TFsNode);
 		else
 			nodes.push_back(new nameNode(command.subStr(0, command.length() - 2)));
 
