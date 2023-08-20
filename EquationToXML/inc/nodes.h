@@ -1,3 +1,4 @@
+#pragma once
 #include<unordered_map>
 #include<map>
 #include <utility>
@@ -6,23 +7,20 @@
 #include "td/String.h"
 #include <vector>
 
-#include <thread>
-#include <mutex>
+
 
 class baseNode {
 
 	static const td::String attributeKeywords[];
-	class Messages;
-
-	
-	std::mutex mtx;
+	baseNode* parent = nullptr;
+	baseNode* lastChlid = this;
 
 protected:
 	std::map<td::String, td::String> attribs;
 	std::vector<baseNode*> nodes;
 	virtual bool nodeAction(const td::String &command, baseNode*& newChild) = 0;
 	td::String comment;
-	size_t addLine(std::vector<std::pair<td::String, td::String>> lines, size_t startLine = 0);
+	size_t addLine(std::vector<std::pair<td::String, td::String>> &lines, size_t startLine = 0);
 
 public:
 	virtual void printNode(xml::Writer& w);
@@ -46,7 +44,7 @@ public:
 
 };
 
-const td::String baseNode::attributeKeywords[] = { "type", "domain", "name", "eps", "dT", "signal", "out", "desc" };
+
 
 class modelNode : public baseNode {
 	std::map<td::String, td::String> attribs;

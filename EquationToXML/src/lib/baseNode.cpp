@@ -5,6 +5,7 @@
 
 #define BACK_COMMENT_CHAR "¸"
 
+const td::String baseNode::attributeKeywords[] = { "type", "domain", "name", "eps", "dT", "signal", "out", "desc" };
 
 void baseNode::printNode(xml::Writer& w) {
 	w.startNode(this->getName());
@@ -49,39 +50,18 @@ void baseNode::printNode(xml::Writer& w) {
 
 }
 
-class baseNode::Messages {
-	std::vector<std::pair<td::String, td::String>> commands;
-	int current;
-public:
 
-	std::pair<td::String, td::String>& getCommand() {
-		return commands[current];
-	}
 
-	std::pair<td::String, td::String>& getNextCommand() {
-		return commands[++current];
-	}
-
-	bool addCommands(bool stopExecution = false) {
-		if (current > 10) { //nema potrebe za oslobadanjem memorije ako imamo manje od 10 komandi
-			commands.erase(commands.begin(), commands.begin() + current);
-			current = 0;
-		}
-		mtx
-	}
-
-};
-
-size_t baseNode::addLine(std::vector<std::pair<td::String, td::String>> lines, size_t startLine) {
+size_t baseNode::addLine(std::vector<std::pair<td::String, td::String>> &lines, size_t startLine) {
 	while (startLine < lines.size()) {
 		if (lines[startLine].first.isNull() && !lines[startLine].second.isNull()) {
-			if (nodes.size() != 0) {
-				nodes.back()->addComment(BACK_COMMENT_CHAR);
-				nodes.back()->addComment(lines[startLine].second);
+			if (lastChlid->nodes.size() != 0) {
+				lastChlid->nodes.back()->addComment(BACK_COMMENT_CHAR);
+				lastChlid->nodes.back()->addComment(lines[startLine].second);
 			}
 			else {
-				addComment("\n");
-				addComment(lines[startLine].second);
+				lastChlid->addComment("\n");
+				lastChlid->addComment(lines[startLine].second);
 			}
 			++startLine;
 			continue;
@@ -94,8 +74,8 @@ size_t baseNode::addLine(std::vector<std::pair<td::String, td::String>> lines, s
 			td::String keyword = lines[startLine].first.subStr(0, pozEq - 1).trimRight();
 			for each (auto & var in attributeKeywords) {
 				if (var == keyword) {
-					setAttrib(lines[startLine].first.subStr(0, pozEq - 1).trimRight(), lines[startLine].first.subStr(pozEq + 1, -1).trimLeft());
-					addComment(lines[startLine].second);
+					lastChlid->setAttrib(lines[startLine].first.subStr(0, pozEq - 1).trimRight(), lines[startLine].first.subStr(pozEq + 1, -1).trimLeft());
+					lastChlid->addComment(lines[startLine].second);
 					found = true;
 					break;
 				}
@@ -106,22 +86,27 @@ size_t baseNode::addLine(std::vector<std::pair<td::String, td::String>> lines, s
 			continue;
 		}
 		baseNode* child = nullptr;
-		if (nodeAction(lines[startLine].first, child)) {
+		if (lastChlid->nodeAction(lines[startLine].first, child)) {
 			if (child != nullptr) {
+				child->parent = lastChlid;
 				child->addComment(lines[startLine].second);
+				lastChlid = child;
 				startLine = child->addLine(lines, startLine + 1);
 				continue;
 			}
-			addComment(lines[startLine].second);
+			lastChlid->addComment(lines[startLine].second);
 			++startLine;
 			continue;
 		}
 
 		if (child != nullptr) {
+			child->parent = lastChlid;
+			lastChlid = child;
 			startLine = child->addLine(lines, startLine);
 			continue;
 		}
 
+		parent->lastChlid = parent;
 		break;
 	}
 	return startLine;
