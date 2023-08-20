@@ -368,53 +368,54 @@ PRINT_CHILDREN:
 
 }
 
-bool View::loadXML(const td::String &path){
+bool View::loadXML(const td::String& path) {
 	xml::FileParser par;
 	StringBuilder s;
 	bool x;
-
 
 	if (path.endsWithCI(".txt", 4)) {
 		std::ifstream input(path.c_str());
 		if (!input.is_open())
 			return false;
-		while (input >> s);
+		std::string line;
+		_jednacineText.clean();
+		while (std::getline(input, line)) {
+			_jednacineText.appendString(line.c_str());
+			_jednacineText.appendString("\n");
+		}
 		input.close();
 		currentPath = path;
+		return true;
 	}
 
 	if (!path.endsWithCI(".xml", 4))
 		return false;
-	else {
-		if (!par.parseFile(path) || !getComment(td::String(), x, path.c_str()))
-			return false;
 
-
-		auto& model = par.getRootNode();
-
-		if (model->getName().cCompare("Model") != 0)
-			return false;
-		
-		else {
-			printNode(s, model);
-			td::String comment;
-			while (getComment(comment, x))
-				if (!comment.isNull())
-					s << "//" << comment << '\n';
-		}
-
-		if (currentPath.isNull()) {
-			currentPath = path.subStr(0, currentPath.length() - 4);
-			currentPath += ".txt";
-		}
-
-	}
+	if (!par.parseFile(path) || !getComment(td::String(), x, path.c_str()))
+		return false;
 	
+
+	auto& model = par.getRootNode();
+
+	if (model->getName().cCompare("Model") != 0)
+		return false;
+
+	printNode(s, model);
+	td::String comment;
+	while (getComment(comment, x))
+		if (!comment.isNull())
+			s << "//" << comment << '\n';
 
 	_jednacineText.clean();
 	td::String temp;
 	s.getString(temp);//moglo bi bez temp da getString vraca string pa da se direktno std::move
 	_jednacineText.setText(std::move(temp));
+
+	//if (currentPath.isNull()) {
+		currentPath = path.subStr(0, currentPath.length() - 4);
+		currentPath += ".txt";
+	//}
+
 	return true;
 }
 

@@ -6,9 +6,16 @@
 #include "td/String.h"
 #include <vector>
 
+#include <thread>
+#include <mutex>
+
 class baseNode {
 
 	static const td::String attributeKeywords[];
+	class Messages;
+
+	
+	std::mutex mtx;
 
 protected:
 	std::map<td::String, td::String> attribs;
