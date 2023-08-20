@@ -69,6 +69,8 @@ size_t baseNode::addLine(std::vector<std::pair<td::String, td::String>> &lines, 
 
 		int pozEq = lines[startLine].first.find("=");
 
+		const char* smece = lines[startLine].first.c_str();
+
 		bool found = false;
 		if (pozEq != -1) {
 			td::String keyword = lines[startLine].first.subStr(0, pozEq - 1).trimRight();
@@ -95,7 +97,7 @@ size_t baseNode::addLine(std::vector<std::pair<td::String, td::String>> &lines, 
 				continue;
 			}
 			lastChlid->addComment(lines[startLine].second);
-			++startLine;
+ 			++startLine;
 			continue;
 		}
 
@@ -106,7 +108,8 @@ size_t baseNode::addLine(std::vector<std::pair<td::String, td::String>> &lines, 
 			continue;
 		}
 
-		parent->lastChlid = parent;
+		if(parent != nullptr)
+			parent->lastChlid = parent;
 		break;
 	}
 	return startLine;
@@ -134,13 +137,16 @@ void baseNode::processCommands(const td::String& text) {
 	text.split("\n;", l, true, true);
 	int poz;
 	for (int i = 0; i < l.size(); ++i) {
+		l[i] = l[i].trim();
+		if(l[i].isNull())
+			continue;
 		poz = l[i].find("//");
 		if (poz == -1)
-			lines.emplace_back<std::pair<td::String, td::String>>({ l[i].trim(), "" });
+			lines.emplace_back<std::pair<td::String, td::String>>({ l[i], "" });
 		else if (poz != 0)
-			lines.emplace_back<std::pair<td::String, td::String>>({ l[i].subStr(0,poz - 1).trim(), l[i].subStr(poz + 2, -1) });
+			lines.emplace_back<std::pair<td::String, td::String>>({ l[i].subStr(0,poz - 1).trimRight(), l[i].subStr(poz + 2, -1).trimLeft()});
 		else
-			lines.emplace_back<std::pair<td::String, td::String>>({ "", l[i].subStr(poz + 2, -1) });
+			lines.emplace_back<std::pair<td::String, td::String>>({ "", l[i].subStr(poz + 2, -1).trimLeft()});
 	}
 	addLine(lines);
 }

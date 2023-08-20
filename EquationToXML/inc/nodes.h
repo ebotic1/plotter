@@ -36,6 +36,10 @@ public:
 	void processCommands(const td::String& text);
 	virtual inline const char* getName() = 0;
 
+	td::String &operator[](const td::String& atribute) {
+		return attribs[atribute];
+	}
+
 	~baseNode() {
 		for each (baseNode * var in nodes) {
 			delete var;

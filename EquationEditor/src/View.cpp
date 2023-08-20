@@ -442,6 +442,9 @@ bool View::saveAsXML(const td::String& path){
 		return true;
 	}
 
+	if (!path.endsWith(".xml", 4)) {
+		return false;
+	}
 
 	try{
 		generateXML(_jednacineText.getText(), path);
