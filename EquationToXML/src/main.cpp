@@ -43,12 +43,17 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
-	if (inputPath.isNull() || outputPath.isNull()) {
+	if (inputPath.isNull()) {
 		std::cout << "Invalid use\n";
 		displayHelp();
 		return 1;
 	}
 
+	if (outputPath.isNull()) {
+		int poz = inputPath.findFromRight('.');
+		outputPath = inputPath.subStr(0, poz-1);
+		outputPath += ".xml";
+	}
 
 	std::ifstream input;
 	xml::Writer output(outputPath);
@@ -76,14 +81,13 @@ int main(int argc, char* argv[]) {
 				break;
 			std::string line;
 			std::getline(input, line);
-			line += "\n";
 			commands += line.c_str();
-			//commands += "\n";
+			commands += "\n";
 		}
 
 		mod.processCommands(commands);
 
-		//commands.clean();
+		commands.clean();
 	}
 
 	mod.printNode(output);

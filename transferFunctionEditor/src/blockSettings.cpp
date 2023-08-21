@@ -24,22 +24,26 @@ outputName("output var: ", td::string8, "variable name that will be created when
 		if (current) current->setOutputName(v.strVal());
 		};
 
-	v << num << dem;
+	//v << num << dem;
 
+	v.append(num, td::HAlignment::Center, td::VAlignment::Top);
+	v.append(dem, td::HAlignment::Center, td::VAlignment::Top);
+	v.append(inputSwitch, td::HAlignment::Center, td::VAlignment::Top);
+	v.append(disconnect, td::HAlignment::Center, td::VAlignment::Top);
 
-	v << inputSwitch << disconnect;
-	v.appendSpace(5);
+	//v << inputSwitch << disconnect;
+	//v.appendSpace(5);
 	v << inputName << outputName;
 
-	
-
-
-
 	setLayout(&v);
+
+	this->reMeasure();
 }
 
 void blockSettings::showBlock(Block* block) {
 	globals::switcher->showView(1, false);
+	gui::Size sz(100, 100);
+	globals::switcher->getView(1)->reMeasure(gui::CellInfo());
 
 	currentBlock = block;
 	td::String num, dem, out, in;

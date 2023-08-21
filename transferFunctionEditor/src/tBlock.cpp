@@ -26,6 +26,14 @@ const std::vector<Block*> &Block::getConnectedBlocks() const{
 	return connectedTo;
 }
 
+const std::vector<Block*>& Block::getConnectedFromBlocks() const{
+	return connectedFrom;
+}
+
+const td::String& Block::getOutputName() const{
+	return izlazName;
+}
+
 
 bool Block::intersectsInput(const gui::Point& p) {
 	return gui::Circle(inputPoint, 20).contains(p);

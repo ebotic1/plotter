@@ -26,6 +26,9 @@ public:
 		addView(&modSettings);
 		addView(&bSettings);
 		showView(0, true);
+
+		modSettings.edit.hide(false, false);
+		
 	}
 
 
@@ -39,7 +42,6 @@ class mainView : public gui::View {
 	properties props;
 
 	gui::ViewScroller scroller;
-
 	kanvas _canvas;
 
 public:
@@ -62,7 +64,9 @@ public:
 		return &_canvas;
 	}
 
+
 };
+
 
 
 void globals::refreshCanvas() {

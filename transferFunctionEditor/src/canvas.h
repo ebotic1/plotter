@@ -7,6 +7,8 @@
 #include "arch/ArchiveOut.h"
 #include "arch/FileSerializer.h"
 #include "gui/FileDialog.h"
+#include "./../../EquationToXML/inc/nodes.h"
+#include "td/StringUtils.h"
 
 #define BLOCK_COLOR td::ColorID::Black
 #define BLOCK_COLOR_SELECTED td::ColorID::DeepSkyBlue
@@ -46,6 +48,9 @@ public:
 
 	bool saveState(const td::String &file);
 	bool restoreState(const td::String &file);
+	bool onKeyPressed(const gui::Key& key);
+
+	bool exportToXML(const td::String& path);
 
 	~kanvas();
 
@@ -72,7 +77,7 @@ inline bool kanvas::getModelSize(gui::Size& size) const{
 	return true;
 }
 
-kanvas::kanvas() : gui::Canvas({ gui::InputDevice::Event::PrimaryClicks, gui::InputDevice::Event::SecondaryClicks, gui::InputDevice::Event::PrimaryDblClick, gui::InputDevice::Event::Zoom, gui::InputDevice::Event::CursorDrag }) {
+kanvas::kanvas() : gui::Canvas({ gui::InputDevice::Event::PrimaryClicks, gui::InputDevice::Event::SecondaryClicks, gui::InputDevice::Event::PrimaryDblClick, gui::InputDevice::Event::Zoom, gui::InputDevice::Event::CursorDrag, gui::InputDevice::Event::Keyboard }) {
 }
 
 
@@ -191,7 +196,14 @@ inline bool kanvas::saveState(const td::String& file){
 				out << int(it - blocks.begin());
 			}
 		}
+		out << cntBlock;
 		out << globals::model_settings->name.getValue().strVal();
+		td::Variant v;
+		globals::model_settings->edit.getValue(v);
+
+		out << v.strVal();
+
+
 	}
 	catch (...){
 		return false;
@@ -240,9 +252,18 @@ inline bool kanvas::restoreState(const td::String& file){
 			kopija[i]->disableLogic(false);
 			kopija[i]->setUpAll();
 		}
+
+		in >> cntBlock;
+
 		td::String titl;
 		in >> titl;
 		globals::model_settings->name.setValue(titl);
+
+		td::String params;
+		in >> params;
+		td::Variant v(std::move(params));
+		globals::model_settings->edit.setValue(v, false);
+
 	}
 	catch (...) {
 		for (int i = 0; i < kopija.size(); ++i)
@@ -258,6 +279,22 @@ inline bool kanvas::restoreState(const td::String& file){
 	currentPath = file;
 
 	return true;
+}
+
+inline bool kanvas::onKeyPressed(const gui::Key& key)
+{
+	if (key.getVirtual() == gui::Key::Virtual::Delete) {
+		if (currentBlock != nullptr) {
+			currentBlock->removeConnections();
+			blocks.erase(std::find(blocks.begin(), blocks.end(), currentBlock));
+			currentBlock = nullptr;
+			lastAction = Actions::none;
+			reDraw();
+		}
+		return true;
+	}
+
+	return false;
 }
 
 
@@ -283,6 +320,7 @@ inline bool kanvas::onActionItem(td::BYTE menuID, td::BYTE firstSubMenuID, td::B
 			blocks.clear();
 			globals::switcher->showView(0);
 			cntBlock = 0;
+			globals::model_settings->edit.clean();
 			return true;
 		}
 
@@ -311,7 +349,18 @@ inline bool kanvas::onActionItem(td::BYTE menuID, td::BYTE firstSubMenuID, td::B
 			p->openModal(4, this);
 			return true;
 		}
+
+
+
+		if (actionID == 100) { // export
+			gui::FileDialog* p = new gui::FileDialog(this, gui::FileDialog::Type::SaveFile, "Export to", ".xml", "Export");
+			p->openModal(5, this);
+			return true;
+		}
+
 	}
+
+		
 
 	return false;
 }
@@ -333,7 +382,84 @@ inline bool kanvas::onClick(gui::FileDialog* pDlg, td::UINT4 dlgID){
 		return true;
 	}
 
+	if (dlgID == 5) {//export
+		if (!exportToXML(pDlg->getFileName()))
+			showAlert("error", "cannot export model");
+		return true;
+	}
+
 	return false;
+}
+
+
+
+bool kanvas::exportToXML(const td::String &path){
+
+	xml::Writer w;
+	w.open(path);
+	w.startDocument();
+	if (!w.isOk())
+		return false;
+
+	modelNode mod;
+
+	mod.processCommands("Vars: ; Params: ; TFs: ; NLEqs:");
+
+	baseNode &vars = *mod.nodes[0];
+	baseNode& params = *mod.nodes[1];
+	baseNode& tfs = *mod.nodes[2];
+	baseNode& nle = *mod.nodes[3];
+
+	for (int i = 0; i < blocks.size(); ++i) {
+		td::String nom, dem, inputName, outputName;
+		bool connected, switched;
+
+		blocks[i]->getAllProps(nom, dem, connected, switched, inputName, outputName);
+		vars.processCommands(inputName);
+		vars.processCommands(outputName);
+
+		cnt::StringBuilder cmnd;
+		
+		cmnd << outputName << "/" << inputName << " = " << "(" << nom << ")" << "/(" << dem << ")";
+
+		tfs.processCommands(cmnd.toString());
+
+		if (blocks[i]->getConnectedFromBlocks().size() < 2)
+			continue;
+
+		cmnd.reset();
+
+		cmnd << inputName << " = ";
+		auto& connectedFrom = blocks[i]->getConnectedFromBlocks();
+		for (int j = 0; j < connectedFrom.size(); ++j){
+			cmnd << connectedFrom[j]->getOutputName();
+			if (j != connectedFrom.size() - 1)
+				cmnd << " + ";
+		}
+
+		nle.processCommands(cmnd.toString());
+
+	}
+
+	td::Variant v;
+	globals::model_settings->edit.getValue(v);
+
+	params.processCommands(v.strVal());
+
+
+	mod.attribs = std::move(params.attribs);
+	params.attribs.clear();
+
+	mod["domain"] = "real";
+	mod["type"] = "DAE";
+	mod["name"] = globals::model_settings->name.getValue().strVal();
+
+	mod.printNode(w);
+
+	w.endDocument();
+	w.close();
+
+	return true;
 }
 
 

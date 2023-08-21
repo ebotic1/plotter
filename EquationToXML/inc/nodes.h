@@ -9,6 +9,7 @@
 
 
 
+
 class baseNode {
 
 	static const td::String attributeKeywords[];
@@ -16,19 +17,18 @@ class baseNode {
 	baseNode* lastChlid = this;
 
 protected:
-	std::map<td::String, td::String> attribs;
-	std::vector<baseNode*> nodes;
-	virtual bool nodeAction(const td::String &command, baseNode*& newChild) = 0;
+	
+	virtual bool nodeAction(const td::String& command, baseNode*& newChild) = 0;
 	td::String comment;
-	size_t addLine(std::vector<std::pair<td::String, td::String>> &lines, size_t startLine = 0);
+	size_t addLine(std::vector<std::pair<td::String, td::String>>& lines, size_t startLine = 0);
 
 public:
+	std::vector<baseNode*> nodes;
+	std::map<td::String, td::String> attribs;
+
 	virtual void printNode(xml::Writer& w);
-	virtual void setAttrib(const td::String& name, const td::String& val) {
-		attribs[name] = val;
-	}
-	inline td::String& operator[](const td::String& name) {
-		return attribs[name];
+	inline td::String& operator[](const td::String& attrib) {
+		return attribs[attrib];
 	}
 	void addComment(const td::String& comment);
 	void addComment(td::String&& comment);
@@ -36,9 +36,10 @@ public:
 	void processCommands(const td::String& text);
 	virtual inline const char* getName() = 0;
 
-	td::String &operator[](const td::String& atribute) {
-		return attribs[atribute];
+	virtual void setAttrib(const td::String& name, const td::String& val) {
+		attribs[name] = val;
 	}
+
 
 	~baseNode() {
 		for each (baseNode * var in nodes) {
@@ -49,9 +50,7 @@ public:
 };
 
 
-
 class modelNode : public baseNode {
-	std::map<td::String, td::String> attribs;
 	bool done = false;
 
 public:

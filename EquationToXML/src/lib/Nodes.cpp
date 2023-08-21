@@ -39,8 +39,8 @@ public:
 		}
 		if (command.getLastChar() == ':') return false;
 		if (command.beginsWithCI("end")) {
-			done = true;
-			return true;
+			//done = true;
+			return false;
 		}
 
 
@@ -65,8 +65,6 @@ public:
 	bool nodeAction(const td::String& command, baseNode*& newChild) override {
 		if (added) return false;
 		added = true;
-
-		const char* smece = command.c_str();
 
 		int pozEq = command.find("=");
 		if (pozEq == -1) {
@@ -156,6 +154,7 @@ public:
 	}
 };
 
+
 bool conditionNode::nodeAction(const td::String& command, baseNode*& newChild){
 
 	if (command.beginsWithCI("end"))
@@ -170,6 +169,8 @@ bool conditionNode::nodeAction(const td::String& command, baseNode*& newChild){
 
 	return false;
 }
+
+
 
 struct varsName { static const char* val; };
 const char* varsName::val = "Vars";

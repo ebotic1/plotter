@@ -24,9 +24,10 @@ source_group("header"            FILES ${HEADERS})
 
 add_executable(${SOLUTION_NAME} ${HEADERS} ${SOURCES})
 
+include(${CMAKE_CURRENT_LIST_DIR}/../EquationToXML/EqToXML.cmake)
 
 target_link_libraries(${SOLUTION_NAME}	debug ${MU_LIB_DEBUG}   	optimized ${MU_LIB_RELEASE}
-					debug ${NATGUI_LIB_DEBUG}   optimized ${NATGUI_LIB_RELEASE})
+					debug ${NATGUI_LIB_DEBUG}   optimized ${NATGUI_LIB_RELEASE} ${EqToXML_lib})
 
 set(CMAKE_WIN32_EXECUTABLE TRUE)
 

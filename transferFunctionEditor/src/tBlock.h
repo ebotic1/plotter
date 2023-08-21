@@ -35,6 +35,8 @@ public:
 	const gui::Point &getInput() const;
 	const gui::Point& getLocation() const;
 	const std::vector<Block*>& getConnectedBlocks() const;
+	const std::vector<Block*>& getConnectedFromBlocks() const;
+	const td::String& getOutputName() const;
 
 	void setUpAll();
 	void setUpWires(bool refreshCanvas);

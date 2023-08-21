@@ -33,12 +33,12 @@ void baseNode::printNode(xml::Writer& w) {
 	}
 
 	if (nodes.size() != 0) {
-
 		for each (baseNode * var in nodes)
 			var->printNode(w);
 
 		w.endNode();
 	}
+
 
 	//'BACK_COMMENT_CHAR' oznacava da se komentar printa na kraju elementa
 	cnt::PushBackVector<td::String> coms;
@@ -68,8 +68,6 @@ size_t baseNode::addLine(std::vector<std::pair<td::String, td::String>> &lines, 
 		}
 
 		int pozEq = lines[startLine].first.find("=");
-
-		const char* smece = lines[startLine].first.c_str();
 
 		bool found = false;
 		if (pozEq != -1) {
@@ -108,10 +106,12 @@ size_t baseNode::addLine(std::vector<std::pair<td::String, td::String>> &lines, 
 			continue;
 		}
 
-		if(parent != nullptr)
-			parent->lastChlid = parent;
 		break;
 	}
+
+	if (parent != nullptr)
+		parent->lastChlid = parent;
+
 	return startLine;
 }
 
@@ -134,6 +134,7 @@ void baseNode::addComment(td::String&& comment) {
 void baseNode::processCommands(const td::String& text) {
 	std::vector<std::pair<td::String, td::String>> lines;
 	cnt::PushBackVector<td::String> l;
+	parent = nullptr;
 	text.split("\n;", l, true, true);
 	int poz;
 	for (int i = 0; i < l.size(); ++i) {
@@ -150,3 +151,7 @@ void baseNode::processCommands(const td::String& text) {
 	}
 	addLine(lines);
 }
+
+
+
+
