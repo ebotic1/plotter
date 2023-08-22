@@ -18,13 +18,22 @@ MainWindow::MainWindow()
         y[i] = i * i;
     }
 
-    _mainView.addFunction(x, y, broj);
+    //_mainView.addFunction(x, y, broj);
+
+    gui::CoordType* xx = new gui::CoordType[3];
+    gui::CoordType* yy = new gui::CoordType[3];
+
+    xx[0] = 100; xx[1] = 100; xx[2] = 300;
+    yy[0] = 300; yy[1] = -1400; yy[2] = 300;
+
+    _mainView.addFunction(xx, yy, 3);
 
     delete[] x;
     delete[] y;
 
     setCentralView(&_mainView);
 
+    //_mainView.ZoomToWindow(gui::Geometry());
 
 }
 
