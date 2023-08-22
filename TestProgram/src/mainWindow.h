@@ -1,6 +1,5 @@
 #include "gui/Window.h"
-#include"./../../Canvas/src/canvas.h"
-#pragma once
+#include "./../../Canvas/inc/canvas.h"
 
 
 
@@ -11,7 +10,7 @@ private:
 protected:
     //MenuBar _mainMenuBar;
     //ToolBar _toolBar;
-    Canvas _mainView;
+    graph _mainView;
 public:
     MainWindow();
     ~MainWindow();

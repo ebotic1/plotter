@@ -1,7 +1,6 @@
 #include "gui/Window.h"
 #include "mainWindow.h"
-
-
+#include "./../../Canvas/inc/canvas.h"
 
 
 
@@ -19,28 +18,13 @@ MainWindow::MainWindow()
         y[i] = i * i;
     }
 
-    _mainView.dodajFunkciju(x, y, broj);
-    _mainView.zoomToFit();
+    _mainView.addFunction(x, y, broj);
 
-    std::vector<gui::CoordType> x_vec;
-    std::vector<gui::CoordType> y_vec;
-
-    for (int i = 0; i < broj; i++) {
-        x_vec.push_back(i);
-        y_vec.push_back(i*1000);
-    }
-
-    _mainView.dodajFunkciju(std::move(x_vec), std::move(y_vec), td::ColorID::Crimson);
+    delete[] x;
+    delete[] y;
 
     setCentralView(&_mainView);
-    
-    for (int i = 0; i < broj; i++) {
-        y[i] = (i > 100) * 1000 + (i > 300) * 4000 + (i > 600) * 5000;
-    }
-  
-    _mainView.dodajFunkciju(std::move(x), std::move(y), broj);
 
-    _mainView.setBackgroundColor(td::ColorID::Wheat);
 
 }
 
