@@ -24,11 +24,18 @@ class IMPEXP Function {
 public:
 
 	Function() {};
-	Function(gui::CoordType* x, gui::CoordType* y, size_t length, td::ColorID color, td::LinePattern pattern, double lineWidth = 1);
+	Function(gui::CoordType* x, gui::CoordType* y, size_t length, td::ColorID color, double lineWidth = 1, td::LinePattern pattern = td::LinePattern::Solid);
 	Function(const Function&) = delete;
 	Function(Function&& f) noexcept;
 	Function& operator=(Function&& f) noexcept;
 
+	void getScale(gui::CoordType& scaleX, gui::CoordType& scaleY) const;
+	void getShift(gui::CoordType& shiftX, gui::CoordType& shiftY) const;
+	double getLineWidth() const { return debljina; };
+	td::LinePattern getPattern() const{ return pattern; };
+	td::ColorID getColor() const { return color; }
+	size_t getLength() const{ return length; };
+	const gui::Point* getPoints() const{ return tacke;}
 	void setPoints(gui::CoordType*x, gui::CoordType*y, size_t lenght);
 	void setColor(td::ColorID& color) {
 		this->color = color;
@@ -54,6 +61,8 @@ public:
 	~Function() {
 		delete[] tacke;
 	}
+
+
 };
 
 

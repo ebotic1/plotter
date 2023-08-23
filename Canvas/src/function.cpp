@@ -63,7 +63,8 @@ gui::Point Function::findIntersection(const gui::Point& p1, const gui::Point& p2
 
 }
 
-Function::Function(gui::CoordType* x, gui::CoordType* y, size_t length, td::ColorID color, td::LinePattern pattern, double lineWidth): color(color), pattern(pattern), length(length), debljina(lineWidth){
+Function::Function(gui::CoordType* x, gui::CoordType* y, size_t length, td::ColorID color, double lineWidth, td::LinePattern pattern): color(color), pattern(pattern), length(length), debljina(lineWidth)
+{
 	setPoints(x, y, length);
 }
 
@@ -73,13 +74,23 @@ Function::Function(Function&& f) noexcept {
 }
 
 Function& Function::operator=(Function&& f) noexcept{
-	tacke = f.tacke;
+	memcpy(this, &f, sizeof(Function));
 	f.tacke = nullptr;
-	color = f.color;
-	pattern = f.pattern;
-	length = f.length;
+
 	return *this;
+
 }
+
+void Function::getScale(gui::CoordType& scaleXX, gui::CoordType& scaleYY) const{
+	scaleXX = this->scaleX;
+	scaleYY = this->scaleY;
+}
+
+void Function::getShift(gui::CoordType& shiftX, gui::CoordType& shiftY) const{
+	shiftX = this->shiftX;
+	shiftY = this->shiftY;
+}
+
 
 void Function::setPoints(gui::CoordType* x, gui::CoordType* y, size_t length){
 	delete[] tacke;
@@ -94,7 +105,7 @@ void Function::setPoints(gui::CoordType* x, gui::CoordType* y, size_t length){
 
 
 void Function::increaseScaleAndShiftX(const gui::CoordType& scale, const gui::CoordType& shift){
-	for (size_t i = 0; i < length; ++i) 
+	for (size_t i = 0; i < length; ++i)
 		tacke[i].x = (tacke[i].x - shiftX) * scale + shiftX + shift;
 
 	scaleX *= scale;
@@ -104,7 +115,7 @@ void Function::increaseScaleAndShiftX(const gui::CoordType& scale, const gui::Co
 
 void Function::increaseScaleAndShiftY(const gui::CoordType& scale, const gui::CoordType& shift){
 	for (size_t i = 0; i < length; ++i)
-		tacke[i].y = (tacke[i].y + shiftY) * scale - shiftY + shift;
+		tacke[i].y = (tacke[i].y + shiftY) * scale - shiftY - shift;
 
 	scaleY *= scale;
 	shiftY += shift;
@@ -126,12 +137,14 @@ void Function::increaseShiftY(const gui::CoordType& shift){
 
 void Function::increaseScaleX(const gui::CoordType& scale){
 	for (size_t i = 0; i < length; ++i)
-		tacke[i].x *= scale;
+		tacke[i].x = (tacke[i].x - shiftX) * scale + shiftX;
+	scaleX *= scale;
 }
 
 void Function::increaseScaleY(const gui::CoordType& scale) {
 	for (size_t i = 0; i < length; ++i)
-		tacke[i].y *= scale;
+		tacke[i].y = (tacke[i].y + shiftY) * scale - shiftY;
+	scaleY *= scale;
 }
 
 void Function::draw(const gui::Rect& frame){
@@ -146,7 +159,7 @@ void Function::draw(const gui::Rect& frame){
 	
 
 	bool past = frame.contains(tacke[0]) ? true : false;
-	gui::Point p;
+
 	for (size_t i = 1; i < length; ++i) {
 		if (frame.contains(tacke[i])) {
 			if (!past) 
@@ -158,8 +171,12 @@ void Function::draw(const gui::Rect& frame){
 			continue;
 		}
 
-		if (!past) {
-			gui::Shape::drawLine(findIntersection(tacke[i - 1], tacke[i], frame), findIntersection(tacke[i], tacke[i-1], frame), color, debljina, pattern);
+		if (!past) { // ako dvije tacke zaredom nisu unutar prozora provjeri da li njihov spoj se sudara sa prozorom
+			
+			gui::Point p1 = findIntersection(tacke[i - 1], tacke[i], frame);
+			if(p1.x >= frame.left && p1.x <= frame.right)
+				if (p1.y <= frame.bottom && p1.y >= frame.top)
+				gui::Shape::drawLine(p1, findIntersection(tacke[i], tacke[i-1], frame), color, debljina, pattern);
 			continue;
 		}
 		past = false;

@@ -9,6 +9,8 @@ MainWindow::MainWindow()
 {
     setTitle("Graph");
 
+    _mainView.showMargins(2);
+
     int broj = 1001;
     gui::CoordType* x = new gui::CoordType[broj];
     gui::CoordType* y = new gui::CoordType[broj];
@@ -18,22 +20,28 @@ MainWindow::MainWindow()
         y[i] = i * i;
     }
 
-    //_mainView.addFunction(x, y, broj);
+
 
     gui::CoordType* xx = new gui::CoordType[3];
     gui::CoordType* yy = new gui::CoordType[3];
 
-    xx[0] = 100; xx[1] = 100; xx[2] = 300;
-    yy[0] = 300; yy[1] = -1400; yy[2] = 300;
+    xx[0] = 0; xx[1] = 10; xx[2] = 100;
+    yy[0] = 0; yy[1] = 10; yy[2] = 100;
 
     _mainView.addFunction(xx, yy, 3);
+    
+    _mainView.addFunction(x, y, broj);
+
+
+    
 
     delete[] x;
     delete[] y;
 
     setCentralView(&_mainView);
 
-    //_mainView.ZoomToWindow(gui::Geometry());
+    
+
 
 }
 
