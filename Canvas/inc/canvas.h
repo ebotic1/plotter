@@ -2,7 +2,7 @@
 #include "./../inc/function.h"
 #include "gui/Canvas.h"
 #include "./../../common/defineExportImport.h"
-
+#include "gui/Image.h"
 #include <vector>
 
 
@@ -19,6 +19,7 @@ class IMPEXP graph : public gui::Canvas {
 	bool drawMargins;
 	double marginsFactor = 2;
 
+	bool active = false;
 	bool drawGrid = false;
 	void drawAxis();
 	double numberHeight;
@@ -33,13 +34,21 @@ class IMPEXP graph : public gui::Canvas {
 	gui::CoordType* Limits = nullptr;
 	bool initalDraw = false;
 
+	gui::Rect selectRect;
+	gui::Point lastMousePos;
+
 	bool _drawLegend = false;
 
 	class legend;
 	legend* legenda = nullptr;
 
+	gui::Image imgSave, imgFullscreen, imgGrid, imgLegend, imgMeni; //ubaciti help i fitToWindow
+	gui::Rect rectSave, rectFullscreen, rectGrid, rectLegend, rectMeni;
+
+
 public:
 
+	std::vector<gui::CoordType> verticals, horizontals;
 
 	graph(bool startWithMargins = false, bool takeUserInput = true, td::ColorID backgroundColor = td::ColorID::Black);
 
@@ -50,7 +59,8 @@ public:
 
 	void setAxisColor(td::ColorID boja);
 	void showMargins(double reductionFactor);
-	void drawLegend(bool draw) { _drawLegend = draw; }
+	void showLegend(bool draw) { _drawLegend = draw; reDraw(); }
+	void showGrid(bool draw) { drawGrid = draw; reDraw(); }
 
 	void addFunction(gui::CoordType* x, gui::CoordType* y, size_t length, td::ColorID color, double lineWidth = 2, td::LinePattern pattern = td::LinePattern::Solid, td::String name = "line");
 	void addFunction(gui::CoordType* x, gui::CoordType* y, size_t length, double lineWidth = 2, td::LinePattern pattern = td::LinePattern::Solid, td::String name = "line");
@@ -61,8 +71,6 @@ public:
 
 	void onDraw(const gui::Rect& rect);
 
-	gui::Rect selectRect;
-	gui::Point lastMousePos;
 
 	void onPrimaryButtonPressed(const gui::InputDevice& inputDevice) override;
 	void onPrimaryButtonReleased(const gui::InputDevice & inputDevice) override;
@@ -72,7 +80,9 @@ public:
 	void onCursorDragged(const gui::InputDevice& inputDevice) override;
 	bool onZoom(const gui::InputDevice& inputDevice) override;
 	void Zoom(const gui::CoordType &scale);
-
+	bool onKeyPressed(const gui::Key& key) override;
+	void onCursorExited(const gui::InputDevice& inputDevice) override;
+	void onCursorEntered(const gui::InputDevice& inputDevice) override;
 
 	~graph();
 

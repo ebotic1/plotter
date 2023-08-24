@@ -1,6 +1,6 @@
 #pragma once
 #include "gui/View.h"
-#include "property.h"
+#include "../../common/property.h"
 #include "gui/VerticalLayout.h"
 #include "gui/TextEdit.h"
 #include "gui/Button.h"

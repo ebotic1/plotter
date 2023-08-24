@@ -58,6 +58,23 @@ public:
 	void increaseScaleX(const gui::CoordType& scale);
 	void increaseScaleY(const gui::CoordType& scale);
 
+	gui::CoordType realToTransformedX(const gui::CoordType& cord) {
+		return cord * scaleX + shiftX;
+	}
+
+	gui::CoordType transformedToRealX(const gui::CoordType& cord) {
+		return (cord - shiftX) / scaleX;
+	}
+
+	gui::CoordType realToTransformedY(const gui::CoordType& cord) {
+		return cord * scaleY - shiftY;
+	}
+
+	gui::CoordType TrasformedToRealY(const gui::CoordType& cord) {
+		return (cord + shiftY) / scaleY;
+	}
+
+
 	void draw(const gui::Rect& frame);
 
 	~Function() {

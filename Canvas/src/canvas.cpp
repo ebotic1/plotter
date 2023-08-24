@@ -1,6 +1,7 @@
 #include "./../inc/canvas.h"
 #include "gui/Shape.h"
 #include "gui/DrawableString.h"
+#include "annotationDialog.h"
 
 #define SELECT_COLOR td::ColorID::AliceBlue
 #define FONT gui::Font::ID::ReportBody1
@@ -44,13 +45,13 @@ public:
     }
 };
 
-#include "gui/Dialog.h"
 
-graph::graph(bool startWithMargins, bool takeUserInput, td::ColorID backgroundColor) :gui::Canvas(takeUserInput ? inputs : noInputs), backgroundColor(backgroundColor), drawMargins(startWithMargins)
+
+graph::graph(bool startWithMargins, bool takeUserInput, td::ColorID backgroundColor) :gui::Canvas(takeUserInput ? inputs : noInputs), backgroundColor(backgroundColor), drawMargins(startWithMargins),
+imgFullscreen(":fullScreen"), imgGrid(":grid"), imgLegend(":legend"), imgMeni(":meni"), imgSave(":save"),
+rectFullscreen({0,0}, gui::Size(32,32)), rectGrid({ 0,0 }, gui::Size(32, 32)), rectLegend({ 0,0 }, gui::Size(32, 32)), rectMeni({ 0,0 }, gui::Size(32, 32)), rectSave({ 0,0 }, gui::Size(32, 32))
 {
-
     enableResizeEvent(true);
-
 
     if (backgroundColor == axisColor)
         axisColor = td::ColorID::Black;
@@ -67,12 +68,13 @@ graph::graph(bool startWithMargins, bool takeUserInput, td::ColorID backgroundCo
 
     if (startWithMargins)
         setUpDrawingWindow();
+
+
 }
 
 void graph::setUpDrawingWindow(){
-    gui::Point past = drawingWindow.point;
+    auto past = drawingWindow;
     getGeometry(drawingWindow);
-    //drawingWindow.size.height += drawingWindow.point.y;
     drawingWindow.point.y = 0;
 
     if (drawMargins) {
@@ -86,10 +88,7 @@ void graph::setUpDrawingWindow(){
         drawingWindow.point.y = center.y - drawingWindow.size.height / 2;
     }
 
-    for (int i = 0; i < funkcije.size(); ++i) {
-        funkcije[i].increaseShiftX(drawingWindow.point.x - past.x);
-        funkcije[i].increaseShiftY(past.y - drawingWindow.point.y); // - drawingWindow.size.height);
-    }
+    ZoomToWindow(past);
 
 }
 
@@ -229,6 +228,7 @@ void graph::fitToWindow(){
 
 
     ZoomToWindow(g);
+    reDraw();
 }
 
 void graph::ZoomToWindow(const gui::Geometry& window){
@@ -257,14 +257,7 @@ void graph::ZoomToWindow(const gui::Geometry& window){
 }
 
 
-#include "gui/Symbol.h"
-#include "gui/Button.h"
-#include "gui/Image.h"
-#include "gui/ISymbol.h"
-#include "gui/PopoverButton.h"
-#include "gui/Control.h"
-#include "gui/MenuBar.h"
-#include "gui/MenuItem.h"
+
 
 
 void graph::onDraw(const gui::Rect& rect){
@@ -277,18 +270,47 @@ void graph::onDraw(const gui::Rect& rect){
     if (action == Actions::select) 
         gui::Shape::drawRect(selectRect, SELECT_COLOR, 1.5, td::LinePattern::Dash);
 
-    if (drawMargins)
+    if (drawMargins) {
         gui::Shape::drawRect(drawingRect, axisColor, 2);
+
+        gui::Point origin = { rect.left + 32, rect.bottom - 32 - 32 };
+        rectFullscreen.setOrigin({ rect.left + 32, rect.bottom - 32 - 32 });
+        rectGrid.setOrigin({ rect.left + 32 + (32+32)*1, rect.bottom - 32 - 32});
+        rectLegend.setOrigin({ rect.left + 32 + (32 + 32) * 2, rect.bottom - 32 - 32 });
+        rectMeni.setOrigin({ rect.left + 32 + (32 + 32) * 3, rect.bottom - 32 - 32 });
+        rectSave.setOrigin({ rect.left + 32 + (32 + 32) * 4, rect.bottom - 32 - 32 });
+
+           /*
+           * ovo je sve privremeno pa nema potrebe za vektorom
+           */
+
+        imgFullscreen.draw(rectFullscreen);
+        imgGrid.draw(rectGrid);
+        imgLegend.draw(rectLegend);
+        imgMeni.draw(rectMeni);
+        imgSave.draw(rectSave);
+
+
+
+    }
 
     drawAxis();
 
     if (_drawLegend)
         legenda->draw({ rect.right - 20, rect.top + 20 });
 
+    for (size_t i = 0; i < verticals.size(); ++i){
+        gui::CoordType scaleX, scaleY, shiftX, shiftY;
+        funkcije[0].getScale(scaleX, scaleY);
+        funkcije[0].getShift(shiftX, shiftY);
 
-    
 
-    
+        auto realToFake = [&scaleX, &shiftX](const gui::CoordType& x) {return x * scaleX + shiftX; };
+        auto fakeToReal = [&scaleX, &shiftX](const gui::CoordType& x) {return (x - shiftX) / scaleX; };
+
+        gui::Shape::drawLine({ verticals[i], rect.bottom }, { verticals[i], rect.top }, td::ColorID::Red, 2);
+        
+    }
     
 }
 
@@ -299,33 +321,24 @@ void graph::drawAxis(){
     if (funkcije.size() == 0)
         return;
 
-    gui::CoordType scaleX, scaleY, shiftX, shiftY;
+    gui::CoordType scaleX, scaleY;
     funkcije[0].getScale(scaleX, scaleY);
-    funkcije[0].getShift(shiftX, shiftY);
 
-
-    auto realToFake = [&scaleX, &shiftX](const gui::CoordType& x) {return x * scaleX + shiftX; };
-    auto fakeToReal = [&scaleX, &shiftX](const gui::CoordType& x) {return (x - shiftX) / scaleX; };
 
     gui::CoordType len = drawingWindow.size.width / scaleX;
-    gui::CoordType razmak = 7.27612440527 + std::log2(1 / scaleX); // log2(155) = 7.27612440527 sto prouzrokuje otprilike jednu grid vertikalnu liniju svakih 155 jedinica duzine
+    gui::CoordType razmak = 8.60733031375 + std::log2(1 / scaleX); // log2(390) = 8.60733031375 sto prouzrokuje otprilike jednu grid vertikalnu liniju svakih 390 jedinica duzine
     razmak = std::round(razmak);
     razmak = std::pow(2.0, razmak);
-    gui::CoordType startVal = std::ceil(fakeToReal(drawingWindow.point.x) / razmak) * razmak;
-    gui::CoordType line = realToFake(startVal);
+    gui::CoordType startVal = std::ceil(funkcije[0].transformedToRealX(drawingWindow.point.x) / razmak) * razmak;
+    gui::CoordType line = funkcije[0].realToTransformedX(startVal);
 
 
-
-
-
-    auto realToFakeY = [&scaleY, &shiftY](const gui::CoordType& x) {return x * scaleY - shiftY; };
-    auto fakeToRealY = [&scaleY, &shiftY](const gui::CoordType& x) {return (x + shiftY) / scaleY; };
 
     gui::CoordType razmakY = 7.27612440527 + std::log2(-1 / scaleY);
     razmakY = std::round(razmakY);
     razmakY = std::pow(2.0, razmakY);
-    gui::CoordType startValY = std::ceil(fakeToRealY(drawingWindow.point.y + drawingWindow.size.height) / razmakY) * razmakY;
-    gui::CoordType lineY = realToFakeY(startValY);
+    gui::CoordType startValY = std::ceil(funkcije[0].TrasformedToRealY(drawingWindow.point.y + drawingWindow.size.height) / razmakY) * razmakY;
+    gui::CoordType lineY = funkcije[0].realToTransformedY(startValY);
 
 
 
@@ -393,11 +406,41 @@ td::String graph::to_string(gui::CoordType x){
 
 
 
-void graph::onPrimaryButtonPressed(const gui::InputDevice& inputDevice){
-    action = Actions::select;
-    selectRect.setOrigin(inputDevice.getFramePoint());
-    selectRect.setWidth(0);
-    selectRect.setHeight(0);
+void graph::onPrimaryButtonPressed(const gui::InputDevice& inputDevice) {
+    if (gui::Rect({ drawingWindow.point.x, drawingWindow.point.y }, gui::Size(drawingWindow.size.width, drawingWindow.size.height)).contains(inputDevice.getFramePoint())) {
+        action = Actions::select;
+        selectRect.setOrigin(inputDevice.getFramePoint());
+        selectRect.setWidth(0);
+        selectRect.setHeight(0);
+        return;
+    }
+
+    if (rectFullscreen.contains(inputDevice.getFramePoint())) {
+        showMargins(0);
+    }
+
+    if (rectGrid.contains(inputDevice.getFramePoint())) {
+        showGrid(!drawGrid);
+    }
+
+    if (rectLegend.contains(inputDevice.getFramePoint())) {
+        showLegend(!_drawLegend);
+    }
+
+    if (rectMeni.contains(inputDevice.getFramePoint())) {
+        auto d = new annotDiag(this, verticals, horizontals);
+        d->open();
+    }
+
+    if (rectSave.contains(inputDevice.getFramePoint())) {
+
+
+    }
+
+    
+
+
+
 }
 
 void graph::onPrimaryButtonReleased(const gui::InputDevice& inputDevice){
@@ -457,10 +500,9 @@ void graph::onCursorMoved(const gui::InputDevice& inputDevice){
             funkcije[i].increaseShiftX(inputDevice.getFramePoint().x - lastMousePos.x);
             funkcije[i].increaseShiftY(lastMousePos.y - inputDevice.getFramePoint().y);
         }
-        lastMousePos = inputDevice.getFramePoint();
         reDraw();
-        return;
     }
+    lastMousePos = inputDevice.getFramePoint();
 
 }
 
@@ -497,7 +539,64 @@ void graph::Zoom(const gui::CoordType &scale){
 }
 
 
+bool graph::onKeyPressed(const gui::Key& key) {
+    char c = key.getChar();
 
+    if (c == 'f' || c == 'F') {
+        fitToWindow();
+        return true;
+    }
+
+    if (c == 'g' || c == 'G') {
+        showGrid(!drawGrid);
+        return true;
+    }
+
+    if (key.getVirtual() == gui::Key::Virtual::F1) {
+        showAlert("Uputstvo", "f - fit to window\nv - dodaj vertikalnu liniju\nh - dodaj horizontalnu liniju\ni - prikazi informacije o vertiklanim i horizontalnim linijama\nDesni klik - zoom out\nDesni drag (mis) - pomjeranje grafika\nLijevi drag (mis) - povecavanje na zabiljezeni prozor");
+        return true;
+    }
+
+
+    if (key.getVirtual() == gui::Key::Virtual::F11) {
+        if (drawMargins)
+            showMargins(0);
+        else
+            showMargins(marginsFactor);
+        return true;
+    }
+
+    if (funkcije.size() == 0)
+        return false;
+
+    if (c == 'v' || c == 'V' || c == 'h' || c == 'H') {
+        if (!gui::Rect({ drawingWindow.point.x, drawingWindow.point.y }, gui::Size(drawingWindow.size.width, drawingWindow.size.height)).contains(lastMousePos))
+            return true;
+        if (!active)
+            return false;
+
+        if (c == 'v' || c == 'V')
+            verticals.emplace_back((lastMousePos.x));
+        else
+            horizontals.emplace_back(lastMousePos.y);
+
+        reDraw();
+        return true;
+    }
+
+
+    return false;
+}
+
+
+void graph::onCursorExited(const gui::InputDevice& inputDevice) {
+    active = false;
+
+}
+
+void graph::onCursorEntered(const gui::InputDevice& inputDevice) {
+    active = true;
+}
 
 graph::~graph(){
     delete[] Limits;

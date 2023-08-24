@@ -16,13 +16,15 @@ include(${WORK_ROOT}/DevEnv/Common.cmake)
 include(${WORK_ROOT}/DevEnv/natGUI.cmake)
 
 file(GLOB SOURCES  ${CMAKE_CURRENT_LIST_DIR}/src/*.cpp)
+file(GLOB COMMON ${CMAKE_CURRENT_LIST_DIR}/../common/*.cpp)
 file(GLOB HEADERS ${CMAKE_CURRENT_LIST_DIR}/src/*.h)
 
 source_group("src"            FILES ${SOURCES})
 source_group("header"            FILES ${HEADERS})
+source_group("common"            FILES ${COMMON})
 
 
-add_executable(${SOLUTION_NAME} ${HEADERS} ${SOURCES})
+add_executable(${SOLUTION_NAME} ${HEADERS} ${SOURCES} ${COMMON})
 
 include(${CMAKE_CURRENT_LIST_DIR}/../EquationToXML/EqToXML.cmake)
 
