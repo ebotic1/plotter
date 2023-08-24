@@ -41,10 +41,19 @@ class IMPEXP graph : public gui::Canvas {
 
 	class legend;
 	legend* legenda = nullptr;
+	void showInformation();
+	void saveMenu();
 
-	gui::Image imgSave, imgFullscreen, imgGrid, imgLegend, imgMeni; //ubaciti help i fitToWindow
-	gui::Rect rectSave, rectFullscreen, rectGrid, rectLegend, rectMeni;
+	struct imageButton {
+		gui::Image image; //help i fintowindow
+		gui::Rect rect;
 
+		imageButton(const gui::Image& image, const gui::Rect& rect) : image(image), rect(rect) {};
+	};
+
+	std::vector<imageButton> slike;
+
+	bool saveXML(const td::String& path);
 
 public:
 

@@ -2,6 +2,9 @@
 #include "gui/Shape.h"
 #include "gui/DrawableString.h"
 #include "annotationDialog.h"
+#include "gui/FileDialog.h"
+
+#include"xml/Writer.h"
 
 #define SELECT_COLOR td::ColorID::AliceBlue
 #define FONT gui::Font::ID::ReportBody1
@@ -47,11 +50,46 @@ public:
 
 
 
-graph::graph(bool startWithMargins, bool takeUserInput, td::ColorID backgroundColor) :gui::Canvas(takeUserInput ? inputs : noInputs), backgroundColor(backgroundColor), drawMargins(startWithMargins),
-imgFullscreen(":fullScreen"), imgGrid(":grid"), imgLegend(":legend"), imgMeni(":meni"), imgSave(":save"),
-rectFullscreen({0,0}, gui::Size(32,32)), rectGrid({ 0,0 }, gui::Size(32, 32)), rectLegend({ 0,0 }, gui::Size(32, 32)), rectMeni({ 0,0 }, gui::Size(32, 32)), rectSave({ 0,0 }, gui::Size(32, 32))
+bool graph::saveXML(const td::String& path){
+    if (funkcije.size() == 0)
+        return true;
+
+    xml::Writer w;
+    w.open(path);
+    w.startDocument();
+
+    if (!w.isOk())
+        return false;
+
+    w.startElement("Model");
+
+    gui::CoordType scaleX, scaleY, shiftX, shiftY;
+    funkcije[0].getScale(scaleX, scaleY);
+    funkcije[0].getShift(shiftX, shiftY);
+
+    w.attribute("scaleX", to_string(scaleX));
+    w.attribute("scaleY", to_string(scaleY));
+    w.attribute("shftX", to_string(shiftX));
+    w.attribute("shftY", to_string(shiftY));
+
+    td::Color c(td::UINT4(backgounrdColor));
+
+    w.attribute("background", c.toString());
+
+    for (size_t i = 0; i < funkcije.size(); ++i){
+        
+    }
+
+    return true;
+}
+
+graph::graph(bool startWithMargins, bool takeUserInput, td::ColorID backgroundColor) :gui::Canvas(takeUserInput ? inputs : noInputs), backgroundColor(backgroundColor), drawMargins(startWithMargins)
 {
     enableResizeEvent(true);
+
+    for each (const char *ime in std::vector<const char*>{":fullScreen", ":grid", ":legend", ":meni", ":save"})
+        slike.emplace_back(ime, gui::Rect({ 0,0 }, gui::Size(32, 32)));
+    
 
     if (backgroundColor == axisColor)
         axisColor = td::ColorID::Black;
@@ -205,6 +243,14 @@ void graph::updateLimits(const Function& newFun){
 
 void graph::onResize(const gui::Size& newSize) {
     setUpDrawingWindow();
+
+    double distance = 20;
+    for (size_t i = 0; i < slike.size(); ++i) {
+        slike[i].rect.setOrigin(distance, newSize.height - 32 - slike[i].rect.height());
+        distance += 32 + slike[i].rect.width();
+    }
+
+
     if (!initalDraw)
         fitToWindow();
 }
@@ -273,44 +319,23 @@ void graph::onDraw(const gui::Rect& rect){
     if (drawMargins) {
         gui::Shape::drawRect(drawingRect, axisColor, 2);
 
-        gui::Point origin = { rect.left + 32, rect.bottom - 32 - 32 };
-        rectFullscreen.setOrigin({ rect.left + 32, rect.bottom - 32 - 32 });
-        rectGrid.setOrigin({ rect.left + 32 + (32+32)*1, rect.bottom - 32 - 32});
-        rectLegend.setOrigin({ rect.left + 32 + (32 + 32) * 2, rect.bottom - 32 - 32 });
-        rectMeni.setOrigin({ rect.left + 32 + (32 + 32) * 3, rect.bottom - 32 - 32 });
-        rectSave.setOrigin({ rect.left + 32 + (32 + 32) * 4, rect.bottom - 32 - 32 });
-
-           /*
-           * ovo je sve privremeno pa nema potrebe za vektorom
-           */
-
-        imgFullscreen.draw(rectFullscreen);
-        imgGrid.draw(rectGrid);
-        imgLegend.draw(rectLegend);
-        imgMeni.draw(rectMeni);
-        imgSave.draw(rectSave);
-
-
+        for each (auto & img in slike)
+            img.image.draw(img.rect);
 
     }
 
     drawAxis();
 
+    if (funkcije.size() == 0)
+        return;
+
     if (_drawLegend)
         legenda->draw({ rect.right - 20, rect.top + 20 });
 
-    for (size_t i = 0; i < verticals.size(); ++i){
-        gui::CoordType scaleX, scaleY, shiftX, shiftY;
-        funkcije[0].getScale(scaleX, scaleY);
-        funkcije[0].getShift(shiftX, shiftY);
-
-
-        auto realToFake = [&scaleX, &shiftX](const gui::CoordType& x) {return x * scaleX + shiftX; };
-        auto fakeToReal = [&scaleX, &shiftX](const gui::CoordType& x) {return (x - shiftX) / scaleX; };
-
-        gui::Shape::drawLine({ verticals[i], rect.bottom }, { verticals[i], rect.top }, td::ColorID::Red, 2);
-        
-    }
+    for (size_t i = 0; i < verticals.size(); ++i)
+        gui::Shape::drawLine({ funkcije[0].realToTransformedX(verticals[i]), drawingRect.bottom }, { funkcije[0].realToTransformedX(verticals[i]), drawingRect.top }, axisColor, 1.8);
+    for (size_t i = 0; i < horizontals.size(); ++i)
+        gui::Shape::drawLine({ drawingRect.left, funkcije[0].realToTransformedY(horizontals[i]) }, { drawingRect.right, funkcije[0].realToTransformedY(horizontals[i]) }, axisColor, 1.8);
     
 }
 
@@ -397,11 +422,7 @@ void graph::drawAxis(){
 }
 
 
-td::String graph::to_string(gui::CoordType x){
-    td::String s;
-    s.format("%g", x);
-    return s;
-}
+
 
 
 
@@ -415,32 +436,40 @@ void graph::onPrimaryButtonPressed(const gui::InputDevice& inputDevice) {
         return;
     }
 
-    if (rectFullscreen.contains(inputDevice.getFramePoint())) {
+    if (slike[0].rect.contains(inputDevice.getFramePoint())) {
         showMargins(0);
     }
 
-    if (rectGrid.contains(inputDevice.getFramePoint())) {
+    if (slike[1].rect.contains(inputDevice.getFramePoint())) {
         showGrid(!drawGrid);
     }
 
-    if (rectLegend.contains(inputDevice.getFramePoint())) {
+    if (slike[2].rect.contains(inputDevice.getFramePoint())) {
         showLegend(!_drawLegend);
     }
 
-    if (rectMeni.contains(inputDevice.getFramePoint())) {
-        auto d = new annotDiag(this, verticals, horizontals);
-        d->open();
+    if (slike[3].rect.contains(inputDevice.getFramePoint())) {
+        showInformation();
     }
 
-    if (rectSave.contains(inputDevice.getFramePoint())) {
-
-
+    if (slike[4].rect.contains(inputDevice.getFramePoint())) {
+        saveMenu();
     }
 
     
+}
 
+void graph::showInformation(){
+    auto d = new annotDiag(this, verticals, horizontals);
+    d->open();
+}
 
-
+void graph::saveMenu(){
+    auto f = new gui::FileDialog(this, "Save plot", { ".esp", ".svg", ".txt", ".xml" }, "Save");
+    //auto f = new gui::SaveFileDialog(this, "d", ".txt,.fsf", "dd", "dawd");
+    //auto f = new gui::OpenFileDialog(this, "title", { ".xml" }, "d");
+   
+    f->openModal(1, this);
 }
 
 void graph::onPrimaryButtonReleased(const gui::InputDevice& inputDevice){
@@ -547,6 +576,21 @@ bool graph::onKeyPressed(const gui::Key& key) {
         return true;
     }
 
+    if (c == '+') {
+        Zoom(2);
+        return true;
+    }
+
+    if (c == '-') {
+        Zoom(0.5);
+        return true;
+    }
+
+    if (c == 'i' || c == 'I') {
+        showInformation();
+        return true;
+    }
+
     if (c == 'g' || c == 'G') {
         showGrid(!drawGrid);
         return true;
@@ -576,9 +620,9 @@ bool graph::onKeyPressed(const gui::Key& key) {
             return false;
 
         if (c == 'v' || c == 'V')
-            verticals.emplace_back((lastMousePos.x));
+            verticals.emplace_back(funkcije[0].transformedToRealX(lastMousePos.x));
         else
-            horizontals.emplace_back(lastMousePos.y);
+            horizontals.emplace_back(funkcije[0].TrasformedToRealY(lastMousePos.y));
 
         reDraw();
         return true;
