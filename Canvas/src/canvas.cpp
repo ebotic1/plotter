@@ -44,10 +44,13 @@ public:
     }
 };
 
+#include "gui/Dialog.h"
+
 graph::graph(bool startWithMargins, bool takeUserInput, td::ColorID backgroundColor) :gui::Canvas(takeUserInput ? inputs : noInputs), backgroundColor(backgroundColor), drawMargins(startWithMargins)
 {
 
     enableResizeEvent(true);
+
 
     if (backgroundColor == axisColor)
         axisColor = td::ColorID::Black;
@@ -105,6 +108,8 @@ void graph::reset(){
     lastColor = 0;
     action = Actions::none;
     funkcije.clear();
+    delete legenda;
+    legenda = new legend(axisColor);
 }
 
 void graph::setAxisColor(td::ColorID boja){
@@ -252,6 +257,15 @@ void graph::ZoomToWindow(const gui::Geometry& window){
 }
 
 
+#include "gui/Symbol.h"
+#include "gui/Button.h"
+#include "gui/Image.h"
+#include "gui/ISymbol.h"
+#include "gui/PopoverButton.h"
+#include "gui/Control.h"
+#include "gui/MenuBar.h"
+#include "gui/MenuItem.h"
+
 
 void graph::onDraw(const gui::Rect& rect){
     gui::Rect drawingRect({ drawingWindow.point.x, drawingWindow.point.y }, drawingWindow.size);
@@ -270,6 +284,11 @@ void graph::onDraw(const gui::Rect& rect){
 
     if (_drawLegend)
         legenda->draw({ rect.right - 20, rect.top + 20 });
+
+
+    
+
+    
     
 }
 

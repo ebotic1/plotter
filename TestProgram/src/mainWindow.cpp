@@ -2,7 +2,7 @@
 #include "mainWindow.h"
 #include "./../../Canvas/inc/canvas.h"
 
-
+#include "gui/Dialog.h"
 
 MainWindow::MainWindow()
     : gui::Window(gui::Geometry(600, 100, 1500, 1500))
@@ -29,16 +29,13 @@ MainWindow::MainWindow()
     yy[0] = 0; yy[1] = 10; yy[2] = 100;
 
     _mainView.addFunction(xx, yy, 3);
-
-    _mainView.addFunction(xx, yy, 3);
     
     _mainView.addFunction(x, y, broj);
 
 
     
+    
 
-    delete[] x;
-    delete[] y;
 
     setCentralView(&_mainView);
 

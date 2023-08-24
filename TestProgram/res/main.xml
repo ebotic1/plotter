@@ -1,0 +1,12 @@
+<?xml version='1.0'?>
+<DevRes>
+	<Images>
+		<Res id="save" path="Work/Common/Icons/openSave/save64.png"/>
+		<Res id="grid" path="Work/Common/Icons/grid128.png"/>
+		<Res id="fullScreen" path="Work/Common/Icons/fullScreen64.png"/>
+		<Res id="meni" path="Work/Common/Icons/menuA_32.png"/>
+	</Images>
+	<Symbols>
+
+	</Symbols>
+</DevRes>
