@@ -2,6 +2,7 @@
 #include "gui/Canvas.h"
 #include "./../../common/defineExportImport.h"
 #include "gui/Shape.h"
+#include "td/String.h"
 
 class IMPEXP Function {
 
@@ -24,11 +25,12 @@ class IMPEXP Function {
 public:
 
 	Function() {};
-	Function(gui::CoordType* x, gui::CoordType* y, size_t length, td::ColorID color, double lineWidth = 1, td::LinePattern pattern = td::LinePattern::Solid);
+	Function(gui::CoordType* x, gui::CoordType* y, size_t length, td::ColorID color, td::String name = "line", double lineWidth = 1, td::LinePattern pattern = td::LinePattern::Solid);
 	Function(const Function&) = delete;
 	Function(Function&& f) noexcept;
 	Function& operator=(Function&& f) noexcept;
 
+	td::String name = "line";
 	void getScale(gui::CoordType& scaleX, gui::CoordType& scaleY) const;
 	void getShift(gui::CoordType& shiftX, gui::CoordType& shiftY) const;
 	double getLineWidth() const { return debljina; };

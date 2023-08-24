@@ -21,6 +21,8 @@ class IMPEXP graph : public gui::Canvas {
 
 	bool drawGrid = false;
 	void drawAxis();
+	double numberHeight;
+	td::String to_string(gui::CoordType x);
 
 	enum class Actions { none, select, secondaryClick, drag } action = Actions::none;
 
@@ -30,6 +32,11 @@ class IMPEXP graph : public gui::Canvas {
 	enum class limits{xMin = 0, xMax, yMin, yMax};
 	gui::CoordType* Limits = nullptr;
 	bool initalDraw = false;
+
+	bool _drawLegend = false;
+
+	class legend;
+	legend* legenda = nullptr;
 
 public:
 
@@ -43,9 +50,10 @@ public:
 
 	void setAxisColor(td::ColorID boja);
 	void showMargins(double reductionFactor);
+	void drawLegend(bool draw) { _drawLegend = draw; }
 
-	void addFunction(gui::CoordType* x, gui::CoordType* y, size_t length, td::ColorID color, double lineWidth = 2, td::LinePattern pattern = td::LinePattern::Solid);
-	void addFunction(gui::CoordType* x, gui::CoordType* y, size_t length, double lineWidth = 2, td::LinePattern pattern = td::LinePattern::Solid);
+	void addFunction(gui::CoordType* x, gui::CoordType* y, size_t length, td::ColorID color, double lineWidth = 2, td::LinePattern pattern = td::LinePattern::Solid, td::String name = "line");
+	void addFunction(gui::CoordType* x, gui::CoordType* y, size_t length, double lineWidth = 2, td::LinePattern pattern = td::LinePattern::Solid, td::String name = "line");
 	void addFunction(Function && fun);
 	void ZoomToWindow(const gui::Geometry& window);
 	void onResize(const gui::Size& newSize) override;
@@ -64,6 +72,7 @@ public:
 	void onCursorDragged(const gui::InputDevice& inputDevice) override;
 	bool onZoom(const gui::InputDevice& inputDevice) override;
 	void Zoom(const gui::CoordType &scale);
+
 
 	~graph();
 

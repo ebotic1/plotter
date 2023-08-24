@@ -63,7 +63,7 @@ gui::Point Function::findIntersection(const gui::Point& p1, const gui::Point& p2
 
 }
 
-Function::Function(gui::CoordType* x, gui::CoordType* y, size_t length, td::ColorID color, double lineWidth, td::LinePattern pattern): color(color), pattern(pattern), length(length), debljina(lineWidth)
+Function::Function(gui::CoordType* x, gui::CoordType* y, size_t length, td::ColorID color, td::String name, double lineWidth, td::LinePattern pattern): color(color), pattern(pattern), length(length), debljina(lineWidth), name(name)
 {
 	setPoints(x, y, length);
 }

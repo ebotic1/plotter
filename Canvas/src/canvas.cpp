@@ -1,13 +1,48 @@
 #include "./../inc/canvas.h"
 #include "gui/Shape.h"
+#include "gui/DrawableString.h"
 
 #define SELECT_COLOR td::ColorID::AliceBlue
-
+#define FONT gui::Font::ID::ReportBody1
 
 const std::initializer_list<gui::InputDevice::Event> graph::inputs = { gui::InputDevice::Event::PrimaryClicks, gui::InputDevice::Event::SecondaryClicks, gui::InputDevice::Event::Zoom, gui::InputDevice::Event::CursorDrag,
 gui::InputDevice::Event::CursorMove, gui::InputDevice::Event::Keyboard, gui::InputDevice::Event::CursorEnterLeave };
 
 const std::initializer_list<gui::InputDevice::Event> graph::noInputs = {};
+
+
+class graph::legend {
+    std::vector<gui::DrawableString> imena;
+    std::vector<td::ColorID> colors;
+    gui::CoordType length = 0;
+
+    static constexpr double offset = 13;
+    static constexpr double rectSize = 21;
+
+    int cnt = 0;
+public:
+    td::ColorID textColor;
+    legend(td::ColorID textColor) : textColor(textColor), imena(10) {};
+
+    void addFunction(const Function &f) {
+        imena[cnt] = f.name.c_str(); // zaobilazi se koristenje move i copy konstruktora drawableString na ovaj nacin dok se ne poprave konstruktori. UPDATE: ne radi ni ovo uvijek
+        gui::Size sz;
+        imena[cnt].measure(FONT, sz);
+        ++cnt;
+        if (length < sz.width)
+            length = sz.width;
+        colors.emplace_back(f.getColor());
+    };
+
+    void draw(const gui::Point& topRight) {
+        gui::CoordType height = topRight.y;
+        for (size_t i = 0; i < colors.size(); ++i) {
+            imena[i].draw({ topRight.x - length, height}, FONT, textColor);
+            gui::Shape::drawRect(gui::Rect({ topRight.x - length - offset - rectSize, height }, gui::Size(rectSize, rectSize)), colors[i]);
+            height += rectSize + 10;
+        }
+    }
+};
 
 graph::graph(bool startWithMargins, bool takeUserInput, td::ColorID backgroundColor) :gui::Canvas(takeUserInput ? inputs : noInputs), backgroundColor(backgroundColor), drawMargins(startWithMargins)
 {
@@ -19,6 +54,13 @@ graph::graph(bool startWithMargins, bool takeUserInput, td::ColorID backgroundCo
     if (backgroundColor == axisColor)
         axisColor = td::ColorID::White;
     setBackgroundColor(backgroundColor);
+
+    gui::DrawableString test("1234567890.1234567890e^(1234567890.1234567890)");
+    gui::Size sz;
+    test.measure(FONT, sz);
+    numberHeight = sz.height;
+
+    legenda = new legend(axisColor);
 
     if (startWithMargins)
         setUpDrawingWindow();
@@ -70,12 +112,12 @@ void graph::setAxisColor(td::ColorID boja){
     reDraw();
 }
 
-void graph::addFunction(gui::CoordType* x, gui::CoordType* y, size_t length, td::ColorID color, double lineWidth, td::LinePattern pattern){
-    funkcije.emplace_back(x, y, length, color, lineWidth, pattern);
+void graph::addFunction(gui::CoordType* x, gui::CoordType* y, size_t length, td::ColorID color, double lineWidth, td::LinePattern pattern, td::String name){
+    funkcije.emplace_back(x, y, length, color, name, lineWidth, pattern);
     finishAddingFunction(funkcije.back());
 }
 
-void graph::addFunction(gui::CoordType* x, gui::CoordType* y, size_t length, double lineWidth, td::LinePattern pattern){
+void graph::addFunction(gui::CoordType* x, gui::CoordType* y, size_t length, double lineWidth, td::LinePattern pattern, td::String name){
     td::ColorID boja;
     if (lastColor == 0 && pastColors.size() == 0) {
         if (backgroundColor == td::ColorID::Black)
@@ -101,7 +143,7 @@ void graph::addFunction(gui::CoordType* x, gui::CoordType* y, size_t length, dou
         boja = td::ColorID(lastColor);
     }
 
-    funkcije.emplace_back(x, y, length, boja, lineWidth, pattern);
+    funkcije.emplace_back(x, y, length, boja, name, lineWidth, pattern);
     finishAddingFunction(funkcije.back());
 }
 
@@ -123,6 +165,8 @@ void graph::finishAddingFunction(Function& newFun) {
         newFun.increaseScaleAndShiftX(scaleX, shiftX);
         newFun.increaseScaleAndShiftY(scaleY, shiftY);
     }
+
+    legenda->addFunction(newFun);
 }
 
 void graph::updateLimits(const Function& newFun){
@@ -185,6 +229,9 @@ void graph::fitToWindow(){
 void graph::ZoomToWindow(const gui::Geometry& window){
     if (funkcije.size() == 0)
         return;
+    if (window.size.width < 0.1 || window.size.height < 0.1) {
+        return;
+    }
 
     gui::CoordType shiftY = window.point.y + window.size.height - drawingWindow.point.y - drawingWindow.size.height;
     gui::CoordType shiftX = drawingWindow.point.x - window.point.x;
@@ -205,26 +252,11 @@ void graph::ZoomToWindow(const gui::Geometry& window){
 }
 
 
-gui::CoordType roundToNearestPowerOf2(gui::CoordType number) {
-    if (number < 1.0)
-        return 1 / roundToNearestPowerOf2(1 / number);
-
-    int power = static_cast<int>(std::log2(number));
-    gui::CoordType lowerPowerOf2 = std::pow(2.0, power);
-    gui::CoordType higherPowerOf2 = lowerPowerOf2 * 2.0;
-
-    //return higherPowerOf2;
-
-    if (number - lowerPowerOf2 <= higherPowerOf2 - number)
-        return lowerPowerOf2;
-    else
-        return higherPowerOf2;
-}
-
 
 void graph::onDraw(const gui::Rect& rect){
     gui::Rect drawingRect({ drawingWindow.point.x, drawingWindow.point.y }, drawingWindow.size);
 
+ 
     for (int i = 0; i < funkcije.size(); ++i)
         funkcije[i].draw(drawingRect);
 
@@ -235,9 +267,14 @@ void graph::onDraw(const gui::Rect& rect){
         gui::Shape::drawRect(drawingRect, axisColor, 2);
 
     drawAxis();
-    
 
+    if (_drawLegend)
+        legenda->draw({ rect.right - 20, rect.top + 20 });
+    
 }
+
+
+
 
 void graph::drawAxis(){
     if (funkcije.size() == 0)
@@ -248,31 +285,90 @@ void graph::drawAxis(){
     funkcije[0].getShift(shiftX, shiftY);
 
 
-    auto realToFake = [&scaleX, shiftX](const gui::CoordType& x) {return x * scaleX + shiftX; };
-    auto fakeToReal = [&scaleX, shiftX](const gui::CoordType& x) {return (x - shiftX) / scaleX; };
-
-    shiftX -= drawingWindow.point.x;
-    shiftY += drawingWindow.point.y + drawingWindow.size.height;
+    auto realToFake = [&scaleX, &shiftX](const gui::CoordType& x) {return x * scaleX + shiftX; };
+    auto fakeToReal = [&scaleX, &shiftX](const gui::CoordType& x) {return (x - shiftX) / scaleX; };
 
     gui::CoordType len = drawingWindow.size.width / scaleX;
-
-    gui::CoordType razmak = int(std::log2(160) + std::log2(1 / scaleX)) + 1; // log2(200) = 7.64385618977 sto je za jednu linija svakih 200 jedinica duzine
+    gui::CoordType razmak = 7.27612440527 + std::log2(1 / scaleX); // log2(155) = 7.27612440527 sto prouzrokuje otprilike jednu grid vertikalnu liniju svakih 155 jedinica duzine
+    razmak = std::round(razmak);
     razmak = std::pow(2.0, razmak);
-
-
-    gui::CoordType startVal = (0 + int(fakeToReal(drawingWindow.point.x) / razmak)) * razmak;
+    gui::CoordType startVal = std::ceil(fakeToReal(drawingWindow.point.x) / razmak) * razmak;
     gui::CoordType line = realToFake(startVal);
 
-    
 
-    while (line < drawingWindow.point.x + drawingWindow.size.width) {
-    
-        gui::Shape::drawLine({ line, 0 }, { line, 1500 }, td::ColorID::Red, 2);
 
+
+
+    auto realToFakeY = [&scaleY, &shiftY](const gui::CoordType& x) {return x * scaleY - shiftY; };
+    auto fakeToRealY = [&scaleY, &shiftY](const gui::CoordType& x) {return (x + shiftY) / scaleY; };
+
+    gui::CoordType razmakY = 7.27612440527 + std::log2(-1 / scaleY);
+    razmakY = std::round(razmakY);
+    razmakY = std::pow(2.0, razmakY);
+    gui::CoordType startValY = std::ceil(fakeToRealY(drawingWindow.point.y + drawingWindow.size.height) / razmakY) * razmakY;
+    gui::CoordType lineY = realToFakeY(startValY);
+
+
+
+
+
+
+
+    const gui::CoordType xAxisHeight = drawingWindow.point.y + drawingWindow.size.height;
+    while (line < drawingWindow.point.x + drawingWindow.size.width || lineY >= drawingWindow.point.y){
+
+        constexpr double markLen = 7;
+        if (lineY >= drawingWindow.point.y) { // Y osa
+            gui::Shape::drawLine({ drawingWindow.point.x - markLen, lineY }, { drawingWindow.point.x + markLen,  lineY }, axisColor, 2);
+
+            gui::DrawableString broj(to_string(startValY));
+     
+            if (drawMargins) {
+                gui::Size sz;
+                broj.measure(FONT, sz);
+                broj.draw({ drawingWindow.point.x - markLen - 10 - sz.width,  lineY - numberHeight / 2 }, FONT, axisColor);
+            }
+            else 
+                broj.draw({ drawingWindow.point.x + markLen + 5,  lineY }, FONT, axisColor);
+            
+            if (drawGrid) 
+                gui::Shape::drawLine({ drawingWindow.point.x, lineY }, { drawingWindow.point.x + drawingWindow.size.width,  lineY }, axisColor, 1, td::LinePattern::Dash); 
+
+        }
+
+        if (line < drawingWindow.point.x + drawingWindow.size.width) { // X osa
+            gui::Shape::drawLine({ line, xAxisHeight - markLen }, { line,  xAxisHeight + markLen }, axisColor, 2); 
+
+            gui::DrawableString broj(to_string(startVal));
+            gui::Size sz;
+            broj.measure(FONT, sz);
+
+            if (drawMargins) 
+                broj.draw({ line - sz.width / 2, xAxisHeight + numberHeight + 5 }, FONT, axisColor);
+            else 
+                broj.draw({ line - sz.width / 2, xAxisHeight - numberHeight - 12 }, FONT, axisColor);
+
+            if (drawGrid) 
+                gui::Shape::drawLine({ line, xAxisHeight }, { line,  drawingWindow.point.y }, axisColor, 1, td::LinePattern::Dash);
+
+        }
+
+
+
+        startVal += razmak;
+        startValY += razmakY;
         line += razmak * scaleX;
+        lineY += razmakY * scaleY;
 
     }
 
+}
+
+
+td::String graph::to_string(gui::CoordType x){
+    td::String s;
+    s.format("%g", x);
+    return s;
 }
 
 
@@ -363,7 +459,7 @@ bool graph::onZoom(const gui::InputDevice& inputDevice){
 }
 
 void graph::Zoom(const gui::CoordType &scale){
-    if (scale == 0)
+    if (scale < 0.01)
         return;
 
   
@@ -386,25 +482,8 @@ void graph::Zoom(const gui::CoordType &scale){
 
 graph::~graph(){
     delete[] Limits;
+    delete legenda;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

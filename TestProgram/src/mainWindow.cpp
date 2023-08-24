@@ -29,6 +29,8 @@ MainWindow::MainWindow()
     yy[0] = 0; yy[1] = 10; yy[2] = 100;
 
     _mainView.addFunction(xx, yy, 3);
+
+    _mainView.addFunction(xx, yy, 3);
     
     _mainView.addFunction(x, y, broj);
 
