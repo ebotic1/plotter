@@ -48,18 +48,29 @@ MainWindow::MainWindow()
 
 bool MainWindow::onActionItem(td::BYTE menuID, td::BYTE firstSubMenuID, td::BYTE lastSubMenuID, td::BYTE actionID, gui::ActionItem* pMenuAI){
 
+    if (menuID == 1) {
+        if (actionID > 2)
+            return false;
+        if (actionID == 1)
+            _mainView.reset();
+
+        auto f = new gui::FileDialog(this, "Read data", { "*.txt", "*.xml" }, "Open");
+        f->openModal(1, this);
+
+    }
+    
     if (menuID == 2) {
 
         if (actionID == 11) {
             
-            auto a = new gui::SaveFileDialog(this, "export data to xml", ".xml");
+            auto a = new gui::SaveFileDialog(this, "export data to xml", "*.xml");
             a->openModal(11, this);
             return true;
         }
 
         if (actionID == 10) {
 
-            auto a = new gui::SaveFileDialog(this, "export data to txt", ".txt");
+            auto a = new gui::SaveFileDialog(this, "export data to txt", "*.txt");
             a->openModal(10, this);
             return true;
         }
@@ -70,6 +81,10 @@ bool MainWindow::onActionItem(td::BYTE menuID, td::BYTE firstSubMenuID, td::BYTE
 }
 
 bool MainWindow::onClick(gui::FileDialog* pDlg, td::UINT4 dlgID){
+    if (dlgID == 1) {
+        if (pDlg->getFileName().endsWithCI(".txt", 4))
+            pokToGraph->readTXT(pDlg->getFileName());
+    }
 
     if (dlgID == 11) {
         pokToGraph->saveXML(pDlg->getFileName());

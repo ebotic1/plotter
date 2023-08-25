@@ -13,7 +13,8 @@ class diagView : public gui::View {
     const char* infoHor = "Write data horiontaly. Format is : \n\nname[xVal1,  xVal2...]\n\nFirst data row is x value and the second one is y value.The name of the function is the name of the y data row(both names can be empty)."
             "if more than one pair of data is present then additional pairs are added as seperate functions.";
 
-    const char* infoVer = "Write data vertically. Format is: \n\nname\nxVal    yVal\nxVal2    yVal2\n...\n\nIf there are more than 2 numbers per line then additional pairs are regarded as seperate functions.";
+    const char* infoVer = "Write data vertically. Format is: \n\nname\nxVal    yVal\nxVal2    yVal2\n...\n\nIf there are more than 2 numbers per line then additional pairs are regarded as seperate functions."
+        "\nIf function dont have the same lenght the longer ones have to be printed out first";
 
 public:
 

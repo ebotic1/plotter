@@ -25,16 +25,15 @@ class graph::legend {
     static constexpr double offset = 13;
     static constexpr double rectSize = 21;
 
-    int cnt = 0;
 public:
     td::ColorID textColor;
-    legend(td::ColorID textColor) : textColor(textColor), imena(10) {};
+    legend(td::ColorID textColor) : textColor(textColor){};
 
     void addFunction(const Function &f) {
-        imena[cnt] = f.name->c_str(); // zaobilazi se koristenje move i copy konstruktora drawableString na ovaj nacin dok se ne poprave konstruktori. UPDATE: ne radi ni ovo uvijek
+        imena.reserve(10);
+        imena.emplace_back(f.name->c_str());
         gui::Size sz;
-        imena[cnt].measure(FONT, sz);
-        ++cnt;
+        imena.back().measure(FONT, sz);
         if (length < sz.width)
             length = sz.width;
         colors.emplace_back(f.getColor());
@@ -160,6 +159,8 @@ bool graph::saveTXT(const td::String& path, bool horizontal){
     }
     else{
 
+        std::sort(funkcije.begin(), funkcije.end(), [](const Function& f1, const Function& f2) {return f1.getLength() > f2.getLength(); });
+
         size_t length = 0;
         for each (auto & fun in funkcije) {
             out << fun.name->c_str() << "\t\t";
@@ -231,10 +232,11 @@ void graph::readTXT(const td::String& path){
 
                 bool done = true;
                 do {
-                    if (done) {
+                    if (!done)
                         iss.str(line);
+                    else
                         done = false;
-                    }
+                       
                     gui::CoordType val;
                     while (iss >> val) {
                         values.emplace_back(val);
@@ -245,6 +247,7 @@ void graph::readTXT(const td::String& path){
                         }
                     }
                 } while (getline(file, line) && !done);
+                break;
             }
 
         };
@@ -253,48 +256,70 @@ void graph::readTXT(const td::String& path){
             std::vector<gui::CoordType> x, y;
             std::string name;
             readData(name, x);
+            name.clear();
             readData(name, y);
             size_t bigger = (x.size() > y.size()) ? y.size() : x.size();
-            this->addFunction(x.data(), y.data(), bigger);
+            if (bigger == 0)
+                break;
+            this->addFunction(x.data(), y.data(), bigger, 2, td::LinePattern::Solid, name.c_str());
         }
 
     }
     else {
         // Handle the "%s %s %s....\n%g %g %g %g %g %g\n%g %g %g %g %g %g..." pattern
+
         int headerCount = 0;
         getline(file, line);
         std::istringstream issHeader(line);
         std::string header;
+        std::vector<td::String> names;
         while (issHeader >> header) {
             ++headerCount;
+            names.emplace_back(header.c_str());
+            header.clear();
         }
-        std::cout << "Header Count: " << headerCount << std::endl;
 
-        // Reset file pointer after reading header
+
+        char c;
+        size_t lines_cnt = 0;
+        while (file.get(c)) {
+            if (c == '\n')
+                ++lines_cnt;
+        }
+
         file.clear();
         file.seekg(0, std::ios::beg);
-        getline(file, line); // Skip the header line
+        getline(file, line);
+        std::vector<std::vector<gui::Point>> tacke;
+   
 
-        while (getline(file, line)) {
-            std::vector<double> values;
-            std::istringstream iss(line);
-            double val;
-            while (iss >> val) {
-                values.push_back(val);
+        try
+        {
+            tacke.resize(headerCount);
+
+            while (getline(file, line)) {
+                std::istringstream iss(line);
+
+                for (size_t i = 0; i < headerCount; ++i) {
+                    gui::CoordType val1, val2;
+                    if (iss >> val1 >> val2) 
+                        tacke[i].emplace_back(val1, val2);
+                }
+
             }
 
-            if (values.size() != headerCount) {
-                std::cerr << "Mismatch in number of values and headers." << std::endl;
-                break;
+            for (size_t i = 0; i < headerCount; ++i) {
+                addFunction(Function(tacke[i].data(), tacke[i].size(), nextColor(), names[i], 2));
             }
-
-            for (const auto& value : values) {
-                std::cout << value << " ";
-            }
-            std::cout << std::endl;
         }
+    
+        catch (...) {
+            showAlert("Error", "No memory");
+        }
+        
     }
     file.close();
+    fitToWindow();
 }
 
 graph::graph(bool startWithMargins, bool takeUserInput, td::ColorID backgroundColor) :gui::Canvas(takeUserInput ? inputs : noInputs), backgroundColor(backgroundColor), drawMargins(startWithMargins)
@@ -359,6 +384,8 @@ void graph::reset(){
     lastColor = 0;
     action = Actions::none;
     funkcije.clear();
+    delete Limits;
+    Limits = nullptr;
     delete legenda;
     legenda = new legend(axisColor);
 }
@@ -374,34 +401,10 @@ void graph::addFunction(gui::CoordType* x, gui::CoordType* y, size_t length, td:
 }
 
 void graph::addFunction(gui::CoordType* x, gui::CoordType* y, size_t length, double lineWidth, td::LinePattern pattern, td::String name){
-    td::ColorID boja;
-    if (lastColor == 0 && pastColors.size() == 0) {
-        if (backgroundColor == td::ColorID::Black)
-            boja = td::ColorID::White;
-        else
-            boja = td::ColorID::Black;
-    }
-    else {
-        bool repeat;
-        int current = lastColor;
-        do {
-            repeat = false;
-            lastColor += 23;
-            lastColor = lastColor % 137; //otprilike sve boje su obuhvacene i svaka boja ce se izabrati prije nego sto se pocnu ponavljati
-            for each (td::ColorID boja in pastColors)
-                if (lastColor == int(boja) || lastColor == int(backgroundColor)){
-                    repeat = true;
-                    break;
-                }
-            if (lastColor == current)
-                break;
-        } while (repeat);
-        boja = td::ColorID(lastColor);
-    }
-
-    funkcije.emplace_back(x, y, length, boja, name, lineWidth, pattern);
+    funkcije.emplace_back(x, y, length, nextColor(), name, lineWidth, pattern);
     finishAddingFunction(funkcije.back());
 }
+
 
 void graph::addFunction(Function&& fun){
     funkcije.emplace_back(std::move(fun));
@@ -556,6 +559,35 @@ void graph::onDraw(const gui::Rect& rect){
 
 
 
+td::ColorID graph::nextColor(){
+    td::ColorID boja;
+    if (lastColor == 0 && pastColors.size() == 0) {
+        if (backgroundColor == td::ColorID::Black)
+            boja = td::ColorID::White;
+        else
+            boja = td::ColorID::Black;
+    }
+    else {
+        bool repeat;
+        int current = lastColor;
+        do {
+            repeat = false;
+            lastColor += 23;
+            lastColor = lastColor % 137; //otprilike sve boje su obuhvacene i svaka boja ce se izabrati prije nego sto se pocnu ponavljati
+            for each (td::ColorID boja in pastColors)
+                if (lastColor == int(boja) || lastColor == int(backgroundColor)) {
+                    repeat = true;
+                    break;
+                }
+            if (lastColor == current)
+                break;
+        } while (repeat);
+        boja = td::ColorID(lastColor);
+    }
+
+    return boja;
+}
+
 void graph::drawAxis(){
     if (funkcije.size() == 0)
         return;
@@ -679,7 +711,7 @@ void graph::showInformation(){
 }
 
 void graph::saveMenu(){
-    auto f = new gui::FileDialog(this, "Save plot", { ".esp", ".svg", ".txt", ".xml" }, "Save");
+    auto f = new gui::FileDialog(this, "Save plot", { "*.esp", "*.svg", "*.txt", "*.xml" }, "Save");
     
     //auto f = new gui::SaveFileDialog(this, "d", ".txt,.fsf", "dd", "dawd");
     //auto f = new gui::OpenFileDialog(this, "title", { ".xml" }, "d");
@@ -788,6 +820,11 @@ bool graph::onKeyPressed(const gui::Key& key) {
 
     if (c == 'f' || c == 'F') {
         fitToWindow();
+        return true;
+    }
+
+    if (c == 'l' || c == 'L') {
+        showLegend(!_drawLegend);
         return true;
     }
 

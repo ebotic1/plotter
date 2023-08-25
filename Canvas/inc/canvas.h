@@ -11,6 +11,7 @@ class IMPEXP graph : public gui::Canvas {
 	std::vector<Function> funkcije;
 	std::vector<td::ColorID> pastColors;
 	int lastColor = 0;
+	td::ColorID nextColor();
 	td::ColorID axisColor = td::ColorID::White;
 	td::ColorID backgroundColor = td::ColorID::Black;
 	static const std::initializer_list<gui::InputDevice::Event> inputs;

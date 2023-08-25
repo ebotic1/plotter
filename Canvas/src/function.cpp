@@ -70,6 +70,13 @@ Function::Function(gui::CoordType* x, gui::CoordType* y, size_t length, td::Colo
 }
 
 
+Function::Function(gui::Point* points, size_t length, td::ColorID color, td::String name, double lineWidth, td::LinePattern pattern) : color(color), pattern(pattern), length(length), debljina(lineWidth)
+{
+	tacke = new gui::Point[length];
+	memcpy(tacke, points, length);
+}
+
+
 Function::Function(Function&& f) noexcept {
 	*this = std::move(f);
 }

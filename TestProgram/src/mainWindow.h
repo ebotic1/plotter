@@ -13,9 +13,9 @@ public:
         items[1].initAsActionItem("Append function", 2);
 
         auto& items2 = save.getItems();
-        items2[0].initAsActionItem("EPS", 1);
-        items2[1].initAsActionItem("PDF", 2);
-        items2[2].initAsActionItem("SVG", 3);
+        items2[0].initAsActionItem("EPS", 3);
+        items2[1].initAsActionItem("PDF", 4);
+        items2[2].initAsActionItem("SVG", 5);
         items2[3].initAsActionItem("txt", 10);
         items2[4].initAsActionItem("xml", 11);
 
