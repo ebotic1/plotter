@@ -187,7 +187,114 @@ bool graph::saveTXT(const td::String& path, bool horizontal){
 }
 
 void graph::readTXT(const td::String& path){
+    std::ifstream file(path.c_str());
 
+    if (!file.is_open()) {
+        showAlert("Error", "Cant open file");
+        return;
+    }
+
+    std::string line;
+    bool containsBracket = false;
+
+
+    while (getline(file, line)) {
+        if (line.find('[') != std::string::npos) {
+            containsBracket = true;
+            break;
+        }
+    }
+    
+    file.clear();
+    file.seekg(0, std::ios::beg);
+
+    auto isWhitespace = [](const std::string& line) {
+            return line.find_first_not_of(" \t\n\v\f\r") == std::string::npos;
+        };
+
+    if (containsBracket) {
+        // Handle the "%s[%g, %g, %g, ....]" pattern
+
+        auto readData = [&file, &line, &isWhitespace](std::string& name, std::vector<gui::CoordType>& values) {
+            while (getline(file, line)) {
+                if (isWhitespace(line))
+                    continue;
+
+                
+                std::istringstream iss(line);
+                char ch;
+                while (iss >> ch) {
+                    if (ch == '[')
+                        break;
+                    name += ch;
+                }
+
+                bool done = true;
+                do {
+                    if (done) {
+                        iss.str(line);
+                        done = false;
+                    }
+                    gui::CoordType val;
+                    while (iss >> val) {
+                        values.emplace_back(val);
+                        iss >> ch;
+                        if (ch == ']') {
+                            done = true;
+                            break;
+                        }
+                    }
+                } while (getline(file, line) && !done);
+            }
+
+        };
+
+        while (!file.fail() || !file.eof()) {
+            std::vector<gui::CoordType> x, y;
+            std::string name;
+            readData(name, x);
+            readData(name, y);
+            size_t bigger = (x.size() > y.size()) ? y.size() : x.size();
+            this->addFunction(x.data(), y.data(), bigger);
+        }
+
+    }
+    else {
+        // Handle the "%s %s %s....\n%g %g %g %g %g %g\n%g %g %g %g %g %g..." pattern
+        int headerCount = 0;
+        getline(file, line);
+        std::istringstream issHeader(line);
+        std::string header;
+        while (issHeader >> header) {
+            ++headerCount;
+        }
+        std::cout << "Header Count: " << headerCount << std::endl;
+
+        // Reset file pointer after reading header
+        file.clear();
+        file.seekg(0, std::ios::beg);
+        getline(file, line); // Skip the header line
+
+        while (getline(file, line)) {
+            std::vector<double> values;
+            std::istringstream iss(line);
+            double val;
+            while (iss >> val) {
+                values.push_back(val);
+            }
+
+            if (values.size() != headerCount) {
+                std::cerr << "Mismatch in number of values and headers." << std::endl;
+                break;
+            }
+
+            for (const auto& value : values) {
+                std::cout << value << " ";
+            }
+            std::cout << std::endl;
+        }
+    }
+    file.close();
 }
 
 graph::graph(bool startWithMargins, bool takeUserInput, td::ColorID backgroundColor) :gui::Canvas(takeUserInput ? inputs : noInputs), backgroundColor(backgroundColor), drawMargins(startWithMargins)
