@@ -5,7 +5,7 @@
 #include "canvas.h"
 #include "gui/TextEdit.h"
 #include "blockSettings.h"
-#include "property.h"
+#include "./../../common/property.h"
 #include "globals.h"
 #include "blockSettings.h"
 #include "modelSettings.h"

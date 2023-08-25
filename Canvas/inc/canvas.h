@@ -43,6 +43,7 @@ class IMPEXP graph : public gui::Canvas {
 	legend* legenda = nullptr;
 	void showInformation();
 	void saveMenu();
+	td::String txtPut;
 
 	struct imageButton {
 		gui::Image image; //help i fintowindow
@@ -53,7 +54,7 @@ class IMPEXP graph : public gui::Canvas {
 
 	std::vector<imageButton> slike;
 
-	bool saveXML(const td::String& path);
+	
 
 public:
 
@@ -92,6 +93,13 @@ public:
 	bool onKeyPressed(const gui::Key& key) override;
 	void onCursorExited(const gui::InputDevice& inputDevice) override;
 	void onCursorEntered(const gui::InputDevice& inputDevice) override;
+	bool onClick(gui::Dialog* pDlg, td::UINT4 dlgID) override;
+
+
+	bool saveXML(const td::String& path);
+	void saveTXT(const td::String& path);
+	bool saveTXT(const td::String& path, bool horizontal);
+	void readTXT(const td::String& path);
 
 	~graph();
 

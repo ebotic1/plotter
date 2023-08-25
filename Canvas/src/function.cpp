@@ -63,8 +63,9 @@ gui::Point Function::findIntersection(const gui::Point& p1, const gui::Point& p2
 
 }
 
-Function::Function(gui::CoordType* x, gui::CoordType* y, size_t length, td::ColorID color, td::String name, double lineWidth, td::LinePattern pattern): color(color), pattern(pattern), length(length), debljina(lineWidth), name(name)
+Function::Function(gui::CoordType* x, gui::CoordType* y, size_t length, td::ColorID color, td::String name, double lineWidth, td::LinePattern pattern): color(color), pattern(pattern), length(length), debljina(lineWidth)
 {
+	this->name = new td::String(std::move(name));
 	setPoints(x, y, length);
 }
 
@@ -75,8 +76,8 @@ Function::Function(Function&& f) noexcept {
 
 Function& Function::operator=(Function&& f) noexcept{
 	memcpy(this, &f, sizeof(Function));
+	f.name = nullptr;
 	f.tacke = nullptr;
-
 	return *this;
 
 }

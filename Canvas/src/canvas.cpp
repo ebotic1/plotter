@@ -3,10 +3,12 @@
 #include "gui/DrawableString.h"
 #include "annotationDialog.h"
 #include "gui/FileDialog.h"
+#include "txtDiaglog.h"
 
 #include"xml/Writer.h"
+#include <fstream>
 
-#define SELECT_COLOR td::ColorID::AliceBlue
+#define SELECT_COLOR td::ColorID::Gray
 #define FONT gui::Font::ID::ReportBody1
 
 const std::initializer_list<gui::InputDevice::Event> graph::inputs = { gui::InputDevice::Event::PrimaryClicks, gui::InputDevice::Event::SecondaryClicks, gui::InputDevice::Event::Zoom, gui::InputDevice::Event::CursorDrag,
@@ -29,7 +31,7 @@ public:
     legend(td::ColorID textColor) : textColor(textColor), imena(10) {};
 
     void addFunction(const Function &f) {
-        imena[cnt] = f.name.c_str(); // zaobilazi se koristenje move i copy konstruktora drawableString na ovaj nacin dok se ne poprave konstruktori. UPDATE: ne radi ni ovo uvijek
+        imena[cnt] = f.name->c_str(); // zaobilazi se koristenje move i copy konstruktora drawableString na ovaj nacin dok se ne poprave konstruktori. UPDATE: ne radi ni ovo uvijek
         gui::Size sz;
         imena[cnt].measure(FONT, sz);
         ++cnt;
@@ -47,6 +49,13 @@ public:
         }
     }
 };
+
+td::String graph::to_string(gui::CoordType x) {
+    td::String s;
+    s.format("%g", x);
+    return s;
+}
+
 
 
 
@@ -68,19 +77,117 @@ bool graph::saveXML(const td::String& path){
     funkcije[0].getShift(shiftX, shiftY);
 
     w.attribute("scaleX", to_string(scaleX));
-    w.attribute("scaleY", to_string(scaleY));
+    w.attribute("scaleY", to_string(-scaleY));
     w.attribute("shftX", to_string(shiftX));
     w.attribute("shftY", to_string(shiftY));
 
-    td::Color c(td::UINT4(backgounrdColor));
-
-    w.attribute("background", c.toString());
+    w.attribute("background", td::toString(backgroundColor));
+    w.attribute("axis", td::toString(axisColor));
+    
 
     for (size_t i = 0; i < funkcije.size(); ++i){
+        size_t length = funkcije[i].getLength();
+
+        w.startElement("function");
+        w.attribute("name", funkcije[i].name->c_str());
+        w.attribute("width", to_string(funkcije[i].getLineWidth()).c_str());
+        w.attribute("color", td::toString(funkcije[i].getColor()));
+        w.attribute("pattern", td::toString(funkcije[i].getPattern()));
+        w.attribute("points", to_string(length));
         
+        
+        w.nodeString("x=[");
+        const gui::Point* tacke = funkcije[i].getPoints();
+        --length;
+
+
+        for (size_t j = 0; j < length; ++j) {
+            w.nodeString(to_string(funkcije[i].transformedToRealX(tacke[j].x)));
+            w.nodeString(", ");
+        }
+        w.nodeString(to_string(funkcije[i].transformedToRealX(tacke[length].x)));
+        w.nodeString("]\ny=[");
+        for (size_t j = 0; j < length; ++j) {
+            w.nodeString(to_string(funkcije[i].TrasformedToRealY(tacke[j].y)));
+            w.nodeString(", ");
+        }
+        w.nodeString(to_string(funkcije[i].TrasformedToRealY(tacke[length].y)));
+        w.nodeString("]");
+        w.endElement();
+       
+    }
+
+    w.endDocument();
+    w.close();
+
+    return true;
+}
+
+void graph::saveTXT(const td::String& path){
+    txtPut = path;
+    auto d = new txtDiag(this, 10);
+    d->openModal(10, this);
+}
+
+bool graph::saveTXT(const td::String& path, bool horizontal){
+    std::ofstream out;
+
+    out.open(path.c_str());
+
+    if (!out.is_open()) {
+        showAlert("Error", "Cant write to file");
+        return false;
+    }
+    
+    if (horizontal) {
+        for each (auto & fun in funkcije) {
+            size_t length = fun.getLength() - 1;
+            const gui::Point* tacke = fun.getPoints();
+
+            out << "x=[";
+            for (size_t j = 0; j < length; ++j)
+                out << to_string(fun.transformedToRealX(tacke[j].x)) << ", ";
+            out << to_string(fun.transformedToRealX(tacke[length].x)) << "]\n\n";
+
+            out << fun.name->c_str() << "[";
+
+            for (size_t j = 0; j < length; ++j)
+                out << to_string(fun.TrasformedToRealY(tacke[j].y)) << ", ";
+            out << to_string(fun.TrasformedToRealY(tacke[length].y)) << "]\n\n";
+
+        }
+
+    }
+    else{
+
+        size_t length = 0;
+        for each (auto & fun in funkcije) {
+            out << fun.name->c_str() << "\t\t";
+            if (length < fun.getLength())
+                length = fun.getLength();
+        }
+        
+
+        for (size_t i = 0; i < length; ++i){
+            out << "\n";
+            for each (auto & fun in funkcije) {
+                if (fun.getLength() > i) 
+                    out << to_string(fun.transformedToRealX(fun.getPoints()[i].x)) << "\t" << to_string(fun.TrasformedToRealY(fun.getPoints()[i].y)) << "\t";
+                else 
+                    out << "\t\t";
+                
+            }
+
+        }
+           
+
     }
 
     return true;
+}
+
+void graph::readTXT(const td::String& path){
+
 }
 
 graph::graph(bool startWithMargins, bool takeUserInput, td::ColorID backgroundColor) :gui::Canvas(takeUserInput ? inputs : noInputs), backgroundColor(backgroundColor), drawMargins(startWithMargins)
@@ -359,7 +466,7 @@ void graph::drawAxis(){
 
 
 
-    gui::CoordType razmakY = 7.27612440527 + std::log2(-1 / scaleY);
+    gui::CoordType razmakY = 8.60733031375 + std::log2(-1 / scaleY);
     razmakY = std::round(razmakY);
     razmakY = std::pow(2.0, razmakY);
     gui::CoordType startValY = std::ceil(funkcije[0].TrasformedToRealY(drawingWindow.point.y + drawingWindow.size.height) / razmakY) * razmakY;
@@ -403,7 +510,7 @@ void graph::drawAxis(){
             if (drawMargins) 
                 broj.draw({ line - sz.width / 2, xAxisHeight + numberHeight + 5 }, FONT, axisColor);
             else 
-                broj.draw({ line - sz.width / 2, xAxisHeight - numberHeight - 12 }, FONT, axisColor);
+                broj.draw({ line - sz.width / 2, xAxisHeight - numberHeight - 22 }, FONT, axisColor);
 
             if (drawGrid) 
                 gui::Shape::drawLine({ line, xAxisHeight }, { line,  drawingWindow.point.y }, axisColor, 1, td::LinePattern::Dash);
@@ -466,6 +573,7 @@ void graph::showInformation(){
 
 void graph::saveMenu(){
     auto f = new gui::FileDialog(this, "Save plot", { ".esp", ".svg", ".txt", ".xml" }, "Save");
+    
     //auto f = new gui::SaveFileDialog(this, "d", ".txt,.fsf", "dd", "dawd");
     //auto f = new gui::OpenFileDialog(this, "title", { ".xml" }, "d");
    
@@ -640,6 +748,16 @@ void graph::onCursorExited(const gui::InputDevice& inputDevice) {
 
 void graph::onCursorEntered(const gui::InputDevice& inputDevice) {
     active = true;
+}
+
+bool graph::onClick(gui::Dialog* pDlg, td::UINT4 dlgID){
+
+    if (dlgID == 10) {
+        saveTXT(txtPut, ((txtDiag*)pDlg)->horizontal);
+    }
+
+    reDraw();
+    return true;
 }
 
 graph::~graph(){

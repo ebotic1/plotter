@@ -24,13 +24,13 @@ class IMPEXP Function {
 
 public:
 
-	Function() {};
+	Function() { name = new td::String("line"); };
 	Function(gui::CoordType* x, gui::CoordType* y, size_t length, td::ColorID color, td::String name = "line", double lineWidth = 1, td::LinePattern pattern = td::LinePattern::Solid);
 	Function(const Function&) = delete;
 	Function(Function&& f) noexcept;
 	Function& operator=(Function&& f) noexcept;
 
-	td::String name = "line";
+	td::String *name = nullptr;
 	void getScale(gui::CoordType& scaleX, gui::CoordType& scaleY) const;
 	void getShift(gui::CoordType& shiftX, gui::CoordType& shiftY) const;
 	double getLineWidth() const { return debljina; };
@@ -58,19 +58,19 @@ public:
 	void increaseScaleX(const gui::CoordType& scale);
 	void increaseScaleY(const gui::CoordType& scale);
 
-	gui::CoordType realToTransformedX(const gui::CoordType& cord) {
+	gui::CoordType realToTransformedX(const gui::CoordType& cord) const{
 		return cord * scaleX + shiftX;
 	}
 
-	gui::CoordType transformedToRealX(const gui::CoordType& cord) {
+	gui::CoordType transformedToRealX(const gui::CoordType& cord) const {
 		return (cord - shiftX) / scaleX;
 	}
 
-	gui::CoordType realToTransformedY(const gui::CoordType& cord) {
+	gui::CoordType realToTransformedY(const gui::CoordType& cord) const {
 		return cord * scaleY - shiftY;
 	}
 
-	gui::CoordType TrasformedToRealY(const gui::CoordType& cord) {
+	gui::CoordType TrasformedToRealY(const gui::CoordType& cord) const {
 		return (cord + shiftY) / scaleY;
 	}
 
@@ -79,6 +79,7 @@ public:
 
 	~Function() {
 		delete[] tacke;
+		delete name;
 	}
 
 

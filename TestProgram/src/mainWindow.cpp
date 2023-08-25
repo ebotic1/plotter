@@ -2,12 +2,17 @@
 #include "mainWindow.h"
 #include "./../../Canvas/inc/canvas.h"
 
-#include "gui/Dialog.h"
+#include "gui/FileDialog.h"
+
+
+graph* pokToGraph;
 
 MainWindow::MainWindow()
-    : gui::Window(gui::Geometry(600, 100, 1500, 1500))
+    : gui::Window(gui::Geometry(600, 100, 1500, 1500)), _mainView(true, true, td::ColorID::Black)
 {
     setTitle("Graph");
+    _mainMenuBar.setAsMain(this);
+    pokToGraph = &_mainView;
 
     _mainView.showMargins(2);
 
@@ -34,9 +39,6 @@ MainWindow::MainWindow()
 
 
     
-    
-
-
     setCentralView(&_mainView);
 
     
@@ -44,7 +46,44 @@ MainWindow::MainWindow()
 
 }
 
+bool MainWindow::onActionItem(td::BYTE menuID, td::BYTE firstSubMenuID, td::BYTE lastSubMenuID, td::BYTE actionID, gui::ActionItem* pMenuAI){
 
+    if (menuID == 2) {
+
+        if (actionID == 11) {
+            
+            auto a = new gui::SaveFileDialog(this, "export data to xml", ".xml");
+            a->openModal(11, this);
+            return true;
+        }
+
+        if (actionID == 10) {
+
+            auto a = new gui::SaveFileDialog(this, "export data to txt", ".txt");
+            a->openModal(10, this);
+            return true;
+        }
+
+    }
+
+    return false;
+}
+
+bool MainWindow::onClick(gui::FileDialog* pDlg, td::UINT4 dlgID){
+
+    if (dlgID == 11) {
+        pokToGraph->saveXML(pDlg->getFileName());
+        return true;
+    }
+
+    if (dlgID == 10) {
+        pokToGraph->saveTXT(pDlg->getFileName());
+        return true;
+    }
+
+
+    return false;
+}
 MainWindow::~MainWindow(){}
 
 
