@@ -35,6 +35,9 @@ gui::Point Function::findIntersection(const gui::Point& p1, const gui::Point& p2
 			return { p1.x, q1.y };
 		}
 
+		gui::CoordType p11 = p1.y * -1;
+		gui::CoordType p22 = p2.y * -1;
+
 		const gui::CoordType m = (p1.y - p2.y) / (p1.x - p2.x);
 		const gui::CoordType c = p1.y - p1.x * m;
 		if (verticalSide)

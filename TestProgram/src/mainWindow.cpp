@@ -26,11 +26,11 @@ MainWindow::MainWindow()
     gui::CoordType* xx = new gui::CoordType[3];
     gui::CoordType* yy = new gui::CoordType[3];
 
-    xx[0] = 0; xx[1] = 10; xx[2] = 100;
-    yy[0] = 0; yy[1] = 10; yy[2] = 100;
+    xx[0] = 0; xx[1] = 100; xx[2] = 1000;
+    yy[0] = -0; yy[1] = -100; yy[2] = -1000;
 
-    _graph.addFunction(xx, yy, 3);
-    _graph.addFunction(x, y, broj);
+    _graph.addFunction(xx, yy, 2);
+    //_graph.addFunction(x, y, broj);
 
   
     setCentralView(&splitter);
