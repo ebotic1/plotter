@@ -4,11 +4,12 @@
 #include "annotationDialog.h"
 #include "gui/FileDialog.h"
 #include "txtDiaglog.h"
-
 #include"xml/Writer.h"
 #include <fstream>
+#include "xml/DOMParser.h"
+#include "./../../common/to_string.h"
 
-#define SELECT_COLOR td::ColorID::Gray
+#define SELECT_COLOR td::ColorID::Green
 #define FONT gui::Font::ID::ReportBody1
 
 const std::initializer_list<gui::InputDevice::Event> graph::inputs = { gui::InputDevice::Event::PrimaryClicks, gui::InputDevice::Event::SecondaryClicks, gui::InputDevice::Event::Zoom, gui::InputDevice::Event::CursorDrag,
@@ -77,21 +78,21 @@ bool graph::saveXML(const td::String& path){
 
     w.attribute("scaleX", to_string(scaleX));
     w.attribute("scaleY", to_string(-scaleY));
-    w.attribute("shftX", to_string(shiftX));
-    w.attribute("shftY", to_string(shiftY));
+    w.attribute("shiftX", to_string(shiftX));
+    w.attribute("shiftY", to_string(shiftY));
 
-    w.attribute("background", td::toString(backgroundColor));
-    w.attribute("axis", td::toString(axisColor));
+    w.attributeC("background", toString(backgroundColor));
+    w.attributeC("axis", toString(axisColor));
     
 
     for (size_t i = 0; i < funkcije.size(); ++i){
         size_t length = funkcije[i].getLength();
 
         w.startElement("function");
-        w.attribute("name", funkcije[i].name->c_str());
-        w.attribute("width", to_string(funkcije[i].getLineWidth()).c_str());
-        w.attribute("color", td::toString(funkcije[i].getColor()));
-        w.attribute("pattern", td::toString(funkcije[i].getPattern()));
+        w.attributeC("name", *funkcije[i].name);
+        w.attribute("width", to_string(funkcije[i].getLineWidth()));
+        w.attributeC("color", toString(funkcije[i].getColor()));
+        w.attributeC("pattern", toString(funkcije[i].getPattern()));
         w.attribute("points", to_string(length));
         
         
@@ -322,6 +323,59 @@ void graph::readTXT(const td::String& path){
     fitToWindow();
 }
 
+void graph::readXML(const td::String& path){
+    xml::FileParser par;
+    par.parseFile(path);
+    
+    auto root = par.getRootNode();
+
+    gui::CoordType scaleX = 0, scaleY = 0, shiftX = 0, shiftY = 0;
+    td::ColorID background, axis;
+
+    auto atrib = root.getAttrib("scaleX");
+    if (atrib != nullptr)
+        scaleX = atrib->getValue().toDouble();
+    
+    atrib = root.getAttrib("scaleY");
+    if (atrib != nullptr)
+        scaleY = atrib->getValue().toDouble();
+
+    atrib = root.getAttrib("shiftX");
+    if (atrib != nullptr)
+        shiftX = atrib->getValue().toDouble();
+
+    atrib = root.getAttrib("shiftY");
+    if (atrib != nullptr)
+        shiftY = atrib->getValue().toDouble();
+
+    atrib = root.getAttrib("shiftY");
+    if (atrib != nullptr)
+        shiftY = atrib->getValue().toDouble();
+
+    td::toColorID
+
+    /*
+
+    w.attribute("background", td::toString(backgroundColor));
+    w.attribute("axis", td::toString(axisColor));
+    * /*/
+
+
+    auto funs = root.getChildNode();
+
+    while (funs.isOk()) {
+        if (funs->getName().cCompareNoCase("function")) {
+            td::String name = "line";
+            atrib = funs.getAttrib("name");
+            if (atrib != nullptr)
+                name = atrib->value;
+
+
+        }
+    }
+
+}
+
 graph::graph(bool startWithMargins, bool takeUserInput, td::ColorID backgroundColor) :gui::Canvas(takeUserInput ? inputs : noInputs), backgroundColor(backgroundColor), drawMargins(startWithMargins)
 {
     enableResizeEvent(true);
@@ -531,7 +585,7 @@ void graph::onDraw(const gui::Rect& rect){
         funkcije[i].draw(drawingRect);
 
     if (action == Actions::select) 
-        gui::Shape::drawRect(selectRect, SELECT_COLOR, 1.5, td::LinePattern::Dash);
+        gui::Shape::drawRect(selectRect, SELECT_COLOR, 3, td::LinePattern::Dash);
 
     if (drawMargins) {
         gui::Shape::drawRect(drawingRect, axisColor, 2);
@@ -549,10 +603,16 @@ void graph::onDraw(const gui::Rect& rect){
     if (_drawLegend)
         legenda->draw({ rect.right - 20, rect.top + 20 });
 
-    for (size_t i = 0; i < verticals.size(); ++i)
-        gui::Shape::drawLine({ funkcije[0].realToTransformedX(verticals[i]), drawingRect.bottom }, { funkcije[0].realToTransformedX(verticals[i]), drawingRect.top }, axisColor, 1.8);
-    for (size_t i = 0; i < horizontals.size(); ++i)
-        gui::Shape::drawLine({ drawingRect.left, funkcije[0].realToTransformedY(horizontals[i]) }, { drawingRect.right, funkcije[0].realToTransformedY(horizontals[i]) }, axisColor, 1.8);
+    for (size_t i = 0; i < verticals.size(); ++i) {
+        gui::CoordType xVal = funkcije[0].realToTransformedX(verticals[i]);
+        if(xVal >= drawingRect.left && xVal <= drawingRect.right)
+            gui::Shape::drawLine({ xVal, drawingRect.bottom }, { xVal, drawingRect.top }, axisColor, 1.8);
+    }
+    for (size_t i = 0; i < horizontals.size(); ++i) {
+        gui::CoordType yVal = funkcije[0].realToTransformedY(horizontals[i]);
+        if(yVal <= drawingRect.bottom && yVal >= drawingRect.top)
+            gui::Shape::drawLine({ drawingRect.left, yVal }, { drawingRect.right, yVal }, axisColor, 1.8);
+    }
     
 }
 

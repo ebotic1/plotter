@@ -63,17 +63,18 @@ gui::Point Function::findIntersection(const gui::Point& p1, const gui::Point& p2
 
 }
 
-Function::Function(gui::CoordType* x, gui::CoordType* y, size_t length, td::ColorID color, td::String name, double lineWidth, td::LinePattern pattern): color(color), pattern(pattern), length(length), debljina(lineWidth)
+Function::Function(gui::CoordType* x, gui::CoordType* y, size_t length, td::ColorID color, const td::String& name, double lineWidth, td::LinePattern pattern): color(color), pattern(pattern), length(length), debljina(lineWidth)
 {
-	this->name = new td::String(std::move(name));
+	this->name = new td::String(name);
 	setPoints(x, y, length);
 }
 
 
-Function::Function(gui::Point* points, size_t length, td::ColorID color, td::String name, double lineWidth, td::LinePattern pattern) : color(color), pattern(pattern), length(length), debljina(lineWidth)
+Function::Function(gui::Point* points, size_t length, td::ColorID color, const td::String& name, double lineWidth, td::LinePattern pattern) : color(color), pattern(pattern), length(length), debljina(lineWidth)
 {
+	this->name = new td::String(name);
 	tacke = new gui::Point[length];
-	memcpy(tacke, points, length);
+	memcpy(tacke, points, sizeof(gui::Point)*length);
 }
 
 

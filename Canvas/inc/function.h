@@ -25,8 +25,8 @@ class IMPEXP Function {
 public:
 
 	Function() { name = new td::String("line"); };
-	Function(gui::CoordType* x, gui::CoordType* y, size_t length, td::ColorID color, td::String name = "line", double lineWidth = 1, td::LinePattern pattern = td::LinePattern::Solid);
-	Function(gui::Point *points, size_t length, td::ColorID color, td::String name = "line", double lineWidth = 1, td::LinePattern pattern = td::LinePattern::Solid);
+	Function(gui::CoordType* x, gui::CoordType* y, size_t length, td::ColorID color, const td::String &name = "line", double lineWidth = 1, td::LinePattern pattern = td::LinePattern::Solid);
+	Function(gui::Point *points, size_t length, td::ColorID color, const td::String& name = "line", double lineWidth = 1, td::LinePattern pattern = td::LinePattern::Solid);
 	Function(const Function&) = delete;
 	Function(Function&& f) noexcept;
 	Function& operator=(Function&& f) noexcept;
