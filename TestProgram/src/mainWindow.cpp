@@ -32,8 +32,8 @@ MainWindow::MainWindow()
     _graph.addFunction(xx, yy, 3);
     _graph.addFunction(x, y, broj);
 
-    view.setLayout(&splitter);
-    setCentralView(&view);
+  
+    setCentralView(&splitter);
 
     
     splitter.refreshPicks();

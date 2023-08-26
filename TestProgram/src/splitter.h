@@ -6,14 +6,15 @@
 
 class switcher;
 
-class splitterLayout : public gui::SplitterLayout {
 
 
+class splitterLayout : public gui::View {
+	gui::SplitterLayout _mainLayout;
+
+	gui::ComboBox picker;
 	gui::VerticalLayout v;
 	switcher* props = nullptr;
 	graph& _graph;
-	
-	
 
 public:
 	splitterLayout(graph& mainView);
@@ -25,4 +26,5 @@ public:
 	~splitterLayout() {
 		delete props;
 	}
+	
 };

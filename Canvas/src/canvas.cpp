@@ -30,15 +30,6 @@ public:
     td::ColorID textColor;
     legend(td::ColorID textColor) : textColor(textColor){};
 
-    void addFunction(const Function &f) {
-        imena.reserve(10);
-        imena.emplace_back(f.name->c_str());
-        gui::Size sz;
-        imena.back().measure(FONT, sz);
-        if (length < sz.width)
-            length = sz.width;
-        colors.emplace_back(f.getColor());
-    };
 
     void draw(const gui::Point& topRight) {
         gui::CoordType height = topRight.y;
@@ -48,6 +39,26 @@ public:
             height += rectSize + 10;
         }
     }
+
+    void changeName(const td::String& name, size_t poz) {
+        imena[poz] = name;
+        gui::Size sz;
+        imena[poz].measure(FONT, sz);
+        if (length < sz.width)
+            length = sz.width;
+    }
+    void changeColor(td::ColorID color, size_t poz) {
+        colors[poz] = color;
+    }
+
+    void addFunction(const Function& f) {
+        imena.reserve(10);
+        imena.resize(imena.size() + 1);
+        changeName(*f.name, imena.size()-1);
+        colors.emplace_back(f.getColor());
+    };
+
+
 };
 
 td::String graph::to_string(gui::CoordType x) {
@@ -704,6 +715,38 @@ void graph::changeWidth(double width, size_t function){
         return;
 
     funkcije[function].setLineWidth(width);
+    reDraw();
+}
+
+void graph::changeName(const td::String& name, size_t function){
+    if (checkRange(function))
+        return;
+
+    *funkcije[function].name = name;
+    if (legenda == nullptr)
+        return;
+    legenda->changeName(name, function);
+    reDraw();
+}
+
+void graph::changePattern(td::LinePattern pattern, size_t function){
+    if (checkRange(function))
+        return;
+
+    funkcije[function].setPattern(pattern);
+    reDraw();
+
+}
+
+void graph::changeColor(td::ColorID color, size_t function){
+    if (checkRange(function))
+        return;
+
+    funkcije[function].setColor(color);
+    if (legenda == nullptr)
+        return;
+
+    legenda->changeColor(color, function);
     reDraw();
 }
 

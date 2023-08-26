@@ -70,6 +70,8 @@ public:
 	void reset();
 
 	void setAxisColor(td::ColorID boja);
+	td::ColorID getAxisColor() { return axisColor; }
+	td::ColorID getBackgroundColor() { return backgroundColor; }
 	void showMargins(double reductionFactor);
 	void showLegend(bool draw) { _drawLegend = draw; reDraw(); }
 	void showGrid(bool draw) { drawGrid = draw; reDraw(); }
@@ -85,6 +87,9 @@ public:
 
 	const std::vector<Function>& getFunctions(){return funkcije;}
 	void changeWidth(double width, size_t function);
+	void changeName(const td::String& name, size_t function);
+	void changePattern(td::LinePattern pattern, size_t function);
+	void changeColor(td::ColorID color, size_t function);
 
 
 	void onPrimaryButtonPressed(const gui::InputDevice& inputDevice) override;

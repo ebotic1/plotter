@@ -166,6 +166,18 @@ void Function::draw(const gui::Rect& frame){
 		return;
 	}
 	
+	if (pattern == td::LinePattern::NA) {
+		gui::Shape dot;
+		std::vector<gui::Circle> dots;
+		dots.reserve(length);
+		for (size_t i = 1; i < length; ++i) 
+			if (frame.contains(tacke[i])) 
+				dots.emplace_back(tacke[i], 1);
+			
+			dot.createCircles(dots.data(), dots.size(), debljina);
+			dot.drawFillAndWire(color, color);
+			return;
+	}
 
 	bool past = frame.contains(tacke[0]) ? true : false;
 

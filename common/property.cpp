@@ -45,6 +45,9 @@ td::Variant elementProperty::getValue(){
 
 void elementProperty::setValue(const td::Variant &value, bool doAction){
 
+	auto debug = value.getType();
+	
+
 	if (numeric)
 		((gui::NumericEdit*)edit)->setValue(value, doAction);
 	else
