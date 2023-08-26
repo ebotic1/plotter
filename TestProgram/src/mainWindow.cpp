@@ -41,7 +41,7 @@ MainWindow::MainWindow()
 
 }
 
-bool resetGraph = true;
+
 
 bool MainWindow::onActionItem(td::BYTE menuID, td::BYTE firstSubMenuID, td::BYTE lastSubMenuID, td::BYTE actionID, gui::ActionItem* pMenuAI){
 
@@ -84,12 +84,7 @@ bool MainWindow::onActionItem(td::BYTE menuID, td::BYTE firstSubMenuID, td::BYTE
 
 bool MainWindow::onClick(gui::FileDialog* pDlg, td::UINT4 dlgID){
     if (dlgID == 1) {
-        if (pDlg->getFileName().endsWithCI(".txt", 4))
-            _graph.readTXT(pDlg->getFileName());
-        if (pDlg->getFileName().endsWithCI(".xml", 4))
-            _graph.readXML(pDlg->getFileName(), resetGraph);
-        splitter.refreshPicks();
-        return true;
+        return open(pDlg->getFileName());
     }
 
     if (dlgID == 11) {
@@ -105,6 +100,40 @@ bool MainWindow::onClick(gui::FileDialog* pDlg, td::UINT4 dlgID){
 
     return false;
 }
+
+bool MainWindow::open(const td::String& path){
+    bool succes = false;
+    if (path.endsWithCI(".txt", 4)) {
+        _graph.readTXT(path);
+        succes = true;
+    }
+    if (path.endsWithCI(".xml", 4)) {
+        _graph.readXML(path, resetGraph);
+        succes = true;
+    }
+    if (!succes)
+        return false;
+
+    splitter.refreshPicks();
+    return true;
+}
+
+
+void MainWindow::loadFromTerminal(int argc, char** argv){
+
+    if (argc < 2)
+        return;
+
+    open(argv[1]);
+    resetGraph = false;
+
+    for (size_t i = 2; i < argc; ++i){
+        open(argv[i]);
+    }
+
+}
+
+
 MainWindow::~MainWindow(){}
 
 

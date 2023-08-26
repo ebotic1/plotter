@@ -4,6 +4,8 @@
 
 class Application : public gui::Application
 {
+
+
 protected:
 
     gui::Window* createInitialWindow() override

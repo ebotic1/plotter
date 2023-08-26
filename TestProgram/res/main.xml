@@ -6,6 +6,9 @@
 		<Res id="fullScreen" path="Work/Common/Icons/sizeIncrease128.png"/>
 		<Res id="meni" path="Work/Common/Icons/menuA_32.png"/>
 		<Res id="legend" path="Work/Common/Icons/assortment.png"/>
+		<Res id="reset" path="Work/Common/Icons/delete48.png"/>
+		<Res id="info" path="Work/Common/Icons/apple.png"/>
+		<Res id="fitToWindow" path="Work/Common/Icons/Traditional-HomeXL.png"/>
 	</Images>
 	<Symbols>
 

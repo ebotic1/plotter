@@ -17,6 +17,7 @@ class IMPEXP graph : public gui::Canvas {
 	static const std::initializer_list<gui::InputDevice::Event> inputs;
 	static const std::initializer_list<gui::InputDevice::Event> noInputs;
 	gui::Geometry drawingWindow;
+	gui::Rect drawingRect;
 	bool drawMargins;
 	double marginsFactor = 2;
 
@@ -27,7 +28,7 @@ class IMPEXP graph : public gui::Canvas {
 	td::String to_string(gui::CoordType x);
 	inline bool checkRange(const size_t& number) { return number > funkcije.size(); }
 
-	enum class Actions { none, select, secondaryClick, drag } action = Actions::none;
+	enum class Actions { none, select, secondaryClick, drag, pointPeek } action = Actions::none;
 
 	void setUpDrawingWindow();
 	void finishAddingFunction(Function& newFun);
@@ -44,19 +45,18 @@ class IMPEXP graph : public gui::Canvas {
 	class legend;
 	legend* legenda = nullptr;
 	void showInformation();
+	void showHelp();
 	void saveMenu();
 	td::String txtPut;
 
 	struct imageButton {
-		gui::Image image; //help i fintowindow
+		gui::Image image;
 		gui::Rect rect;
 
 		imageButton(const gui::Image& image, const gui::Rect& rect) : image(image), rect(rect) {};
 	};
 
 	std::vector<imageButton> slike;
-
-	
 
 public:
 
@@ -69,6 +69,7 @@ public:
 
 	void reset();
 
+	void setBackgroundColor(td::ColorID color);
 	void setAxisColor(td::ColorID boja);
 	td::ColorID getAxisColor() { return axisColor; }
 	td::ColorID getBackgroundColor() { return backgroundColor; }
@@ -90,6 +91,7 @@ public:
 	void changeName(const td::String& name, size_t function);
 	void changePattern(td::LinePattern pattern, size_t function);
 	void changeColor(td::ColorID color, size_t function);
+	
 
 
 	void onPrimaryButtonPressed(const gui::InputDevice& inputDevice) override;
@@ -104,6 +106,8 @@ public:
 	void onCursorExited(const gui::InputDevice& inputDevice) override;
 	void onCursorEntered(const gui::InputDevice& inputDevice) override;
 	bool onClick(gui::Dialog* pDlg, td::UINT4 dlgID) override;
+	bool onClick(gui::FileDialog* pDlg, td::UINT4 dlgID) override;
+	void onPrimaryButtonDblClick(const gui::InputDevice& inputDevice) override;
 
 
 	bool saveXML(const td::String& path);
@@ -111,6 +115,7 @@ public:
 	bool saveTXT(const td::String& path, bool horizontal);
 	void readTXT(const td::String& path);
 	void readXML(const td::String& path, bool resetGraph);
+	bool save(const td::String& path);
 
 	~graph();
 

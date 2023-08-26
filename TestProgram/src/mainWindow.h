@@ -40,6 +40,7 @@ protected:
     graph _graph;
     splitterLayout splitter;
 
+    bool resetGraph = true;
 
 public:
     MainWindow();
@@ -47,6 +48,8 @@ public:
 
     bool onActionItem(td::BYTE menuID, td::BYTE firstSubMenuID, td::BYTE lastSubMenuID, td::BYTE actionID, gui::ActionItem* pMenuAI) override;
     bool onClick(gui::FileDialog* pDlg, td::UINT4 dlgID) override;
+    bool open(const td::String& path);
+    void loadFromTerminal(int argc, char** argv);
 
 
 };

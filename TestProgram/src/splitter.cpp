@@ -45,8 +45,6 @@ public:
 		lineProps << pattern;
 
 
-		backgroundColor.setValue(mainGraph.getBackgroundColor(), false);
-		axisColor.setValue(mainGraph.getAxisColor(), false);
 		graphProps << backgroundLabel << backgroundColor;
 		graphProps.appendSpace(10);
 		graphProps << axisLabel << axisColor;
@@ -63,6 +61,7 @@ public:
 	bool onChangedSelection(gui::ComboBox* pCmb) override;
 	bool onChangedValue(gui::ColorPicker* pCP);
 	void showFunction(size_t pos);
+	void showGraph();
 
 };
 
@@ -108,6 +107,12 @@ void switcher::showFunction(size_t pos){
 	showView(1, false);
 }
 
+void switcher::showGraph(){
+	backgroundColor.setValue(mainGraph.getBackgroundColor(), false);
+	axisColor.setValue(mainGraph.getAxisColor(), false);
+	showView(0, false);
+}
+
 
 
 
@@ -128,33 +133,39 @@ splitterLayout::splitterLayout(graph& mainView) : _mainLayout(gui::SplitterLayou
 }
 
 void splitterLayout::refreshPicks(){
-	int len = picker.getNoOfItems();
+	ignoreSelections = true;
+	int curent = picker.getSelectedIndex();
+	props->showGraph();
 	picker.selectIndex(0);
-	for (int i = 1; i <= len; ++i)
-		picker.removeItem(i);
-	
-	
+	int len = picker.getNoOfItems();
+	for (int i = 1; i < len; ++i)
+		picker.removeItem(1);
 	auto &funs = _graph.getFunctions();
 	for (const Function& fun : funs) {
 		picker.addItem(fun.name->c_str());
 	}
-	picker.selectIndex(0);
 	
+	if (picker.getNoOfItems() > curent && curent != -1)
+		picker.selectIndex(curent);
+
+	ignoreSelections = false;
 }
 
 bool splitterLayout::onChangedSelection(gui::ComboBox* pCmb){
 	
-	if (pCmb != &picker) {
-		//refreshPicks();
+	if (pCmb != &picker)
 		return false;
-	}
+	
 
 	if (pCmb->getSelectedIndex() == 0) {
-		props->showView(0, false);
+		props->showGraph();
 		return true;
 	}
 
 	props->showFunction(pCmb->getSelectedIndex() - 1);
+
+	if(!ignoreSelections)
+	refreshPicks();
 
 	return true;
 }

@@ -16,6 +16,8 @@ class splitterLayout : public gui::View {
 	switcher* props = nullptr;
 	graph& _graph;
 
+	bool ignoreSelections = false;
+
 public:
 	splitterLayout(graph& mainView);
 	void refreshPicks();
