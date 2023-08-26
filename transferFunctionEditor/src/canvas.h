@@ -176,7 +176,7 @@ inline bool kanvas::saveState(const td::String& file){
 	arch::ArchiveOut out("TFv1", temp);
 	try {
 		out << int(blocks.size());
-		for each (Block * var in blocks) {
+		for(Block * var : blocks) {
 			td::String nom, dem, inputName, outputName;
 			bool connected, switched;
 			var->getAllProps(nom, dem, connected, switched, inputName, outputName);
@@ -191,7 +191,7 @@ inline bool kanvas::saveState(const td::String& file){
 			auto& vec = blocks[i]->getConnectedBlocks();
 			out << int(vec.size());
 
-			for each (Block * var in vec) {
+			for  (Block * var : vec) {
 				auto it = std::find(blocks.begin(), blocks.end(), var);
 				out << int(it - blocks.begin());
 			}

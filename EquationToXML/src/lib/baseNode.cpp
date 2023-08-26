@@ -9,7 +9,7 @@ const td::String baseNode::attributeKeywords[] = { "type", "domain", "name", "ep
 
 void baseNode::printNode(xml::Writer& w) {
 	w.startNode(this->getName());
-	for each (auto & at in this->attribs)
+	for (auto & at : this->attribs)
 		w.attribute(at.first.c_str(), at.second);
 
 
@@ -33,7 +33,7 @@ void baseNode::printNode(xml::Writer& w) {
 	}
 
 	if (nodes.size() != 0) {
-		for each (baseNode * var in nodes)
+		for (baseNode * var : nodes)
 			var->printNode(w);
 
 		w.endNode();
@@ -72,7 +72,7 @@ size_t baseNode::addLine(std::vector<std::pair<td::String, td::String>> &lines, 
 		bool found = false;
 		if (pozEq != -1) {
 			td::String keyword = lines[startLine].first.subStr(0, pozEq - 1).trimRight();
-			for each (auto & var in attributeKeywords) {
+			for (auto & var : attributeKeywords) {
 				if (var == keyword) {
 					lastChlid->setAttrib(lines[startLine].first.subStr(0, pozEq - 1).trimRight(), lines[startLine].first.subStr(pozEq + 1, -1).trimLeft());
 					lastChlid->addComment(lines[startLine].second);

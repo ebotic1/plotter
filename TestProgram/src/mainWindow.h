@@ -1,6 +1,7 @@
 #include "gui/Window.h"
 #include "./../../Canvas/inc/canvas.h"
 #include "gui/MenuBar.h"
+#include "splitter.h"
 
 
 class MenuBar : public gui::MenuBar {
@@ -36,13 +37,22 @@ private:
 protected:
     MenuBar _mainMenuBar;
     //ToolBar _toolBar;
-    graph _mainView;
+    graph _graph;
+    splitterLayout splitter;
+    gui::View view;
+
 public:
     MainWindow();
     ~MainWindow();
 
     bool onActionItem(td::BYTE menuID, td::BYTE firstSubMenuID, td::BYTE lastSubMenuID, td::BYTE actionID, gui::ActionItem* pMenuAI) override;
     bool onClick(gui::FileDialog* pDlg, td::UINT4 dlgID) override;
+
+
+    bool onChangedValue(gui::Slider* pSlider) {
+        int x = 3;
+        return false;
+    }
 
 };
 

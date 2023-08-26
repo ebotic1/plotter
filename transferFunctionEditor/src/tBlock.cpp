@@ -101,12 +101,12 @@ void Block::connectTo(Block* block) {
 }
 
 void Block::removeConnections() {
-	for each (Block *var in connectedTo){
+	for(Block *var : connectedTo){
 		var->connectedFrom.erase(std::find(var->connectedFrom.begin(), var->connectedFrom.end(), this));
 
 	}
 	connectedTo.clear();
-	for each (Block * var in connectedFrom) {
+	for(Block * var : connectedFrom) {
 		var->connectedTo.erase(std::find(var->connectedTo.begin(), var->connectedTo.end(), this));
 		var->setUpWires(false);
 	}
@@ -203,7 +203,7 @@ void Block::setUpAll() {
 		outputRect.setWidth(armLenght*2/1.2);
 	}
 
-	for each (Block * var in connectedFrom)
+	for(Block * var : connectedFrom)
 		var->setUpWires(false);
 
 	setUpWires(true); // will refresh canvas

@@ -42,7 +42,7 @@ public:
 
 
 	~baseNode() {
-		for each (baseNode * var in nodes) {
+		for (baseNode * var : nodes) {
 			delete var;
 		}
 	}

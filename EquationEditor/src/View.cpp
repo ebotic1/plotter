@@ -320,9 +320,9 @@ void printNode(StringBuilder &result, xml::FileParser::node_iterator &node, int 
 	}
 
 
-	for each (auto & var in node->attribs) {
+	for (auto & var : node->attribs) {
 
-		for each (auto &atSkip in skipAtribs)
+		for  (auto &atSkip : skipAtribs)
 			if (atSkip.cCompareNoCase(var.getName().c_str()) == 0)
 				goto END_LOOP;
 		

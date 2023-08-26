@@ -7,7 +7,7 @@
 #include"xml/Writer.h"
 #include <fstream>
 #include "xml/DOMParser.h"
-#include "./../../common/to_string.h"
+#include "./../../common/to_color.h"
 
 #define SELECT_COLOR td::ColorID::Green
 #define FONT gui::Font::ID::ReportBody1
@@ -117,6 +117,23 @@ bool graph::saveXML(const td::String& path){
        
     }
 
+
+    
+
+        for (auto& an : verticals) {
+            w.startNode("annotation");
+            w.attribute("x", to_string(an));
+            w.endNode();
+        }
+        for (auto& an : horizontals) {
+            w.startNode("annotation");
+            w.attribute("y", to_string(an));
+            w.endNode();
+        }
+
+
+        
+
     w.endDocument();
     w.close();
 
@@ -140,7 +157,7 @@ bool graph::saveTXT(const td::String& path, bool horizontal){
     }
     
     if (horizontal) {
-        for each (auto & fun in funkcije) {
+        for (auto & fun : funkcije) {
             size_t length = fun.getLength() - 1;
             const gui::Point* tacke = fun.getPoints();
 
@@ -163,7 +180,7 @@ bool graph::saveTXT(const td::String& path, bool horizontal){
         std::sort(funkcije.begin(), funkcije.end(), [](const Function& f1, const Function& f2) {return f1.getLength() > f2.getLength(); });
 
         size_t length = 0;
-        for each (auto & fun in funkcije) {
+        for (auto & fun : funkcije) {
             out << fun.name->c_str() << "\t\t";
             if (length < fun.getLength())
                 length = fun.getLength();
@@ -172,7 +189,7 @@ bool graph::saveTXT(const td::String& path, bool horizontal){
 
         for (size_t i = 0; i < length; ++i){
             out << "\n";
-            for each (auto & fun in funkcije) {
+            for (auto & fun : funkcije) {
                 if (fun.getLength() > i) 
                     out << to_string(fun.transformedToRealX(fun.getPoints()[i].x)) << "\t" << to_string(fun.TrasformedToRealY(fun.getPoints()[i].y)) << "\t";
                 else 
@@ -341,7 +358,7 @@ void graph::readXML(const td::String& path, bool resetGraph){
     gui::CoordType scaleX = 0, scaleY = 0, shiftX = 0, shiftY = 0;
 
     if (resetGraph) {
-        for each (auto & att in root->attribs) {
+        for (auto & att : root->attribs) {
             if (att.getName().cCompareNoCase("scaleX") == 0)
                 scaleX = att.value.toDouble();
             if (att.getName().cCompareNoCase("scaleY") == 0)
@@ -351,11 +368,11 @@ void graph::readXML(const td::String& path, bool resetGraph){
             if (att.getName().cCompareNoCase("shiftY") == 0)
                 shiftY = att.value.toDouble();
             if (att.getName().cCompareNoCase("background") == 0) {
-                backgroundColor = td::toColorID(att.getName().c_str());
+                backgroundColor = to_color(att.getValue().c_str());
                 setBackgroundColor(backgroundColor);
             }
             if (att.getName().cCompareNoCase("axis") == 0)
-                setAxisColor(td::toColorID(att.getName().c_str()));
+                setAxisColor(to_color(att.getValue().c_str()));
         }
 
 
@@ -373,7 +390,7 @@ void graph::readXML(const td::String& path, bool resetGraph){
             size_t points = 0;
             td::ColorID color = td::ColorID::Transparent;
             td::LinePattern pattern = td::LinePattern::Solid;
-            for each (auto & att in funs->attribs) {
+            for (auto & att : funs->attribs) {
                 if (att.getName().cCompareNoCase("name") == 0)
                     name = att.getValue();
                 if (att.getName().cCompareNoCase("width") == 0)
@@ -381,10 +398,12 @@ void graph::readXML(const td::String& path, bool resetGraph){
                 if (att.getName().cCompareNoCase("points") == 0)
                     points = att.value.toInt();
                 if (att.getName().cCompareNoCase("color") == 0)
-                    color = td::toColorID(att.getName().c_str());
+                    color = to_color(att.getValue().c_str());
                 if (att.getName().cCompareNoCase("pattern") == 0)
-                    pattern = td::toLinePattern(att.getName().c_str());
+                    pattern = td::toLinePattern(att.getValue().c_str());
             }
+
+            
 
             auto &text = funs->text;
 
@@ -424,6 +443,15 @@ void graph::readXML(const td::String& path, bool resetGraph){
 
         }
 
+        if (funs->getName().cCompareNoCase("annotation") == 0) {
+            auto at = funs.getAttrib("x");
+            if (at != nullptr)
+                verticals.emplace_back(at->getValue().toDouble());
+            at = funs.getAttrib("y");
+            if (at != nullptr)
+                horizontals.emplace_back(at->getValue().toDouble());
+        }
+
         ++funs;
     }
 
@@ -433,7 +461,7 @@ graph::graph(bool startWithMargins, bool takeUserInput, td::ColorID backgroundCo
 {
     enableResizeEvent(true);
 
-    for each (const char *ime in std::vector<const char*>{":fullScreen", ":grid", ":legend", ":meni", ":save"})
+    for (const char *ime : std::vector<const char*>{":fullScreen", ":grid", ":legend", ":meni", ":save"})
         slike.emplace_back(ime, gui::Rect({ 0,0 }, gui::Size(32, 32)));
     
 
@@ -489,6 +517,8 @@ void graph::showMargins(double reductionFactor){
 void graph::reset(){
     pastColors.clear();
     lastColor = 0;
+    verticals.clear();
+    horizontals.clear();
     action = Actions::none;
     funkcije.clear();
     delete Limits;
@@ -643,7 +673,7 @@ void graph::onDraw(const gui::Rect& rect){
     if (drawMargins) {
         gui::Shape::drawRect(drawingRect, axisColor, 2);
 
-        for each (auto & img in slike)
+        for(auto & img : slike)
             img.image.draw(img.rect);
 
     }
@@ -669,6 +699,14 @@ void graph::onDraw(const gui::Rect& rect){
     
 }
 
+void graph::changeWidth(double width, size_t function){
+    if (checkRange(function))
+        return;
+
+    funkcije[function].setLineWidth(width);
+    reDraw();
+}
+
 
 
 
@@ -687,7 +725,7 @@ td::ColorID graph::nextColor(){
             repeat = false;
             lastColor += 23;
             lastColor = lastColor % 137; //otprilike sve boje su obuhvacene i svaka boja ce se izabrati prije nego sto se pocnu ponavljati
-            for each (td::ColorID boja in pastColors)
+            for (td::ColorID boja : pastColors)
                 if (lastColor == int(boja) || lastColor == int(backgroundColor)) {
                     repeat = true;
                     break;

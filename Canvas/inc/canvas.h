@@ -25,6 +25,7 @@ class IMPEXP graph : public gui::Canvas {
 	void drawAxis();
 	double numberHeight;
 	td::String to_string(gui::CoordType x);
+	inline bool checkRange(const size_t& number) { return number > funkcije.size(); }
 
 	enum class Actions { none, select, secondaryClick, drag } action = Actions::none;
 
@@ -81,6 +82,9 @@ public:
 	void fitToWindow();
 
 	void onDraw(const gui::Rect& rect);
+
+	const std::vector<Function>& getFunctions(){return funkcije;}
+	void changeWidth(double width, size_t function);
 
 
 	void onPrimaryButtonPressed(const gui::InputDevice& inputDevice) override;
