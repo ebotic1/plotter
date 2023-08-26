@@ -323,55 +323,108 @@ void graph::readTXT(const td::String& path){
     fitToWindow();
 }
 
-void graph::readXML(const td::String& path){
+void graph::readXML(const td::String& path, bool resetGraph){
     xml::FileParser par;
     par.parseFile(path);
+
+    if (!par.isOk()) {
+        showAlert("Error", "cant open file");
+        return;
+    }
+
+
+    if (resetGraph)
+        this->reset();
     
     auto root = par.getRootNode();
 
     gui::CoordType scaleX = 0, scaleY = 0, shiftX = 0, shiftY = 0;
-    td::ColorID background, axis;
 
-    auto atrib = root.getAttrib("scaleX");
-    if (atrib != nullptr)
-        scaleX = atrib->getValue().toDouble();
-    
-    atrib = root.getAttrib("scaleY");
-    if (atrib != nullptr)
-        scaleY = atrib->getValue().toDouble();
+    if (resetGraph) {
+        for each (auto & att in root->attribs) {
+            if (att.getName().cCompareNoCase("scaleX") == 0)
+                scaleX = att.value.toDouble();
+            if (att.getName().cCompareNoCase("scaleY") == 0)
+                scaleY = att.value.toDouble();
+            if (att.getName().cCompareNoCase("shiftX") == 0)
+                shiftX = att.value.toDouble();
+            if (att.getName().cCompareNoCase("shiftY") == 0)
+                shiftY = att.value.toDouble();
+            if (att.getName().cCompareNoCase("background") == 0) {
+                backgroundColor = td::toColorID(att.getName().c_str());
+                setBackgroundColor(backgroundColor);
+            }
+            if (att.getName().cCompareNoCase("axis") == 0)
+                setAxisColor(td::toColorID(att.getName().c_str()));
+        }
 
-    atrib = root.getAttrib("shiftX");
-    if (atrib != nullptr)
-        shiftX = atrib->getValue().toDouble();
 
-    atrib = root.getAttrib("shiftY");
-    if (atrib != nullptr)
-        shiftY = atrib->getValue().toDouble();
 
-    atrib = root.getAttrib("shiftY");
-    if (atrib != nullptr)
-        shiftY = atrib->getValue().toDouble();
+    }
 
-    td::toColorID
-
-    /*
-
-    w.attribute("background", td::toString(backgroundColor));
-    w.attribute("axis", td::toString(axisColor));
-    * /*/
 
 
     auto funs = root.getChildNode();
 
     while (funs.isOk()) {
-        if (funs->getName().cCompareNoCase("function")) {
+        if (funs->getName().cCompareNoCase("function") == 0) {
             td::String name = "line";
-            atrib = funs.getAttrib("name");
-            if (atrib != nullptr)
-                name = atrib->value;
+            double width = 2;
+            size_t points = 0;
+            td::ColorID color = td::ColorID::Transparent;
+            td::LinePattern pattern = td::LinePattern::Solid;
+            for each (auto & att in funs->attribs) {
+                if (att.getName().cCompareNoCase("name") == 0)
+                    name = att.getValue();
+                if (att.getName().cCompareNoCase("width") == 0)
+                    width = att.value.toDouble();
+                if (att.getName().cCompareNoCase("points") == 0)
+                    points = att.value.toInt();
+                if (att.getName().cCompareNoCase("color") == 0)
+                    color = td::toColorID(att.getName().c_str());
+                if (att.getName().cCompareNoCase("pattern") == 0)
+                    pattern = td::toLinePattern(att.getName().c_str());
+            }
 
+            auto &text = funs->text;
+
+            auto getPoints = [&text, &points](const char* tag, std::vector<gui::CoordType>& vek) {
+                int poz = text.find(tag);
+                if (poz == -1)
+                    return;
+                int poz2 = text.find("]", poz+std::strlen(tag));
+                if (poz2 == -1)
+                    return;
+
+                cnt::PushBackVector<td::String> brojevi;
+                text.subStr(poz + std::strlen(tag), poz2 - 1).split(",", brojevi, true, true);
+
+                size_t smaller = (points > 0 && points < brojevi.size()) ? points : brojevi.size();
+
+                for (size_t i = 0; i < smaller; ++i) 
+                    vek.emplace_back(brojevi[i].toDouble());
+                    
+                
+
+            };
+            
+            std::vector<gui::CoordType> x, y;
+            getPoints("x=[", x);
+            getPoints("y=[", y);
+
+            if (x.size() == 0 || y.size() == 0 || x.size() != y.size())
+                continue;
+
+            addFunction(x.data(), y.data(), x.size(), (color == td::ColorID::Transparent) ? nextColor() : color, width, pattern, name);
+                
+            if (funkcije.size() == 1 && resetGraph) {
+                funkcije[0].increaseScaleAndShiftX(scaleX, shiftX);
+                funkcije[0].increaseScaleAndShiftY(scaleY, shiftY);
+            }
 
         }
+
+        ++funs;
     }
 
 }

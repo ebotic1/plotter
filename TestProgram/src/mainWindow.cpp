@@ -46,13 +46,20 @@ MainWindow::MainWindow()
 
 }
 
+bool resetGraph = true;
+
 bool MainWindow::onActionItem(td::BYTE menuID, td::BYTE firstSubMenuID, td::BYTE lastSubMenuID, td::BYTE actionID, gui::ActionItem* pMenuAI){
 
     if (menuID == 1) {
         if (actionID > 2)
             return false;
-        if (actionID == 1)
+        if (actionID == 1) {
             _mainView.reset();
+            resetGraph = true;
+        }
+        else {
+            resetGraph = false;
+        }
 
         auto f = new gui::FileDialog(this, "Read data", { "*.txt", "*.xml" }, "Open");
         f->openModal(1, this);
@@ -84,6 +91,8 @@ bool MainWindow::onClick(gui::FileDialog* pDlg, td::UINT4 dlgID){
     if (dlgID == 1) {
         if (pDlg->getFileName().endsWithCI(".txt", 4))
             pokToGraph->readTXT(pDlg->getFileName());
+        if (pDlg->getFileName().endsWithCI(".xml", 4))
+            pokToGraph->readXML(pDlg->getFileName(), resetGraph);
     }
 
     if (dlgID == 11) {

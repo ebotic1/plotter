@@ -101,7 +101,7 @@ public:
 	void saveTXT(const td::String& path);
 	bool saveTXT(const td::String& path, bool horizontal);
 	void readTXT(const td::String& path);
-	void readXML(const td::String& path);
+	void readXML(const td::String& path, bool resetGraph);
 
 	~graph();
 
