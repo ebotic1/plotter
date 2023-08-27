@@ -5,7 +5,7 @@
 
 #define BACK_COMMENT_CHAR "¸"
 
-const td::String baseNode::attributeKeywords[] = { "type", "domain", "name", "eps", "dT", "signal", "out", "desc" };
+const td::String baseNode::attributeKeywords[] = { "type", "domain", "name", "eps", "dT", "signal", "out", "desc", "method"};
 
 void baseNode::printNode(xml::Writer& w) {
 	w.startNode(this->getName());

@@ -1,10 +1,10 @@
 #include "./../inc/function.h"
 
 
-gui::Point Function::findIntersection(const gui::Point& p1, const gui::Point& p2, const gui::Rect &r) // q1 i q2 su ravni rect sa tackama koji prikazuju dole, desno
+gui::Point Function::findIntersection(const gui::Point& p1, const gui::Point& p2, const gui::Rect& r) // q1 i q2 su ravni rect sa tackama koji prikazuju dole, desno
 {
 
-	auto linesIntersect = [](const gui::Point& p1, const gui::Point& p2, const gui::Point& q1, const gui::Point& q2) -> gui::Point{
+	auto linesIntersect = [](const gui::Point& p1, const gui::Point& p2, const gui::Point& q1, const gui::Point& q2) -> gui::Point {
 
 		bool verticalSide = (q1.y == q2.y) ? false : true;
 
@@ -16,7 +16,7 @@ gui::Point Function::findIntersection(const gui::Point& p1, const gui::Point& p2
 					else
 						return { q1.x, p1.y };
 				else
-					return { q1.x-1, q1.y-1 };
+					return { q1.x - 1, q1.y - 1 };
 
 			return { q1.x, p1.y };
 
@@ -44,21 +44,27 @@ gui::Point Function::findIntersection(const gui::Point& p1, const gui::Point& p2
 
 
 	gui::Point p;
-	
+
 	const gui::Point& outsidePoint = r.contains(p1) ? p2 : p1;
-	
-	if (outsidePoint.y <= r.bottom && outsidePoint.x >= r.left) {
+
+
+	if (outsidePoint.y <= r.top) {
 		p = linesIntersect(p1, p2, { r.left, r.top }, { r.right, r.top });
 		if (p.x >= r.left && p.x <= r.right)
 			return p;
-		return linesIntersect(p1, p2, { r.right, r.top }, { r.right, r.bottom });
 	}
-	else {
+	else if(outsidePoint.y >= r.bottom){
 		p = linesIntersect(p1, p2, { r.left, r.bottom }, { r.right, r.bottom });
 		if (p.x >= r.left && p.x <= r.right)
 			return p;
-		return linesIntersect(p1, p2, { r.left, r.top }, { r.left, r.bottom });
 	}
+
+
+	if(outsidePoint.x >= r.right)
+		return linesIntersect(p1, p2, { r.right, r.top }, { r.right, r.bottom });
+	else
+		return linesIntersect(p1, p2, { r.left, r.top }, { r.left, r.bottom });
+	
 
 
 }

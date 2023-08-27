@@ -77,10 +77,10 @@ bool View::onClick(gui::Button* pBtn)
 void View::pokreniSolver(){
 
 	xml::FileParser p;
-	p.parseFile(currentPath);
+	p.parseFile(currentPathXML);
 	auto root = p.getRootNode();
 
-	td::String s; //treba string builder ali ovo je samo privremeno dok ne bude API
+	td::String s; //treba string builder ali ovo je samo privremeno svakako
 	const char* userProfile = getenv("USERPROFILE");
 	s = "cd ";
 	s += userProfile;
@@ -89,7 +89,7 @@ void View::pokreniSolver(){
 	s += " ";
 	s += root.getAttrib("domain")->getValue();
 	s += " ";
-	s += currentPath;
+	s += currentPathXML;
 	s += " rezultat.txt ";
 	td::Variant v;
 
@@ -205,7 +205,7 @@ bool getComment(td::String& comment, bool &alone, const char* path = nullptr) {
 	int poz2;
 	
 
-	while ((poz2 = line.find("-->")), poz2 == -1) {
+	while ((poz2 = line.find("-->", poz)), poz2 == -1) {
 		comment += line.substr(pozComment);
 		//if (line.size() != 0) 
 			comment += "\n//";
@@ -322,6 +322,8 @@ void printNode(StringBuilder &result, xml::FileParser::node_iterator &node, int 
 
 	for (auto & var : node->attribs) {
 
+		const char* debug = var.getName().c_str();
+
 		for  (auto &atSkip : skipAtribs)
 			if (atSkip.cCompareNoCase(var.getName().c_str()) == 0)
 				goto END_LOOP;
@@ -412,6 +414,8 @@ bool View::loadXML(const td::String& path) {
 	_jednacineText.setText(std::move(temp));
 
 	//if (currentPath.isNull()) {
+	currentPathXML = path;
+	const char* debug = path.c_str();
 		currentPath = path.subStr(0, currentPath.length() - 4);
 		currentPath += ".txt";
 	//}
@@ -448,6 +452,7 @@ bool View::saveAsXML(const td::String& path){
 
 	try{
 		generateXML(_jednacineText.getText(), path);
+		currentPathXML = path;
 	}
 	catch (const std::exception& e){
 		showAlert("Could not save file", e.what());
