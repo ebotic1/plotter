@@ -25,7 +25,7 @@ class View : public gui::View {
 
 
 	void pokreniSolver();
-	td::String currentPath;
+	td::String currentPath, currentPathXML;
 
 
 public:

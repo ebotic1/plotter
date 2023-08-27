@@ -1,4 +1,4 @@
-#include "./../inc/canvas.h"
+﻿#include "./../inc/canvas.h"
 #include "gui/Shape.h"
 #include "gui/DrawableString.h"
 #include "annotationDialog.h"
@@ -671,10 +671,10 @@ void graph::fitToWindow(){
     funkcije[0].getShift(shiftX, shiftY);
 
     gui::Geometry g;
-    g.point.x = Limits[int(limits::xMin)] * scaleX + shiftX;
-    g.point.y = Limits[int(limits::yMax)] * scaleY - shiftY;
-    g.size.width = (Limits[int(limits::xMax)] - Limits[int(limits::xMin)]) * scaleX;
-    g.size.height = (Limits[int(limits::yMin)] - Limits[int(limits::yMax)]) * scaleY;
+    g.point.x = Limits[int(limits::xMin)] * scaleX + shiftX - 0.5;
+    g.point.y = Limits[int(limits::yMax)] * scaleY - shiftY - 0.5;
+    g.size.width = (Limits[int(limits::xMax)] - Limits[int(limits::xMin)]) * scaleX + 1;
+    g.size.height = (Limits[int(limits::yMin)] - Limits[int(limits::yMax)]) * scaleY + 1;
 
 
     ZoomToWindow(g);
@@ -756,7 +756,7 @@ void graph::onDraw(const gui::Rect& rect){
 
         gui::Rect pointRect(lastMousePos, gui::Size(sz.width + 23, sz.height + 23));
         gui::Shape shape;
-        shape.createRoundedRect(pointRect, 15);
+        shape.createRoundedRect(pointRect, 17.5);
         shape.drawFill(td::ColorID::LightGray);
         pointRect.setTopAndHeight(pointRect.top + 11.5, 0);
         str.draw(pointRect, FONT, td::ColorID::Black, td::TextAlignment::Center, td::TextEllipsize::None);
@@ -969,6 +969,7 @@ void graph::onPrimaryButtonPressed(const gui::InputDevice& inputDevice) {
     if (slike[5].rect.contains(inputDevice.getFramePoint())) {
         verticals.clear();
         horizontals.clear();
+        reDraw();
     }
 
     if (slike[6].rect.contains(inputDevice.getFramePoint())) {
@@ -1098,6 +1099,11 @@ bool graph::onKeyPressed(const gui::Key& key) {
         return true;
     }
 
+    if (c == 's' || c == 'S') {
+        saveMenu();
+        return true;
+    }
+
     if (c == 'l' || c == 'L') {
         showLegend(!_drawLegend);
         return true;
@@ -1160,9 +1166,16 @@ bool graph::onKeyPressed(const gui::Key& key) {
 }
 
 void graph::showHelp(){
+
+    showAlert("Manual", "F11 - toggle fullscreen\nf - fit to window\nv - add vertical annotaion\nh - add horizontal annotation\ni - show annotations"
+        "\ng - toggle grid\n'-' - zoom out\n'+' - zoom in\nL - toggle legend"
+        "\nRight click - zoom out\nRight drag (mouse) - move plot\nLeft drag (mouse) - zoom to window\nDouble right click - read point");
+
+    /*
     showAlert("Uputstvo", "F11 - toggle fullscreen\nf - fit to window\nv - dodaj vertikalnu liniju\nh - dodaj horizontalnu liniju\ni - prikazi informacije o vertiklanim i horizontalnim linijama"
         "\ng - toggle grid\n'-' - zoom out\n'+' - zoom in\nL - toggle legend"
-        "\nDesni klik - zoom out\nDesni drag (mis) - pomjeranje grafika\nLijevi drag (mis) - povecavanje na zabiljezeni prozor");
+        "\nDesni klik - zoom out\nDesni drag (mis) - pomjeranje grafika\nLijevi drag (mis) - povecavanje na zabiljezeni prozor\nDupli desni klik - ocitanje tacke");
+        */
 }
 
 void graph::onCursorExited(const gui::InputDevice& inputDevice) {

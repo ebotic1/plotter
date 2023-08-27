@@ -23,13 +23,13 @@ MainWindow::MainWindow()
     }
 
 
-    gui::CoordType* xx = new gui::CoordType[3];
-    gui::CoordType* yy = new gui::CoordType[3];
+    gui::CoordType* xx = new gui::CoordType[6];
+    gui::CoordType* yy = new gui::CoordType[6];
 
-    xx[0] = 0; xx[1] = 100; xx[2] = 1000;
-    yy[0] = -0; yy[1] = -100; yy[2] = -1000;
+    xx[0] = 0; xx[1] = 100; xx[2] = 200; xx[3] = 300; xx[4] = 300; xx[5] = 200;
+    yy[0] = 0; yy[1] = -100; yy[2] = 50; yy[3] = 50; yy[4] = 400; yy[5] = 400;
 
-    _graph.addFunction(xx, yy, 2);
+    _graph.addFunction(xx, yy, 6);
     //_graph.addFunction(x, y, broj);
 
   
