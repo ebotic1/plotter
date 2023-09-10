@@ -179,7 +179,7 @@ void Function::draw(const gui::Rect& frame){
 		gui::Shape dot;
 		std::vector<gui::Circle> dots;
 		dots.reserve(length);
-		for (size_t i = 1; i < length; ++i) 
+		for (size_t i = 0; i < length; ++i) 
 			if (frame.contains(tacke[i])) 
 				dots.emplace_back(tacke[i], 1);
 			

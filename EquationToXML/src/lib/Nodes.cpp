@@ -98,6 +98,7 @@ public:
 
 conditionNode::conditionNode(type t): tip(t){}
 
+
 class singleEquation : public baseNode {
 	bool added = false;
 	bool consumeEnd = false;

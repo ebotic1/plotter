@@ -1,7 +1,7 @@
 #include "blockSettings.h"
 #include "globals.h"
 
-blockSettings::blockSettings() : v(7), num("numerator: ", td::string8, "Numerator of the transfer function (use 's' as a variable OR use space as an operator)", td::Variant("1")),
+blockSettings::blockSettings() : v(8), num("numerator: ", td::string8, "Numerator of the transfer function (use 's' as a variable OR use space as an operator)", td::Variant("1")),
 dem("denominator: ", td::string8, "Denominator of the transfer function (use 's' as a variable OR use space as an operator)", td::Variant("s")), 
 inputSwitch("switch input/output"), disconnect("disconnect wires", "remove all incomming and outgoing connections from the selected block"),
 inputName("input var: ", td::string8, "variable name that will be created when exporting XML file for this block's input"),
@@ -24,20 +24,15 @@ outputName("output var: ", td::string8, "variable name that will be created when
 		if (current) current->setOutputName(v.strVal());
 		};
 
-	//v << num << dem;
+	v << num << dem;
 
-	v.append(num, td::HAlignment::Center, td::VAlignment::Top);
-	v.append(dem, td::HAlignment::Center, td::VAlignment::Top);
-	v.append(inputSwitch, td::HAlignment::Center, td::VAlignment::Top);
-	v.append(disconnect, td::HAlignment::Center, td::VAlignment::Top);
-
-	//v << inputSwitch << disconnect;
-	//v.appendSpace(5);
+	v << inputSwitch << disconnect;
+	v.appendSpace(7);
 	v << inputName << outputName;
+	v.appendSpacer();
 
 	setLayout(&v);
 
-	this->reMeasure();
 }
 
 void blockSettings::showBlock(Block* block) {

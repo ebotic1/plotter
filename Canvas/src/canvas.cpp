@@ -226,12 +226,25 @@ void graph::readTXT(const td::String& path){
 
     std::string line;
     bool containsBracket = false;
+    
 
 
-    while (getline(file, line)) {
-        if (line.find('[') != std::string::npos) {
-            containsBracket = true;
-            break;
+    while (getline(file, line)) { // pokusava skontati radi li se o horizontalnim podacima ili vertikalnim
+        size_t inBracketCharCount = 0;
+        size_t outBracketCharCount = 0;
+        size_t poz1 = 0;
+        if (poz1 = line.find('['), poz1 != std::string::npos) {
+            size_t poz2 = line.find(']');
+            if (poz2 == std::string::npos) {
+                containsBracket = true;
+                break;
+            }
+            inBracketCharCount += poz2 - poz1;
+            outBracketCharCount += line.size() - (poz2 - poz1);
+            if (inBracketCharCount > outBracketCharCount * 2) {
+                containsBracket = true;
+                break;
+            }
         }
     }
     
@@ -297,8 +310,16 @@ void graph::readTXT(const td::String& path){
     else {
         // Handle the "%s %s %s....\n%g %g %g %g %g %g\n%g %g %g %g %g %g..." pattern
 
+        auto skipWhiteLine = [&isWhitespace, &line, &file]() {
+            while (getline(file, line))
+                if (!isWhitespace(line))
+                    break;
+            return;
+            };
+
+
         int headerCount = 0;
-        getline(file, line);
+        skipWhiteLine();
         std::istringstream issHeader(line);
         std::string header;
         std::vector<td::String> names;
@@ -318,15 +339,17 @@ void graph::readTXT(const td::String& path){
 
         file.clear();
         file.seekg(0, std::ios::beg);
-        getline(file, line);
+        skipWhiteLine();
+        skipWhiteLine();
         std::vector<std::vector<gui::Point>> tacke;
    
-
         try
         {
             tacke.resize(headerCount);
 
             while (getline(file, line)) {
+                if (isWhitespace(line))
+                    continue;
                 std::istringstream iss(line);
 
                 for (size_t i = 0; i < headerCount; ++i) {
