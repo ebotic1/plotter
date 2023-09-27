@@ -259,21 +259,21 @@ bool modelNode::nodeAction(const td::String& command, baseNode*& newChild){
 			nodes.push_back(new paramsNode());
 		else if (command.cCompareNoCase("model:") == 0)
 			return true;
-		else if (command.cCompareNoCase("NLEqs:") == 0)
+		else if (command.cCompareNoCase("NLEqs:") == 0 || command.cCompareNoCase("NL:") == 0)
 			nodes.push_back(new NLEquationsNode());
-		else if (command.cCompareNoCase("ODEqs:") == 0)
+		else if (command.cCompareNoCase("ODEqs:") == 0 || command.cCompareNoCase("ODE:") == 0)
 			nodes.push_back(new ODEquationsNode());
 		else if (command.cCompareNoCase("Init:") == 0)
 			nodes.push_back(new initNode);
 		else if (command.cCompareNoCase("PostProc:") == 0)
 			nodes.push_back(new postProcNode);
-		else if (command.cCompareNoCase("MeasEqs:") == 0)
+		else if (command.cCompareNoCase("MeasEqs:") == 0 || command.cCompareNoCase("Meas:") == 0)
 			nodes.push_back(new MeasEqNode);
 		else if (command.cCompareNoCase("Limits:") == 0)
 			nodes.push_back(new LimitNode);
-		else if (command.cCompareNoCase("ECs:") == 0)
+		else if (command.cCompareNoCase("ECs:") == 0 || command.cCompareNoCase("EC:") == 0)
 			nodes.push_back(new ECsNode);
-		else if (command.cCompareNoCase("TFs:") == 0)
+		else if (command.cCompareNoCase("TFs:") == 0 || command.cCompareNoCase("TF:") == 0)
 			nodes.push_back(new TFsNode);
 		else
 			nodes.push_back(new nameNode(command.subStr(0, command.length() - 2)));
@@ -290,9 +290,7 @@ bool modelNode::nodeAction(const td::String& command, baseNode*& newChild){
 void generateXML(const td::String& equations, const td::String& output_path) {
 	modelNode m(equations);
 
-	td::String bacaj(output_path.subStr(0, output_path.length() - 5));
-	bacaj += "test.xml";
-	xml::Writer w(bacaj);
+	xml::Writer w(output_path);
 	w.startDocument();
 
 	m.printNode(w);

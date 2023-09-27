@@ -19,17 +19,16 @@ MainWindow::MainWindow()
 bool MainWindow::onClick(gui::FileDialog* pDlg, td::UINT4 dlgID)
 {
     if (dlgID == 1) {
-        if (!_mainView.loadXML(pDlg->getFileName()))
+        if (!_mainView.loadFile(pDlg->getFileName()))
             showAlert("Error", "Cant load file");
 
-            //delete pDlg; crash aplikacije ?
         return true;
     }
 
     if (dlgID == 2) {
         td::String path = pDlg->getFileName();
 
-        if(!_mainView.saveAsXML(path))
+        if(!_mainView.saveAs(path))
             showAlert("Error", "Cant save file");
         return true;
     }
@@ -46,7 +45,7 @@ bool MainWindow::onActionItem(td::BYTE menuID, td::BYTE firstSubMenuID, td::BYTE
     }
 
     if (menuID == 1 && actionID == 2) {//save
-        if (!_mainView.saveXML())
+        if (!_mainView.save())
             showAlert("Error", "Cant save file");
         return true;
        
@@ -68,7 +67,13 @@ bool MainWindow::onActionItem(td::BYTE menuID, td::BYTE firstSubMenuID, td::BYTE
 }
 
 void MainWindow::onInitialAppearance(){
-    _mainView.loadXML("C:\\Users\\eb\\modelSolver\\test.txt");
+    const char* homePath = getenv("HOME");
+
+    if (homePath == nullptr) 
+        return;
+    td::String path = homePath;
+    path += "\\modelSolver\\test.txt";
+    _mainView.loadFile(path);
 }
 
 

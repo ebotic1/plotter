@@ -37,6 +37,7 @@ public:
 	const std::vector<Block*>& getConnectedBlocks() const;
 	const std::vector<Block*>& getConnectedFromBlocks() const;
 	const td::String& getOutputName() const;
+	const td::String& getInputName() const;
 
 	void setUpAll();
 	void setUpWires(bool refreshCanvas);

@@ -26,12 +26,16 @@ class switcher : public gui::ViewSwitcher {
 
 	gui::ColorPicker backgroundColor; gui::Label backgroundLabel;
 	gui::ColorPicker axisColor; gui::Label axisLabel;
+
+	elementProperty xAxisName, yAxisName;
 	
 public:
-	switcher(graph& mainView) : gui::ViewSwitcher(2), graphProps(5), lineProps(6), mainGraph(mainView),
+	switcher(graph& mainView) : gui::ViewSwitcher(2), graphProps(8), lineProps(6), mainGraph(mainView),
 		name("name: ", td::string8, "name of the function that appears on the legend"),
 		sliderLabel("Line width:"),
-		axisLabel("Axis color:"), backgroundLabel("Background Color:")
+		axisLabel("Axis color:"), backgroundLabel("Background Color:"),
+		xAxisName("x axis label:", td::string8, "label of the x axis"),
+		yAxisName("y axis label:", td::string8, "label of the y axis")
 	{
 		slider.setRange(0.1, 10);
 		pattern.addItems(patternNames.data(), patternNames.size());
@@ -48,6 +52,12 @@ public:
 		graphProps << backgroundLabel << backgroundColor;
 		graphProps.appendSpace(10);
 		graphProps << axisLabel << axisColor;
+
+		xAxisName.Action = [&mainView](const td::Variant& v) {mainView.setxAxisName(v.strVal()); };
+		yAxisName.Action = [&mainView](const td::Variant& v) {mainView.setyAxisName(v.strVal()); };
+
+		graphProps.appendSpace(10);
+		graphProps << xAxisName << yAxisName;
 
 		view1.setLayout(&lineProps);
 		view1.forwardMessagesTo(this);
@@ -110,6 +120,8 @@ void switcher::showFunction(size_t pos){
 void switcher::showGraph(){
 	backgroundColor.setValue(mainGraph.getBackgroundColor(), false);
 	axisColor.setValue(mainGraph.getAxisColor(), false);
+	xAxisName.setValue(td::Variant(mainGraph.getxAxisName()));
+	yAxisName.setValue(td::Variant(mainGraph.getyAxisName()));
 	showView(0, false);
 }
 

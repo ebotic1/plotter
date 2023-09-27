@@ -8,6 +8,7 @@
 #include <fstream>
 #include "xml/DOMParser.h"
 #include "./../../common/to_color.h"
+#include "gui/Transformation.h"
 
 #define SELECT_COLOR td::ColorID::Green
 #define FONT gui::Font::ID::ReportBody1
@@ -58,7 +59,7 @@ public:
         colors.emplace_back(f.getColor());
     };
 
-
+   
 };
 
 td::String graph::to_string(gui::CoordType x) {
@@ -87,10 +88,13 @@ bool graph::saveXML(const td::String& path){
     funkcije[0].getScale(scaleX, scaleY);
     funkcije[0].getShift(shiftX, shiftY);
 
-    w.attribute("scaleX", to_string(scaleX));
-    w.attribute("scaleY", to_string(-scaleY));
-    w.attribute("shiftX", to_string(shiftX));
-    w.attribute("shiftY", to_string(shiftY));
+    w.attribute("minX", to_string(funkcije[0].transformedToRealX(drawingWindow.point.x)));
+    w.attribute("maxX", to_string(funkcije[0].transformedToRealX(drawingWindow.point.x + drawingWindow.size.width)));
+    w.attribute("maxY", to_string(funkcije[0].TrasformedToRealY(drawingWindow.point.y)));
+    w.attribute("minY", to_string(funkcije[0].TrasformedToRealY(drawingWindow.point.y + drawingWindow.size.height)));
+
+    w.attribute("xLabel", xAxisName.toString());
+    w.attribute("yLabel", yAxisName.toString());
 
     w.attributeC("background", toString(backgroundColor));
     w.attributeC("axis", toString(axisColor));
@@ -177,7 +181,7 @@ bool graph::saveTXT(const td::String& path, bool horizontal){
                 out << to_string(fun.transformedToRealX(tacke[j].x)) << ", ";
             out << to_string(fun.transformedToRealX(tacke[length].x)) << "]\n\n";
 
-            out << fun.name->c_str() << "[";
+            out << fun.name->c_str() << "=[";
 
             for (size_t j = 0; j < length; ++j)
                 out << to_string(fun.TrasformedToRealY(tacke[j].y)) << ", ";
@@ -214,6 +218,27 @@ bool graph::saveTXT(const td::String& path, bool horizontal){
     }
 
     return true;
+}
+
+bool graph::openFile(td::String path, bool readOnlyFunctions){
+    bool success = false;
+
+    if (path.endsWith(".txt")) {
+        readTXT(path);
+        success = true;
+    }
+    if (path.endsWith(".xml")) {
+        readXML(path, readOnlyFunctions);
+        success = true;
+    }
+
+    if (success) {
+        lastPath = path;
+        reDraw();
+        return true;
+    }
+
+    return false;
 }
 
 void graph::readTXT(const td::String& path){
@@ -272,6 +297,10 @@ void graph::readTXT(const td::String& path){
                     name += ch;
                 }
 
+                if (name.back() == '=') 
+                    name.pop_back();
+                
+
                 bool done = true;
                 do {
                     if (!done)
@@ -288,7 +317,7 @@ void graph::readTXT(const td::String& path){
                             break;
                         }
                     }
-                } while (getline(file, line) && !done);
+                } while (!done && getline(file, line));
                 break;
             }
 
@@ -298,11 +327,13 @@ void graph::readTXT(const td::String& path){
             std::vector<gui::CoordType> x, y;
             std::string name;
             readData(name, x);
+            setxAxisName(name);
             name.clear();
             readData(name, y);
+            setyAxisName(name);
             size_t bigger = (x.size() > y.size()) ? y.size() : x.size();
             if (bigger == 0)
-                break;
+                continue;
             this->addFunction(x.data(), y.data(), bigger, 2, td::LinePattern::Solid, name.c_str());
         }
 
@@ -371,10 +402,10 @@ void graph::readTXT(const td::String& path){
         
     }
     file.close();
-    fitToWindow();
+   
 }
 
-void graph::readXML(const td::String& path, bool resetGraph){
+void graph::readXML(const td::String& path, bool onlyData){
     xml::FileParser par;
     par.parseFile(path);
 
@@ -384,23 +415,27 @@ void graph::readXML(const td::String& path, bool resetGraph){
     }
 
 
-    if (resetGraph)
-        this->reset();
     
     auto root = par.getRootNode();
 
-    gui::CoordType scaleX = 0, scaleY = 0, shiftX = 0, shiftY = 0;
+    gui::CoordType minX = 0, maxX = 0, maxY = 0, minY = 0;
 
-    if (resetGraph) {
+    if (!onlyData) {
         for (auto & att : root->attribs) {
-            if (att.getName().cCompareNoCase("scaleX") == 0)
-                scaleX = att.value.toDouble();
-            if (att.getName().cCompareNoCase("scaleY") == 0)
-                scaleY = att.value.toDouble();
-            if (att.getName().cCompareNoCase("shiftX") == 0)
-                shiftX = att.value.toDouble();
-            if (att.getName().cCompareNoCase("shiftY") == 0)
-                shiftY = att.value.toDouble();
+
+            if (att.getName().cCompareNoCase("xLabel") == 0)
+                xAxisName = att.getValue();
+            if (att.getName().cCompareNoCase("yLabel") == 0)
+                yAxisName = att.getValue();
+
+            if (att.getName().cCompareNoCase("minX") == 0)
+                minX = att.value.toDouble();
+            if (att.getName().cCompareNoCase("maxX") == 0)
+                maxX = att.value.toDouble();
+            if (att.getName().cCompareNoCase("minY") == 0)
+                maxY = att.value.toDouble();
+            if (att.getName().cCompareNoCase("maxY") == 0)
+                minY = att.value.toDouble();
             if (att.getName().cCompareNoCase("background") == 0) {
                 backgroundColor = to_color(att.getValue().c_str());
                 setBackgroundColor(backgroundColor);
@@ -470,9 +505,11 @@ void graph::readXML(const td::String& path, bool resetGraph){
 
             addFunction(x.data(), y.data(), x.size(), (color == td::ColorID::Transparent) ? nextColor() : color, width, pattern, name);
                 
-            if (funkcije.size() == 1 && resetGraph) {
-                funkcije[0].increaseScaleAndShiftX(scaleX, shiftX);
-                funkcije[0].increaseScaleAndShiftY(scaleY, shiftY);
+            if (funkcije.size() == 1 && !onlyData) {
+                if (minX == maxX || minY == maxY)
+                    fitToWindow();
+                else
+                    ZoomToArea(&minX, &maxX, &minY, &maxY);
             }
 
         }
@@ -503,22 +540,22 @@ bool graph::save(const td::String& path){
         return true;
     }
 
-    gui::Geometry g;
-    getGeometry(g);
-    gui::Rect rect(g.point, gui::Size(g.size.width, g.size.height));
+   // gui::Geometry g;
+   // getGeometry(g);
+   // gui::Rect rect({0,0}, gui::Size(g.size.width, g.size.height));
 
     if (path.endsWith(".svg")) {
-        exportToSVG(rect, path);
+        exportToSVG(path, true);
         return true;
     }
 
     if (path.endsWith(".pdf")) {
-        exportToPDF(rect, path);
+        exportToPDF(path, true);
         return true;
     }
 
     if (path.endsWith(".eps")) {
-        exportToEPS(rect, path);
+        exportToEPS(path, true);
         return true;
     }
 }
@@ -547,13 +584,13 @@ graph::graph(bool startWithMargins, bool takeUserInput, td::ColorID backgroundCo
     if (startWithMargins)
         setUpDrawingWindow();
 
-
 }
 
 void graph::setUpDrawingWindow(){
     auto past = drawingWindow;
     getGeometry(drawingWindow);
     drawingWindow.point.y = 0;
+    drawingWindow.point.x = 0;
 
     if (drawMargins) {
         gui::Point center;
@@ -588,6 +625,8 @@ void graph::reset(){
     verticals.clear();
     horizontals.clear();
     action = Actions::none;
+    xAxisName = "";
+    yAxisName = "";
     funkcije.clear();
     delete Limits;
     Limits = nullptr;
@@ -710,6 +749,8 @@ void graph::ZoomToWindow(const gui::Geometry& window){
     if (window.size.width < 0.1 || window.size.height < 0.1) {
         return;
     }
+    if (drawingWindow.size.width < 1 || drawingWindow.size.height < 1)
+        return;
 
     gui::CoordType shiftY = window.point.y + window.size.height - drawingWindow.point.y - drawingWindow.size.height;
     gui::CoordType shiftX = drawingWindow.point.x - window.point.x;
@@ -730,10 +771,37 @@ void graph::ZoomToWindow(const gui::Geometry& window){
 }
 
 
+void graph::ZoomToArea(gui::CoordType* minX, gui::CoordType* maxX, gui::CoordType* minY, gui::CoordType* maxY){
+    if (funkcije.size() == 0)
+        return;
+    if (drawingWindow.size.width < 1 || drawingWindow.size.height < 1)
+        return;
+
+    gui::CoordType left, right, top, bottom;
+
+    left = (minX == nullptr) ? drawingWindow.point.x : funkcije[0].realToTransformedX(*minX);
+    right = (maxX == nullptr) ? (drawingWindow.point.x + drawingWindow.size.width) : funkcije[0].realToTransformedX(*maxX);
+
+    if (left > right)
+        std::swap(left, right);
+
+    bottom = (minY == nullptr) ? (drawingWindow.point.y + drawingWindow.size.height) : funkcije[0].realToTransformedY(*minY);
+    top = (maxY == nullptr) ? drawingWindow.point.y : funkcije[0].realToTransformedY(*maxY);
+
+    if (top > bottom)
+        std::swap(top, bottom);
+
+    
+
+    gui::Geometry g(left, top, right-left, bottom-top);
+    ZoomToWindow(g);
+    reDraw();
+
+}
 
 
 
-void graph::onDraw(const gui::Rect& rect){
+void graph::onDraw(const gui::Rect& rect){   
 
     for (int i = 0; i < funkcije.size(); ++i)
         funkcije[i].draw(drawingRect);
@@ -783,8 +851,10 @@ void graph::onDraw(const gui::Rect& rect){
         shape.drawFill(td::ColorID::LightGray);
         pointRect.setTopAndHeight(pointRect.top + 11.5, 0);
         str.draw(pointRect, FONT, td::ColorID::Black, td::TextAlignment::Center, td::TextEllipsize::None);
-
+        
     }
+
+
 
 }
 
@@ -943,6 +1013,29 @@ void graph::drawAxis(){
         line += razmak * scaleX;
         lineY += razmakY * scaleY;
 
+    }
+
+
+    //axis names
+    {
+        gui::Transformation tr;
+        tr.saveContext();
+        gui::Rect r({ 0, 0}, gui::Size({ drawingWindow.size.width, 100 }));
+
+        
+        tr.translate(drawingRect.left, drawingRect.bottom + 100);
+        tr.setToContext();
+        this->xAxisName.draw(r, FONT, axisColor, td::TextAlignment::Center);
+
+        tr = gui::Transformation();
+        r.setWidth(drawingWindow.size.height);
+
+        tr.translate(drawingRect.left - 135, drawingRect.bottom);
+        tr.rotateDeg(-90);
+        tr.setToContext();
+        this->yAxisName.draw(r, FONT, axisColor, td::TextAlignment::Center);
+        tr.restoreContext();
+        
     }
 
 }
@@ -1157,6 +1250,30 @@ bool graph::onKeyPressed(const gui::Key& key) {
         return true;
     }
 
+    if (key.getVirtual() == gui::Key::Virtual::F5) {
+        if (lastPath.isNull())
+            return false;
+       
+
+        int funCnt = funkcije.size();
+
+        delete Limits;
+        Limits = nullptr;
+        delete legenda;
+        legenda = new legend(axisColor);
+        xAxisName = "";
+        yAxisName = "";
+        pastColors.clear();
+        lastColor = 0;
+
+        openFile(lastPath, true);
+
+        funkcije.erase(funkcije.begin(), funkcije.begin() + funCnt);
+        reDraw();
+
+        return true;
+    }
+
 
     if (key.getVirtual() == gui::Key::Virtual::F11) {
         if (drawMargins)
@@ -1192,7 +1309,7 @@ void graph::showHelp(){
 
     showAlert("Manual", "F11 - toggle fullscreen\nf - fit to window\nv - add vertical annotaion\nh - add horizontal annotation\ni - show annotations"
         "\ng - toggle grid\n'-' - zoom out\n'+' - zoom in\nL - toggle legend"
-        "\nRight click - zoom out\nRight drag (mouse) - move plot\nLeft drag (mouse) - zoom to window\nDouble right click - read point");
+        "\nRight click - zoom out\nRight drag (mouse) - move plot\nLeft drag (mouse) - zoom to window\nDouble right click - read point\nF5 - reload from file");
 
     /*
     showAlert("Uputstvo", "F11 - toggle fullscreen\nf - fit to window\nv - dodaj vertikalnu liniju\nh - dodaj horizontalnu liniju\ni - prikazi informacije o vertiklanim i horizontalnim linijama"

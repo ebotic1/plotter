@@ -34,6 +34,10 @@ const td::String& Block::getOutputName() const{
 	return izlazName;
 }
 
+const td::String& Block::getInputName() const{
+	return ulazName;
+}
+
 
 bool Block::intersectsInput(const gui::Point& p) {
 	return gui::Circle(inputPoint, 20).contains(p);
@@ -75,6 +79,7 @@ void Block::setInputName(const td::String& name){
 		ulazName = name;
 
 	drawUlaz = ulazName;
+	globals::refreshCanvas();
 }
 
 void Block::setOutputName(const td::String& name){
@@ -85,6 +90,7 @@ void Block::setOutputName(const td::String& name){
 
 	drawIzlaz = izlazName;
 
+	globals::refreshCanvas();
 }
 
 void Block::connectTo(Block* block) {

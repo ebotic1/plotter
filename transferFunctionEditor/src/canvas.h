@@ -416,18 +416,63 @@ bool kanvas::exportToXML(const td::String &path){
 
 		blocks[i]->getAllProps(nom, dem, connected, switched, inputName, outputName);
 		vars.processCommands(inputName);
-		vars.processCommands(outputName);
+		if (blocks[i]->getConnectedFromBlocks().empty())
+			vars.nodes.back()->attribs["out"] = "true";
 
+		vars.processCommands(outputName);
+		if (blocks[i]->getConnectedBlocks().empty())
+			vars.nodes.back()->attribs["out"] = "true";
+
+
+		inputName = inputName.subStr(0, inputName.find("=")-1);
+		outputName = outputName.subStr(0, outputName.find("=")-1);
 		cnt::StringBuilder cmnd;
 		
-		cmnd << outputName << "/" << inputName << " = " << "(" << nom << ")" << "/(" << dem << ")";
+		auto hasLaplaceOperator = [](const td::String& s) {
+			int poz = 0;
 
-		tfs.processCommands(cmnd.toString());
+			while (true) {
+				poz = s.find("s", poz);
+				if (poz == -1)
+					break;
 
-		if (blocks[i]->getConnectedFromBlocks().size() < 2)
-			continue;
+				char c = (s.length() > poz + 1) ? s.getAt(poz + 1) : '*';
+				if (std::isdigit(c) || c == '*' || c == '/' || c == '+' || c == '-' || c == ' ') {
+					c = (poz > 0) ? s.getAt(poz - 1) : c = '*';
+					if (c == '*' || c == '/' || c == '+' || c == '-' || c == ' ')
+						return true;
+				}
+				++poz;
+			}
+			return false;
+		};
+
+		
+
+		if (hasLaplaceOperator(nom) || hasLaplaceOperator(dem)) {	
+			cmnd << outputName << "/" << inputName << " = " << "(" << nom << ")" << "/(" << dem << ")";
+			tfs.processCommands(cmnd.toString());
+		}
+		else {
+			cmnd << outputName << " = " << "(" << nom  << " * " <<  inputName  << ")/(" << dem << ")";
+			nle.processCommands(cmnd.toString());
+		}
+
 
 		cmnd.reset();
+
+		if (blocks[i]->getConnectedFromBlocks().size() == 0) {
+			inputName = blocks[i]->getInputName();
+			if (inputName.find('=') == -1)
+				cmnd << inputName << " = 0";
+			else
+				cmnd << inputName;
+
+			
+
+			nle.processCommands(cmnd.toString());
+			continue;
+		}
 
 		cmnd << inputName << " = ";
 		auto& connectedFrom = blocks[i]->getConnectedFromBlocks();
@@ -444,8 +489,8 @@ bool kanvas::exportToXML(const td::String &path){
 	td::Variant v;
 	globals::model_settings->edit.getValue(v);
 
+	params.processCommands("t // time");
 	params.processCommands(v.strVal());
-
 
 	mod.attribs = std::move(params.attribs);
 	params.attribs.clear();

@@ -8,9 +8,11 @@
 #include <vector>
 #include "gui/ComboBox.h"
 #include "gui/NumericEdit.h"
+#include "../../Canvas/inc/canvas.h"
+#include "gui/SplitterLayout.h"
 
 class View : public gui::View {
-	gui::HorizontalLayout hLayout, opcije;
+	gui::HorizontalLayout opcije;
 	gui::HorizontalLayout timeLayout;
 	gui::NumericEdit _start, _end, _step;
 	gui::Label starLabel, endLabel, korakLabel;
@@ -26,14 +28,17 @@ class View : public gui::View {
 
 	void pokreniSolver();
 	td::String currentPath, currentPathXML;
+	
+	graph plotter;
+	gui::SplitterLayout splitter;
 
 
 public:
 
 	View();
 	virtual bool onClick(gui::Button* pBtn);
-	bool loadXML(const td::String &path);
-	bool saveXML();
-	bool saveAsXML(const td::String &path);
+	bool loadFile(const td::String &path);
+	bool save();
+	bool saveAs(td::String path);
 	
 };

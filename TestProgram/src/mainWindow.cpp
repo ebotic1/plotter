@@ -30,6 +30,7 @@ MainWindow::MainWindow()
     yy[0] = 0; yy[1] = -100; yy[2] = 50; yy[3] = 50; yy[4] = 400; yy[5] = 400;
 
     _graph.addFunction(xx, yy, 6);
+
     //_graph.addFunction(x, y, broj);
 
   
@@ -37,6 +38,7 @@ MainWindow::MainWindow()
 
     
     splitter.refreshPicks();
+
 
 
 }
@@ -48,14 +50,15 @@ bool MainWindow::onActionItem(td::BYTE menuID, td::BYTE firstSubMenuID, td::BYTE
     if (menuID == 1) {
         if (actionID > 2)
             return false;
+
+        resetGraph = false;
         if (actionID == 1) {
             _graph.reset();
             resetGraph = true;
         }
-        else {
-            resetGraph = false;
-        }
 
+       
+        
         auto f = new gui::FileDialog(this, "Read data", { "*.txt", "*.xml" }, "Open");
         f->openModal(1, this);
 
@@ -102,17 +105,18 @@ bool MainWindow::onClick(gui::FileDialog* pDlg, td::UINT4 dlgID){
 }
 
 bool MainWindow::open(const td::String& path){
-    bool succes = false;
-    if (path.endsWithCI(".txt", 4)) {
-        _graph.readTXT(path);
-        succes = true;
-    }
-    if (path.endsWithCI(".xml", 4)) {
-        _graph.readXML(path, resetGraph);
-        succes = true;
-    }
+
+    if (resetGraph && path.endsWith(".xml"))
+        resetGraph = false;
+    else
+        resetGraph = true;
+
+    bool succes = _graph.openFile(path, resetGraph);
     if (!succes)
         return false;
+
+    if(resetGraph)
+        _graph.fitToWindow();
 
     splitter.refreshPicks();
     return true;
@@ -125,7 +129,6 @@ void MainWindow::loadFromTerminal(int argc, char** argv){
         return;
 
     open(argv[1]);
-    resetGraph = false;
 
     for (size_t i = 2; i < argc; ++i){
         open(argv[i]);

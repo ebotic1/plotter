@@ -27,7 +27,7 @@ public:
 	std::map<td::String, td::String> attribs;
 
 	virtual void printNode(xml::Writer& w);
-	inline td::String& operator[](const td::String& attrib) {
+	inline td::String& operator[](td::String attrib) {
 		return attribs[attrib];
 	}
 	void addComment(const td::String& comment);

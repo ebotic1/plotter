@@ -29,10 +29,11 @@ source_group("src"            FILES ${SOURCES})
 add_executable(${SOLUTION_NAME} ${INCS} ${SOURCES})
 
 include("${SOURCE_ROOT}/../EquationToXML/EqToXML.cmake")
+include("${SOURCE_ROOT}/../Canvas/plotlib.cmake")
 
 target_link_libraries(${SOLUTION_NAME}	debug ${MU_LIB_DEBUG}   	optimized ${MU_LIB_RELEASE}
 					debug ${NATGUI_LIB_DEBUG}   optimized ${NATGUI_LIB_RELEASE}
-					${EqToXML_lib})
+					${EqToXML_lib} ${plotlib_lib})
 
 
 setTargetPropertiesForGUIApp(${SOLUTION_NAME} ${CMAKE_CURRENT_LIST_DIR}/src/Info.plist) 

@@ -21,15 +21,13 @@
 
 
 
-View::View() : hLayout(1), vLayout(9), jednacinaLabel("Jednacina:"), dugmadi(1), opcije(5), timeLayout(7), 
-starLabel("pocetno vrijeme simulacije"), endLabel("krajnje vrijeme simulacije"), korakLabel("korak: "), _start(td::DataType::decimal2), _end(td::DataType::decimal2), _step(td::DataType::decimal2), _generisiTXT("Kreiraj rezultat.txt")
+View::View() : splitter(gui::SplitterLayout::Orientation::Horizontal), vLayout(9), jednacinaLabel("Jednacina:"), dugmadi(1), opcije(5), timeLayout(7),
+starLabel("pocetno vrijeme simulacije"), endLabel("krajnje vrijeme simulacije"), korakLabel("korak: "), _start(td::DataType::decimal2), _end(td::DataType::decimal2), _step(td::DataType::decimal2), _generisiTXT("Run")
 {
 
 
-	//hLayout.appendLayout(vLayout);
-
 	_end.setText("10");
-	_step.setText("0.01");
+	_step.setText("0,01");
 
 	vLayout.appendLayout(opcije);
 	timeLayout << starLabel << _start << endLabel << _end << korakLabel << _step;
@@ -48,29 +46,102 @@ starLabel("pocetno vrijeme simulacije"), endLabel("krajnje vrijeme simulacije"),
 	dugmadi.append(_generisiTXT, td::HAlignment::Center);
 
 
-	vLayout.appendSpace(50);
+	vLayout.appendSpace(20);
 	vLayout.appendLayout(dugmadi);
-	vLayout.appendSpace(10);
-
-	
+	vLayout.appendSpace(30);
 	
 	vLayout.setMargins(20, 20);
-	setLayout(&vLayout);
+	splitter.setContent(vLayout, plotter);
+
+	setLayout(&splitter);
 
 	
 }
 
 
-bool View::onClick(gui::Button* pBtn)
-{
+
+bool extractNumbers(const std::string& path, //chatGPT
+	std::vector<std::string>& headers,
+	std::vector<std::vector<double>>& data) {
+	std::ifstream file(path);
+
+	if (!file.is_open()) {
+		std::cerr << "Failed to open file." << std::endl;
+		return false;
+	}
+
+	std::string line;
+	bool startData = false;
+
+	while (getline(file, line)) {
+		// Start collecting data after finding "SOLUTION DATA"
+		if (line.find("SOLUTION DATA") != std::string::npos) {
+			// Skip the divider line
+			getline(file, line);
+			// Read the header line
+			getline(file, line);
+
+			// Split headers and save them
+			std::istringstream issHeaders(line);
+			std::string header;
+			while (issHeaders >> header) {
+				headers.push_back(header);
+			}
+
+			// Initialize data vectors based on header count
+			data.resize(headers.size());
+
+			// Skip the divider line
+			getline(file, line);
+			startData = true;
+			continue;
+		}
+
+		if (startData && !line.empty()) {
+			std::istringstream issData(line);
+			double value;
+			int colIdx = 0;
+			while (issData >> value) {
+				if (colIdx < data.size()) {
+					data[colIdx].push_back(value);
+					colIdx++;
+				}
+			}
+		}
+	}
+
+	file.close();
+	return true;
+}
+
+
+bool View::onClick(gui::Button* pBtn) {
+
+	saveAs(currentPathXML);
 
 	if (pBtn == &_generisiTXT) {
 		pokreniSolver();
-
 	}
+
+
+	std::vector<std::string> names;
+	std::vector<std::vector<double>> numbers;
+
+	const char* userProfile = getenv("USERPROFILE");
+	std::string path = getenv("USERPROFILE");
+	path += "\\modelSolver\\rezultat.txt";
+
+	extractNumbers(path, names, numbers);
+
+	plotter.reset();
+
+	for (int i = 1; i < names.size(); ++i){
+		plotter.addFunction(numbers[0].data(), numbers[i].data(), numbers[0].size(), 2, td::LinePattern::Solid, names[i]);
+		plotter.fitToWindow();
+	}
+
 	return false;
 }
-
 
 
 
@@ -95,6 +166,7 @@ void View::pokreniSolver(){
 
 	_start.getValue(v);
 	s += v.toString();
+	const char* debug = v.toString().c_str();
 	s += " ";
 	
 	_step.getValue(v);
@@ -370,7 +442,7 @@ PRINT_CHILDREN:
 
 }
 
-bool View::loadXML(const td::String& path) {
+bool View::loadFile(const td::String& path) {
 	xml::FileParser par;
 	StringBuilder s;
 	bool x;
@@ -387,52 +459,57 @@ bool View::loadXML(const td::String& path) {
 		}
 		input.close();
 		currentPath = path;
+		currentPathXML = path.subStr(0, currentPath.length() - 5);
+		currentPathXML += ".xml";
 		return true;
 	}
 
-	if (!path.endsWithCI(".xml", 4))
-		return false;
 
-	if (!par.parseFile(path) || !getComment(td::String(), x, path.c_str()))
-		return false;
-	
+	if (path.endsWithCI(".xml", 4)) {
 
-	auto& model = par.getRootNode();
+		if (!par.parseFile(path) || !getComment(td::String(), x, path.c_str()))
+			return false;
 
-	if (model->getName().cCompare("Model") != 0)
-		return false;
 
-	printNode(s, model);
-	td::String comment;
-	while (getComment(comment, x))
-		if (!comment.isNull())
-			s << "//" << comment << '\n';
+		auto& model = par.getRootNode();
 
-	_jednacineText.clean();
-	td::String temp;
-	s.getString(temp);//moglo bi bez temp da getString vraca string pa da se direktno std::move
-	_jednacineText.setText(std::move(temp));
+		if (model->getName().cCompare("Model") != 0)
+			return false;
 
-	//if (currentPath.isNull()) {
-	currentPathXML = path;
-	const char* debug = path.c_str();
-		currentPath = path.subStr(0, currentPath.length() - 4);
+		printNode(s, model);
+		td::String comment;
+		while (getComment(comment, x))
+			if (!comment.isNull())
+				s << "//" << comment << '\n';
+
+		_jednacineText.clean();
+		td::String temp;
+		s.getString(temp);//moglo bi bez temp da getString vraca string pa da se direktno std::move
+		_jednacineText.setText(std::move(temp));
+
+
+		currentPathXML = path;
+		currentPath = path.subStr(0, currentPath.length() - 5);
 		currentPath += ".txt";
-	//}
 
-	return true;
+		return true;
+
+	}
+
+	return false;
 }
 
-bool View::saveXML(){
+bool View::save(){
 	if (currentPath.isNull()) {
 		showAlert("Error", "No file is opened, use 'open' or 'save as'");
 		return true;
 	}
-	saveAsXML(currentPath);
+	saveAs(currentPath);
 	return true;
 }
 
-bool View::saveAsXML(const td::String& path){
+bool View::saveAs(td::String path){
+
 
 	if (path.endsWith(".txt", 4)) {
 		std::ofstream output(path.c_str());
@@ -446,21 +523,23 @@ bool View::saveAsXML(const td::String& path){
 		return true;
 	}
 
-	if (!path.endsWith(".xml", 4)) {
-		return false;
-	}
+	if (path.endsWith(".xml", 4)) {
+		
+		try{
+			generateXML(_jednacineText.getText(), path);
+		}
+		catch (const std::exception& e){
+			showAlert("Could not save file", e.what());
+			return false;
+		}
 
-	try{
-		generateXML(_jednacineText.getText(), path);
 		currentPathXML = path;
-	}
-	catch (const std::exception& e){
-		showAlert("Could not save file", e.what());
-		return false;
+		
+		return true;
+
 	}
 
-	currentPath = path;
-	return true;
+	return false;
 
 }
 
