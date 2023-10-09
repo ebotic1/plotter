@@ -159,14 +159,13 @@ void View::pokreniSolver(){
 	s += root.getAttrib("type")->getValue();
 	s += " ";
 	s += root.getAttrib("domain")->getValue();
-	s += " ";
+	s += " \"";
 	s += currentPathXML;
-	s += " rezultat.txt ";
+	s += "\" rezultat.txt ";
 	td::Variant v;
 
 	_start.getValue(v);
 	s += v.toString();
-	const char* debug = v.toString().c_str();
 	s += " ";
 	
 	_step.getValue(v);
