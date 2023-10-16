@@ -3,6 +3,7 @@
 #include "./../../common/defineExportImport.h"
 #include "gui/Shape.h"
 #include "td/String.h"
+#include <vector>
 
 class IMPEXP Function {
 
@@ -10,8 +11,6 @@ class IMPEXP Function {
 	gui::Point *tacke = nullptr;
 	size_t length = 0;
 	td::LinePattern pattern = td::LinePattern::Solid;
-	//bool recalcShape = true;
-	//gui::Shape lines;
 	double debljina = 1;
 
 	gui::CoordType shiftX = 0;
@@ -21,6 +20,10 @@ class IMPEXP Function {
 	gui::CoordType scaleY = 1;
 	
 	gui::Point findIntersection(const gui::Point& p1, const gui::Point& p2, const gui::Rect& r);
+
+	bool reDraw = true;
+	std::vector<gui::Shape> lines;
+	void addToLines(std::vector<gui::Point>& tacke);
 
 public:
 
@@ -43,12 +46,8 @@ public:
 	void setColor(td::ColorID& color) {
 		this->color = color;
 	}
-	void setPattern(td::LinePattern pattern) {
-		this->pattern = pattern;
-	}
-	void setLineWidth(double width) {
-		debljina = width;
-	}
+	void setPattern(td::LinePattern pattern);
+	void setLineWidth(double width);
 	
 	void increaseScaleAndShiftX(const gui::CoordType& scale, const gui::CoordType& shift);
 	void increaseScaleAndShiftY(const gui::CoordType& scale, const gui::CoordType& shift);

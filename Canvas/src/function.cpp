@@ -74,6 +74,7 @@ gui::Point Function::findIntersection(const gui::Point& p1, const gui::Point& p2
 
 Function::Function(gui::CoordType* x, gui::CoordType* y, size_t length, td::ColorID color, const td::String& name, double lineWidth, td::LinePattern pattern): color(color), pattern(pattern), length(length), debljina(lineWidth)
 {
+	lines.reserve(44); //only temporary, delete this
 	this->name = new td::String(name);
 	setPoints(x, y, length);
 }
@@ -81,6 +82,7 @@ Function::Function(gui::CoordType* x, gui::CoordType* y, size_t length, td::Colo
 
 Function::Function(gui::Point* points, size_t length, td::ColorID color, const td::String& name, double lineWidth, td::LinePattern pattern) : color(color), pattern(pattern), length(length), debljina(lineWidth)
 {
+	lines.reserve(10); //only temporary, delete this
 	this->name = new td::String(name);
 	tacke = new gui::Point[length];
 	memcpy(tacke, points, sizeof(gui::Point)*length);
@@ -92,9 +94,12 @@ Function::Function(Function&& f) noexcept {
 }
 
 Function& Function::operator=(Function&& f) noexcept{
+	std::vector<gui::Shape> temp = std::move(f.lines);
 	memcpy(this, &f, sizeof(Function));
 	f.name = nullptr;
 	f.tacke = nullptr;
+	if (reDraw == false)
+		lines = std::move(temp);
 	return *this;
 
 }
@@ -121,6 +126,16 @@ void Function::setPoints(gui::CoordType* x, gui::CoordType* y, size_t length){
 
 }
 
+void Function::setPattern(td::LinePattern pattern){
+	this->pattern = pattern;
+	reDraw = true;
+}
+
+void Function::setLineWidth(double width){
+	debljina = width;
+	reDraw = true;
+}
+
 
 void Function::increaseScaleAndShiftX(const gui::CoordType& scale, const gui::CoordType& shift){
 	for (size_t i = 0; i < length; ++i)
@@ -128,6 +143,8 @@ void Function::increaseScaleAndShiftX(const gui::CoordType& scale, const gui::Co
 
 	scaleX *= scale;
 	shiftX += shift;
+
+	reDraw = true;
 	
 }
 
@@ -137,6 +154,8 @@ void Function::increaseScaleAndShiftY(const gui::CoordType& scale, const gui::Co
 
 	scaleY *= scale;
 	shiftY += shift;
+
+	reDraw = true;
 }
 
 void Function::increaseShiftX(const gui::CoordType& shift){
@@ -144,6 +163,7 @@ void Function::increaseShiftX(const gui::CoordType& shift){
 		tacke[i].x += shift;
 
 	shiftX += shift;
+	reDraw = true;
 }
 
 void Function::increaseShiftY(const gui::CoordType& shift){
@@ -151,69 +171,108 @@ void Function::increaseShiftY(const gui::CoordType& shift){
 		tacke[i].y -= shift;
 
 	shiftY += shift;
+	reDraw = true;
 }
 
 void Function::increaseScaleX(const gui::CoordType& scale){
 	for (size_t i = 0; i < length; ++i)
 		tacke[i].x = (tacke[i].x - shiftX) * scale + shiftX;
 	scaleX *= scale;
+	reDraw = true;
 }
 
 void Function::increaseScaleY(const gui::CoordType& scale) {
 	for (size_t i = 0; i < length; ++i)
 		tacke[i].y = (tacke[i].y + shiftY) * scale - shiftY;
 	scaleY *= scale;
+	reDraw = true;
+}
+
+void Function::addToLines(std::vector<gui::Point>& tacke){
+	if (!tacke.empty()) {
+		lines.emplace_back();
+		lines.back().createPolyLine(tacke.data(), tacke.size(), debljina, pattern);
+		tacke.clear();
+	}
 }
 
 void Function::draw(const gui::Rect& frame){
 	if (length == 0)
 		return;
 
-	if (frame.isZero()) {
-		for (size_t i = 0; i < length - 1; ++i)
-			gui::Shape::drawLine(tacke[i], tacke[i+1], color, debljina, pattern);
+	if (!reDraw) {
+		for (auto& lin : lines)
+			lin.drawWire(color);
 		return;
 	}
-	
+
+	lines.clear();
+
 	if (pattern == td::LinePattern::NA) {
 		gui::Shape dot;
 		std::vector<gui::Circle> dots;
 		dots.reserve(length);
-		for (size_t i = 0; i < length; ++i) 
-			if (frame.contains(tacke[i])) 
+		for (size_t i = 0; i < length; ++i)
+			if (frame.contains(tacke[i]))
 				dots.emplace_back(tacke[i], 1);
-			
-			dot.createCircles(dots.data(), dots.size(), debljina);
-			dot.drawFillAndWire(color, color);
-			return;
+
+		dot.createCircles(dots.data(), dots.size(), debljina);
+		dot.drawFillAndWire(color, color);
+		return;
 	}
 
-	bool past = frame.contains(tacke[0]) ? true : false;
+	if (frame.isZero()) {
+		lines.emplace_back();
+		lines.back().createPolyLine(tacke, length, debljina, pattern);
+		reDraw = false;
+		draw(frame);
+		return;
+	}
+
+	std::vector<gui::Point> lineParts;
+	
+	bool past = false;
+	if (frame.contains(tacke[0])) {
+		past = true;
+		lineParts.emplace_back(tacke[0]);
+	}
+
 
 	for (size_t i = 1; i < length; ++i) {
 		if (frame.contains(tacke[i])) {
-			if (!past) 
-				gui::Shape::drawLine(findIntersection(tacke[i - 1], tacke[i], frame), tacke[i], color, debljina, pattern);
-			else
-				gui::Shape::drawLine(tacke[i - 1], tacke[i], color, debljina, pattern);
+			if (past)
+				lineParts.emplace_back(tacke[i]);
+			else {
+				lineParts.emplace_back(findIntersection(tacke[i - 1], tacke[i], frame));
+				lineParts.emplace_back(tacke[i]);
+			}
 
 			past = true;
 			continue;
 		}
 
-		if (!past) { // ako dvije tacke zaredom nisu unutar prozora provjeri da li njihov spoj se sudara sa prozorom
+		if (!past) { // ako dvije tacke zaredom nisu unutar prozora provjeri da li se njihov spoj sudara sa prozorom
 			
 			gui::Point p1 = findIntersection(tacke[i - 1], tacke[i], frame);
-			if(p1.x >= frame.left && p1.x <= frame.right)
-				if (p1.y <= frame.bottom && p1.y >= frame.top)
-				gui::Shape::drawLine(p1, findIntersection(tacke[i], tacke[i-1], frame), color, debljina, pattern);
+			if ((p1.x >= frame.left && p1.x <= frame.right) && (p1.y <= frame.bottom && p1.y >= frame.top)) {
+				gui::Point p2 = findIntersection(tacke[i], tacke[i - 1], frame);
+				if (p1.x != p2.x && p1.y != p2.y) {
+					lineParts.emplace_back(p1);
+					lineParts.emplace_back(findIntersection(tacke[i], tacke[i - 1], frame));
+				}
+			}
 			continue;
 		}
 		past = false;
 
-		gui::Shape::drawLine(tacke[i-1], findIntersection(tacke[i - 1], tacke[i], frame), color, debljina, pattern);
+		lineParts.emplace_back(findIntersection(tacke[i - 1], tacke[i], frame));
+		addToLines(lineParts);
 	}
 
+	addToLines(lineParts);
+
+	reDraw = false;
+	draw(frame);
 }
 
 
