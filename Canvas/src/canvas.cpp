@@ -544,6 +544,12 @@ bool graph::save(const td::String& path){
    // getGeometry(g);
    // gui::Rect rect({0,0}, gui::Size(g.size.width, g.size.height));
 
+    if (path.endsWith(".png")) {
+        gui::Image img(path);
+        this->drawToImage(img, 1, false);
+        return true;
+    }
+
     if (path.endsWith(".svg")) {
         exportToSVG(path, true);
         return true;
@@ -1105,7 +1111,7 @@ void graph::showInformation(){
 }
 
 void graph::saveMenu(){
-    auto f = new gui::FileDialog(this, "Save plot", { "*.eps", "*.svg", "*.txt", "*.xml", "*.pdf"}, "Save");
+    auto f = new gui::FileDialog(this, "Save plot", { "*.eps", "*.jpg", "*.png", "*.svg", "*.txt", "*.xml", "*.pdf"}, "Save");
     f->openModal(1, this);
 }
 

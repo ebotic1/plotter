@@ -74,7 +74,7 @@ gui::Point Function::findIntersection(const gui::Point& p1, const gui::Point& p2
 
 Function::Function(gui::CoordType* x, gui::CoordType* y, size_t length, td::ColorID color, const td::String& name, double lineWidth, td::LinePattern pattern): color(color), pattern(pattern), length(length), debljina(lineWidth)
 {
-	lines.reserve(44); //only temporary, delete this
+	lines = new std::deque<gui::Shape>();
 	this->name = new td::String(name);
 	setPoints(x, y, length);
 }
@@ -82,7 +82,7 @@ Function::Function(gui::CoordType* x, gui::CoordType* y, size_t length, td::Colo
 
 Function::Function(gui::Point* points, size_t length, td::ColorID color, const td::String& name, double lineWidth, td::LinePattern pattern) : color(color), pattern(pattern), length(length), debljina(lineWidth)
 {
-	lines.reserve(10); //only temporary, delete this
+	lines = new std::deque<gui::Shape>();
 	this->name = new td::String(name);
 	tacke = new gui::Point[length];
 	memcpy(tacke, points, sizeof(gui::Point)*length);
@@ -94,12 +94,12 @@ Function::Function(Function&& f) noexcept {
 }
 
 Function& Function::operator=(Function&& f) noexcept{
-	std::vector<gui::Shape> temp = std::move(f.lines);
+
 	memcpy(this, &f, sizeof(Function));
 	f.name = nullptr;
 	f.tacke = nullptr;
-	if (reDraw == false)
-		lines = std::move(temp);
+	f.lines = nullptr;
+
 	return *this;
 
 }
@@ -190,8 +190,8 @@ void Function::increaseScaleY(const gui::CoordType& scale) {
 
 void Function::addToLines(std::vector<gui::Point>& tacke){
 	if (!tacke.empty()) {
-		lines.emplace_back();
-		lines.back().createPolyLine(tacke.data(), tacke.size(), debljina, pattern);
+		lines->emplace_back();
+		lines->back().createPolyLine(tacke.data(), tacke.size(), debljina, pattern);
 		tacke.clear();
 	}
 }
@@ -201,12 +201,12 @@ void Function::draw(const gui::Rect& frame){
 		return;
 
 	if (!reDraw) {
-		for (auto& lin : lines)
+		for (auto& lin : *lines)
 			lin.drawWire(color);
 		return;
 	}
 
-	lines.clear();
+	lines->clear();
 
 	if (pattern == td::LinePattern::NA) {
 		gui::Shape dot;
@@ -222,8 +222,8 @@ void Function::draw(const gui::Rect& frame){
 	}
 
 	if (frame.isZero()) {
-		lines.emplace_back();
-		lines.back().createPolyLine(tacke, length, debljina, pattern);
+		lines->emplace_back();
+		lines->back().createPolyLine(tacke, length, debljina, pattern);
 		reDraw = false;
 		draw(frame);
 		return;

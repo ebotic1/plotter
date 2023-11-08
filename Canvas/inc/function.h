@@ -5,6 +5,8 @@
 #include "td/String.h"
 #include <vector>
 
+#include <deque>
+
 class IMPEXP Function {
 
 	td::ColorID color = td::ColorID::Black;
@@ -22,7 +24,7 @@ class IMPEXP Function {
 	gui::Point findIntersection(const gui::Point& p1, const gui::Point& p2, const gui::Rect& r);
 
 	bool reDraw = true;
-	std::vector<gui::Shape> lines;
+	std::deque<gui::Shape> *lines = nullptr;
 	void addToLines(std::vector<gui::Point>& tacke);
 
 public:
@@ -80,6 +82,7 @@ public:
 	~Function() {
 		delete[] tacke;
 		delete name;
+		delete lines;
 	}
 
 
