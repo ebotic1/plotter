@@ -2,7 +2,7 @@
 #include "gui/View.h"
 #include "./../../common/property.h"
 #include "gui/VerticalLayout.h"
-#include "tBlock.h"
+#include "blockBase.h"
 #include "gui/CheckBox.h"
 #include "gui/Button.h"
 
@@ -15,16 +15,15 @@ class blockSettings : public gui::View {
 
 	elementProperty inputName, outputName;
 
-	Block* currentBlock = nullptr;
+	BlockBase* currentBlock = nullptr;
 protected:
 	bool onClick(gui::CheckBox* pBtn) override;
 	bool onClick(gui::Button* pBtn) override;
 public:
 
 	blockSettings();
-	void showBlock(Block* block);
+	void showBlock(BlockBase* block);
 
-	bool onFinishEdit(gui::LineEdit* pCtrl);
 
 };
 

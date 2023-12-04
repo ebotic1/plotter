@@ -46,7 +46,7 @@ public:
     MainWindow();
     ~MainWindow();
 
-    bool onActionItem(td::BYTE menuID, td::BYTE firstSubMenuID, td::BYTE lastSubMenuID, td::BYTE actionID, gui::ActionItem* pMenuAI) override;
+    bool onActionItem(gui::ActionItemDescriptor& aiDesc) override;
     bool onClick(gui::FileDialog* pDlg, td::UINT4 dlgID) override;
     bool open(const td::String& path);
     void loadFromTerminal(int argc, char** argv);

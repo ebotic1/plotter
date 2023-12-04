@@ -8,7 +8,6 @@
 #include "arch/FileSerializer.h"
 #include "gui/FileDialog.h"
 #include "./../../EquationToXML/inc/nodes.h"
-#include "td/StringUtils.h"
 
 #define BLOCK_COLOR td::ColorID::Black
 #define BLOCK_COLOR_SELECTED td::ColorID::DeepSkyBlue
@@ -16,12 +15,12 @@
 
 class kanvas : public gui::Canvas {
 	std::vector<Block *> blocks;
-	Block* currentBlock = nullptr;
+	BlockBase* currentBlock = nullptr;
 	gui::Point lastMousePos = { 0,0 };
 	double scale = 1;
 
 	enum class Actions{none, wiring, dragging} lastAction = Actions::none;
-	Block* tempCurrentBlock = nullptr;
+	BlockBase* tempCurrentBlock = nullptr;
 	int cntBlock = 0;
 
 	td::String currentPath;
@@ -43,10 +42,12 @@ public:
 	bool onZoom(const gui::InputDevice& inputDevice) override;
 	bool getModelSize(gui::Size& size) const override;
 
-	bool onActionItem(td::BYTE menuID, td::BYTE firstSubMenuID, td::BYTE lastSubMenuID, td::BYTE actionID, gui::ActionItem* pMenuAI);
+	bool onActionItem(gui::ActionItemDescriptor& aiDesc) override;
+	bool onContextMenuUpdate(td::BYTE menuID, gui::ContextMenu* pMenu) override;
+
 	virtual bool onClick(gui::FileDialog* pDlg, td::UINT4 dlgID);
 
-	bool saveState(const td::String &file);
+	//bool saveState(const td::String &file);
 	bool restoreState(const td::String &file);
 	bool onKeyPressed(const gui::Key& key);
 
@@ -57,6 +58,8 @@ public:
 	friend void globals::refreshCanvas();
 	
 };
+
+
 
 inline bool kanvas::getModelSize(gui::Size& size) const{
 	size.height = 0;
@@ -78,20 +81,26 @@ inline bool kanvas::getModelSize(gui::Size& size) const{
 }
 
 kanvas::kanvas() : gui::Canvas({ gui::InputDevice::Event::PrimaryClicks, gui::InputDevice::Event::SecondaryClicks, gui::InputDevice::Event::PrimaryDblClick, gui::InputDevice::Event::Zoom, gui::InputDevice::Event::CursorDrag, gui::InputDevice::Event::Keyboard }) {
+
+
+	
+
 }
 
 
-void kanvas::onDraw(const gui::Rect& rect){
-	
+void kanvas::onDraw(const gui::Rect& rect){	
 	for (int i = 0; i < blocks.size(); ++i)
-		if(blocks[i] != currentBlock)
+		if (blocks[i] != currentBlock) 
 			blocks[i]->drawBlock(BLOCK_COLOR);
 		else
 			blocks[i]->drawBlock(BLOCK_COLOR_SELECTED);
+
+
 	
 	if (lastAction == Actions::wiring) {
 		gui::Shape::drawLine(tempCurrentBlock->getOutput(), lastMousePos, BLOCK_COLOR, 2, td::LinePattern::Dash);
 	}
+
 
 }
 
@@ -143,8 +152,8 @@ inline void kanvas::onCursorDragged(const gui::InputDevice& inputDevice){
 inline void kanvas::onPrimaryButtonReleased(const gui::InputDevice& inputDevice){
 	if (lastAction == Actions::wiring) {
 		for (int i = 0; i < blocks.size(); ++i)
-			if (blocks[i]->intersectsInput(inputDevice.getModelPoint())) {
-				tempCurrentBlock->connectTo(blocks[i]);
+			if (int poz = blocks[i]->intersectsInput(inputDevice.getModelPoint())) {
+				tempCurrentBlock->connectTo(blocks[i], poz);
 				break;
 			}
 		lastAction = Actions::none;
@@ -166,7 +175,7 @@ inline bool kanvas::onZoom(const gui::InputDevice& inputDevice){
 }
 
 
-
+/*
 inline bool kanvas::saveState(const td::String& file){
 
 	arch::FileSerializerOut temp;
@@ -280,6 +289,7 @@ inline bool kanvas::restoreState(const td::String& file){
 
 	return true;
 }
+*/
 
 inline bool kanvas::onKeyPressed(const gui::Key& key)
 {
@@ -303,18 +313,28 @@ void kanvas::onSecondaryButtonPressed(const gui::InputDevice& inputDevice){
 	openContextMenu(100, inputDevice);
 }
 
-inline bool kanvas::onActionItem(td::BYTE menuID, td::BYTE firstSubMenuID, td::BYTE lastSubMenuID, td::BYTE actionID, gui::ActionItem* pMenuAI) {
 
-	if (menuID == 100) {
-		if (actionID == 10) {
+inline bool kanvas::onContextMenuUpdate(td::BYTE menuID, gui::ContextMenu* pMenu)
+{
+
+	return false;
+}
+
+inline bool kanvas::onActionItem(gui::ActionItemDescriptor& aiDesc){
+
+	if (aiDesc._menuID == 100) {
+		if (aiDesc._actionItemID == 10) {
+
 			createBlock(lastMousePos);
 			return true;
+
 		}
 	}
 
+	return false;
 
-	if (menuID == 1) { //new
-		if (actionID == 1) {
+	if (aiDesc._menuID == 1) {
+		if (aiDesc._actionItemID == 1) {
 			for (int i = 0; i < blocks.size(); ++i)
 				delete blocks[i];
 			blocks.clear();
@@ -323,15 +343,17 @@ inline bool kanvas::onActionItem(td::BYTE menuID, td::BYTE firstSubMenuID, td::B
 			globals::model_settings->edit.clean();
 			return true;
 		}
+	}
+		/*
 
-		if (actionID == 2) { // open
+		if (aiDesc._actionItemID == 2) { // open
 			gui::OpenFileDialog* p = new gui::OpenFileDialog(this, "Open model", { "*.tfstate" }, "Open");
 			p->openModal(2,this);
 			return true;
 		}
 
 
-		if (actionID == 3) { // save
+		if (aiDesc._actionItemID == 3) { // save
 
 			if (currentPath.isNull()) {
 				showAlert("error", "No file is currently open (use 'save as')");
@@ -344,7 +366,7 @@ inline bool kanvas::onActionItem(td::BYTE menuID, td::BYTE firstSubMenuID, td::B
 			
 		}
 
-		if (actionID == 4) { // save as
+		if (aiDesc._actionItemID == 4) { // save as
 			gui::FileDialog* p = new gui::FileDialog(this, gui::FileDialog::Type::SaveFile, "Save as", ".tfstate", "Save");
 			p->openModal(4, this);
 			return true;
@@ -352,7 +374,7 @@ inline bool kanvas::onActionItem(td::BYTE menuID, td::BYTE firstSubMenuID, td::B
 
 
 
-		if (actionID == 100) { // export
+		if (aiDesc._actionItemID == 100) { // export
 			gui::FileDialog* p = new gui::FileDialog(this, gui::FileDialog::Type::SaveFile, "Export to", ".xml", "Export");
 			p->openModal(5, this);
 			return true;
@@ -360,14 +382,14 @@ inline bool kanvas::onActionItem(td::BYTE menuID, td::BYTE firstSubMenuID, td::B
 
 	}
 
-		
+		*/
 
 	return false;
 }
 
 
 inline bool kanvas::onClick(gui::FileDialog* pDlg, td::UINT4 dlgID){
-
+	/*
 	if (dlgID == 2) {//open
 		if (!restoreState(pDlg->getFileName()))
 			showAlert("error", "cannot open file");
@@ -387,12 +409,12 @@ inline bool kanvas::onClick(gui::FileDialog* pDlg, td::UINT4 dlgID){
 			showAlert("error", "cannot export model");
 		return true;
 	}
-
+	*/
 	return false;
 }
 
 
-
+/*
 bool kanvas::exportToXML(const td::String &path){
 
 	xml::Writer w;
@@ -506,7 +528,7 @@ bool kanvas::exportToXML(const td::String &path){
 
 	return true;
 }
-
+*/
 
 inline kanvas::~kanvas(){
 	for (int i = 0; i < blocks.size(); ++i)

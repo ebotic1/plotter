@@ -5,6 +5,7 @@
 #include "gui/Image.h"
 #include <vector>
 #include "gui/DrawableString.h"
+#include <deque>
 
 
 class IMPEXP graph : public gui::Canvas {

@@ -22,6 +22,7 @@ setTargetPropertiesForGUIApp(${SOLUTION_NAME} $(APPWNDMENUANDTB_PLIST))
 
 
 setIDEPropertiesForExecutable(${SOLUTION_NAME})
+setIDEPropertiesForGUIExecutable(${SOLUTION_NAME} ${CMAKE_CURRENT_LIST_DIR})
 
 setPlatformDLLPath(${SOLUTION_NAME})
 

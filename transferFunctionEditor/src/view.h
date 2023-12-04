@@ -1,6 +1,5 @@
 #pragma once
 #include "gui/SplitterLayout.h"
-#include "gui/PropertyEditorSwitcher.h"
 #include "gui/View.h"
 #include "canvas.h"
 #include "gui/TextEdit.h"
@@ -9,6 +8,7 @@
 #include "globals.h"
 #include "blockSettings.h"
 #include "modelSettings.h"
+#include <gui/ViewScroller.h>
 
 blockSettings* globals::block_properties = nullptr;
 gui::ViewSwitcher* globals::switcher = nullptr;
@@ -42,7 +42,9 @@ class mainView : public gui::View {
 	properties props;
 
 	gui::ViewScroller scroller;
+	
 	kanvas _canvas;
+
 
 public:
 	mainView(): spliter(gui::SplitterLayout::Orientation::Horizontal), scroller(gui::ViewScroller::Type::ScrollAndAutoHide, gui::ViewScroller::Type::ScrollAndAutoHide){

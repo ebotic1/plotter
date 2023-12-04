@@ -23,7 +23,7 @@ public:
 	td::Variant getValue();
 	void setValue(const td::Variant &value, bool doAction = false);
 
-	bool onFinishEdit(gui::LineEdit* pCtrl);
+	bool onFinishEdit(gui::LineEdit* pCtrl) override;
 	std::function<void(const td::Variant &)> Action = nullptr;
 
 };

@@ -1,34 +1,12 @@
 #include "tBlock.h"
 #include "globals.h"
 
-const gui::Rect& Block::getRect() const{
-	return _r;
-}
-
-const bool Block::getInputSwitched() const{
-	return switchOutput;
-}
 
 
-const gui::Point &Block::getOutput() const{
-	return outputPoint;
-}
-
-const gui::Point &Block::getInput() const{
+const gui::Point& Block::getInput(int poz) const{
 	return inputPoint;
 }
 
-const gui::Point& Block::getLocation() const{
-	return gui::Point(_r.left, _r.top);
-}
-
-const std::vector<Block*> &Block::getConnectedBlocks() const{
-	return connectedTo;
-}
-
-const std::vector<Block*>& Block::getConnectedFromBlocks() const{
-	return connectedFrom;
-}
 
 const td::String& Block::getOutputName() const{
 	return izlazName;
@@ -39,16 +17,8 @@ const td::String& Block::getInputName() const{
 }
 
 
-bool Block::intersectsInput(const gui::Point& p) {
+int Block::intersectsInput(const gui::Point& p) {
 	return gui::Circle(inputPoint, 20).contains(p);
-}
-
-bool Block::intersectsOutput(const gui::Point& p) {
-	return gui::Circle(outputPoint, 14).contains(p);
-}
-
-bool Block::intersectsBlock(const gui::Point& p) {
-	return _r.contains(p);
 }
 
 void Block::getAllProps(td::String& nominator, td::String& denominator, bool& connected, bool& switchedInput, td::String& inputName, td::String& outputName){
@@ -93,43 +63,8 @@ void Block::setOutputName(const td::String& name){
 	globals::refreshCanvas();
 }
 
-void Block::connectTo(Block* block) {
-	if (block == this)
-		return;
-
-	auto iterator = std::find(connectedTo.begin(), connectedTo.end(), block);
-	if (connectedTo.end() != iterator)
-		return;
-	connectedTo.push_back(block);
-	block->connectedFrom.push_back(this);
-
-	setUpWires(true);
-}
-
-void Block::removeConnections() {
-	for(Block *var : connectedTo){
-		var->connectedFrom.erase(std::find(var->connectedFrom.begin(), var->connectedFrom.end(), this));
-
-	}
-	connectedTo.clear();
-	for(Block * var : connectedFrom) {
-		var->connectedTo.erase(std::find(var->connectedTo.begin(), var->connectedTo.end(), this));
-		var->setUpWires(false);
-	}
-	connectedFrom.clear();
-	setUpWires(true);
-}
 
 
-void Block::switchInput() {
-	switchOutput = !switchOutput;
-	setUpAll();
-}
-
-void Block::setPosition(const gui::Point& position){
-	_r.setOrigin(position);
-	setUpAll();
-}
 
 
 void Block::setUpAll() {
@@ -209,8 +144,9 @@ void Block::setUpAll() {
 		outputRect.setWidth(armLenght*2/1.2);
 	}
 
-	for(Block * var : connectedFrom)
-		var->setUpWires(false);
+	for (std::set<BlockBase*>& var : connectedFrom)
+		for (BlockBase* block : var) 
+			block->setUpWires(false);
 
 	setUpWires(true); // will refresh canvas
 
@@ -221,17 +157,17 @@ void Block::setUpWires(bool refreshCanvas){
 	if (disableSetUp)
 		return;
 
-	connectionLines.resize(connectedTo.size(), gui::Shape());
-	for (int i = 0; i < connectionLines.size(); ++i) {
-		gui::Point& input = connectedTo[i]->inputPoint;
-		connectionLines[i] = gui::Shape();
+	connectionLines.resize(connectedTo.size());
+	int i = 0;
+	for(const BlockBase *block : connectedTo){
+		const gui::Point& input = block->getInput(i); //POPRAVITI!!!
 
 		if (outputPoint.x < input.x) { // linija ide prema desno
 			if (outputPoint.x > inputPoint.x) {
 				gui::Point tacke[] = { outputPoint,  { input.x, outputPoint.y }, input };
 				connectionLines[i].createPolyLine(tacke, 3, 2);
 			}
-			else if(connectedTo[i]->outputPoint.x > input.x){
+			else if(block->getOutput().x > input.x) {
 				gui::Point tacke[] = { outputPoint,  { outputPoint.x, input.y }, input };
 				connectionLines[i].createPolyLine(tacke, 3, 2);
 			}
@@ -257,7 +193,7 @@ void Block::setUpWires(bool refreshCanvas){
 				gui::Point tacke[] = { outputPoint,  { input.x, outputPoint.y}, input };
 				connectionLines[i].createPolyLine(tacke, 3, 2);
 			}
-			else if (connectedTo[i]->outputPoint.x < input.x) {
+			else if (block->getOutput().x < input.x) {
 				gui::Point tacke[] = { outputPoint,  { outputPoint.x, input.y}, input };
 				connectionLines[i].createPolyLine(tacke, 3, 2);
 			}else{
@@ -268,6 +204,7 @@ void Block::setUpWires(bool refreshCanvas){
 
 		}
 
+		++i;
 	}
 
 	if(refreshCanvas)
@@ -300,13 +237,8 @@ void Block::drawBlock(td::ColorID color) {
 
 }
 
-void Block::disableLogic(bool disable){
-	disableSetUp = disable;
-}
 
-
-Block::Block(const gui::Point& position, const td::String& inputName, const td::String& outputName){
-	_r.setOrigin(position);
+Block::Block(const gui::Point& position, const td::String& inputName, const td::String& outputName): BlockBase(position){
 	setNominator("1");
 	setDenominator("s");
 
@@ -314,6 +246,7 @@ Block::Block(const gui::Point& position, const td::String& inputName, const td::
 	setOutputName(outputName);
 
 	setUpAll();
+	globals::refreshCanvas();
 }
 
 

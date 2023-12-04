@@ -29,7 +29,7 @@ MainWindow::MainWindow()
     xx[0] = 0; xx[1] = 100; xx[2] = 200; xx[3] = 300; xx[4] = 300; xx[5] = 200;
     yy[0] = 0; yy[1] = -100; yy[2] = 50; yy[3] = 50; yy[4] = 400; yy[5] = 400;
 
-    //_graph.addFunction(xx, yy, 6);
+    _graph.addFunction(xx, yy, 6);
 
     //_graph.addFunction(x, y, broj);
 
@@ -44,36 +44,34 @@ MainWindow::MainWindow()
 }
 
 
+bool MainWindow::onActionItem(gui::ActionItemDescriptor& aiDesc) {
 
-bool MainWindow::onActionItem(td::BYTE menuID, td::BYTE firstSubMenuID, td::BYTE lastSubMenuID, td::BYTE actionID, gui::ActionItem* pMenuAI){
-
-    if (menuID == 1) {
-        if (actionID > 2)
+    if (aiDesc._menuID == 1) {
+        if (aiDesc._actionItemID > 2)
             return false;
 
         resetGraph = false;
-        if (actionID == 1) {
+        if (aiDesc._actionItemID == 1) {
             _graph.reset();
             resetGraph = true;
         }
 
-       
         
         auto f = new gui::FileDialog(this, "Read data", { "*.txt", "*.xml" }, "Open");
         f->openModal(1, this);
 
     }
     
-    if (menuID == 2) {
+    if (aiDesc._menuID == 2) {
 
-        if (actionID == 11) {
+        if (aiDesc._actionItemID == 11) {
             
             auto a = new gui::SaveFileDialog(this, "export data to xml", "*.xml");
             a->openModal(11, this);
             return true;
         }
 
-        if (actionID == 10) {
+        if (aiDesc._actionItemID == 10) {
 
             auto a = new gui::SaveFileDialog(this, "export data to txt", "*.txt");
             a->openModal(10, this);

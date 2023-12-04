@@ -24,14 +24,14 @@ public:
 
 class mainWindow : public gui::Window {
 protected:
-mainView view;
-menuBar menu;
+	mainView view;
+	menuBar menu;
 
 public:
 	mainWindow() : gui::Window(gui::Size(1000, 1000)) {
 		setTitle("ovo ne radi nista??");
 		menu.setAsMain(this);
-		menu.forwardMessagesTo(view.getCanvas());
+		//menu.forwardMessagesTo(view.getCanvas());
 		setCentralView(&view);
 	}
 
@@ -40,17 +40,19 @@ public:
 		return true;
 	}
 
-	bool onActionItem(td::BYTE menuID, td::BYTE firstSubMenuID, td::BYTE lastSubMenuID, td::BYTE actionID, gui::ActionItem* pMenuAI);
+
+	bool onActionItem(gui::ActionItemDescriptor& aiDesc) override;
 	//virtual bool onClick(gui::FileDialog* pDlg, td::UINT4 dlgID);
-	bool onContextMenuUpdate(td::BYTE menuID, gui::ContextMenu* pMenu);
+	bool onContextMenuUpdate(td::BYTE menuID, gui::ContextMenu* pMenu) override;
 
 };
 
-bool mainWindow::onActionItem(td::BYTE menuID, td::BYTE firstSubMenuID, td::BYTE lastSubMenuID, td::BYTE actionID, gui::ActionItem* pMenuAI) {
+
+bool mainWindow::onActionItem(gui::ActionItemDescriptor& aiDesc) {
+
 
 	return false;
 }
-
 
 
 bool mainWindow::onContextMenuUpdate(td::BYTE menuID, gui::ContextMenu* pMenu) {

@@ -28,6 +28,7 @@ class switcher : public gui::ViewSwitcher {
 	gui::ColorPicker axisColor; gui::Label axisLabel;
 
 	elementProperty xAxisName, yAxisName;
+
 	
 public:
 	switcher(graph& mainView) : gui::ViewSwitcher(2), graphProps(8), lineProps(6), mainGraph(mainView),
@@ -74,6 +75,8 @@ public:
 	void showGraph();
 
 };
+
+
 
 bool switcher::onChangedValue(gui::Slider* pSlider){
 	mainGraph.changeWidth(pSlider->getValue(), index);

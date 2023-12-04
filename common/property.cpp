@@ -13,11 +13,12 @@ elementProperty::elementProperty(const td::String& name, td::DataType type, cons
 
 	if (defaultValue.getType() != td::DataType::TD_NONE)
 		setValue(defaultValue, false);
-		
-	
+
+
 	gui::Size sz;
 	edit->getSize(sz);
 	edit->setSize(gui::Size(100, sz.height)); // naknadno postavljanje velicine ne radi (dok za label radi)
+
 	layout << *edit;
 	setLayout(&layout);
 

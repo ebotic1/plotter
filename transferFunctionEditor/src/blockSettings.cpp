@@ -1,5 +1,6 @@
 #include "blockSettings.h"
 #include "globals.h"
+#include "tBlock.h"
 
 blockSettings::blockSettings() : v(8), num("numerator: ", td::string8, "Numerator of the transfer function (use 's' as a variable OR use space as an operator)", td::Variant("1")),
 dem("denominator: ", td::string8, "Denominator of the transfer function (use 's' as a variable OR use space as an operator)", td::Variant("s")), 
@@ -7,7 +8,9 @@ inputSwitch("switch input/output"), disconnect("disconnect wires", "remove all i
 inputName("input var: ", td::string8, "variable name that will be created when exporting XML file for this block's input"),
 outputName("output var: ", td::string8, "variable name that will be created when exporting XML file for this block's output")
 {
-	auto& current = currentBlock;
+
+	Block* b = dynamic_cast<Block*>(currentBlock);
+	auto& current = b;
 
 	num.Action = [&current](const td::Variant &v) {
 		if (current) current->setNominator(v.strVal());
@@ -35,7 +38,7 @@ outputName("output var: ", td::string8, "variable name that will be created when
 
 }
 
-void blockSettings::showBlock(Block* block) {
+void blockSettings::showBlock(BlockBase* block) {
 	globals::switcher->showView(1, false);
 	gui::Size sz(100, 100);
 	globals::switcher->getView(1)->reMeasure(gui::CellInfo());
@@ -44,8 +47,9 @@ void blockSettings::showBlock(Block* block) {
 	td::String num, dem, out, in;
 	bool connected, switched;
 
+	Block* b = dynamic_cast<Block*>(block);
 
-	block->getAllProps(num, dem, connected, switched, in, out);
+	b->getAllProps(num, dem, connected, switched, in, out);
 	this->num.setValue(num);
 	this->dem.setValue(dem);
 	inputSwitch.setChecked(switched, false);
@@ -62,11 +66,6 @@ bool blockSettings::onClick(gui::CheckBox* pBtn){
 bool blockSettings::onClick(gui::Button* pBtn){
 	if (pBtn == &disconnect)
 		currentBlock->removeConnections();
-
-	return false;
-}
-
-bool blockSettings::onFinishEdit(gui::LineEdit* pCtrl){
 
 	return false;
 }

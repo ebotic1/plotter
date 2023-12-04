@@ -11,16 +11,16 @@
 #include "gui/Transformation.h"
 
 #define SELECT_COLOR td::ColorID::Green
-#define FONT gui::Font::ID::ReportBody1
+#define FONT gui::Font::ID::SystemNormal
 
 const std::initializer_list<gui::InputDevice::Event> graph::inputs = { gui::InputDevice::Event::PrimaryClicks, gui::InputDevice::Event::SecondaryClicks, gui::InputDevice::Event::Zoom, gui::InputDevice::Event::CursorDrag,
-gui::InputDevice::Event::CursorMove, gui::InputDevice::Event::Keyboard, gui::InputDevice::Event::CursorEnterLeave, gui::InputDevice::Event::PrimaryDblClick };
+gui::InputDevice::Event::CursorMove, gui::InputDevice::Event::Keyboard, gui::InputDevice::Event::CursorEnterLeave, gui::InputDevice::Event::PrimaryDblClick};
 
 const std::initializer_list<gui::InputDevice::Event> graph::noInputs = {};
 
 
 class graph::legend {
-    std::vector<gui::DrawableString> imena;
+    std::deque<gui::DrawableString> imena;
     std::vector<td::ColorID> colors;
     gui::CoordType length = 0;
 
@@ -30,7 +30,6 @@ class graph::legend {
 public:
     td::ColorID textColor;
     legend(td::ColorID textColor) : textColor(textColor){};
-
 
     void draw(const gui::Point& topRight) {
         gui::CoordType height = topRight.y;
@@ -53,9 +52,8 @@ public:
     }
 
     void addFunction(const Function& f) {
-        imena.reserve(10);
         imena.resize(imena.size() + 1);
-        changeName(*f.name, imena.size()-1);
+        changeName(*f.name, imena.size() - 1);
         colors.emplace_back(f.getColor());
     };
 
@@ -739,10 +737,10 @@ void graph::fitToWindow(){
     funkcije[0].getShift(shiftX, shiftY);
 
     gui::Geometry g;
-    g.point.x = Limits[int(limits::xMin)] * scaleX + shiftX - 0.5;
-    g.point.y = Limits[int(limits::yMax)] * scaleY - shiftY - 0.5;
-    g.size.width = (Limits[int(limits::xMax)] - Limits[int(limits::xMin)]) * scaleX + 1;
-    g.size.height = (Limits[int(limits::yMin)] - Limits[int(limits::yMax)]) * scaleY + 1;
+    g.point.x = Limits[int(limits::xMin)] * scaleX + shiftX;
+    g.point.y = Limits[int(limits::yMax)] * scaleY - shiftY;
+    g.size.width = (Limits[int(limits::xMax)] - Limits[int(limits::xMin)]) * scaleX;
+    g.size.height = (Limits[int(limits::yMin)] - Limits[int(limits::yMax)]) * scaleY;
 
 
     ZoomToWindow(g);
@@ -856,7 +854,7 @@ void graph::onDraw(const gui::Rect& rect){
         shape.createRoundedRect(pointRect, 17.5);
         shape.drawFill(td::ColorID::LightGray);
         pointRect.setTopAndHeight(pointRect.top + 11.5, 0);
-        str.draw(pointRect, FONT, td::ColorID::Black, td::TextAlignment::Center, td::TextEllipsize::None);
+        str.draw(pointRect, FONT, td::ColorID::Black, td::TextAlignment::Center, td::VAlignment::Center, td::TextEllipsize::None);
         
     }
 

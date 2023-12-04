@@ -36,10 +36,12 @@ set(CMAKE_WIN32_EXECUTABLE TRUE)
 set(APPWNDMENUANDTB_PLIST  ${CMAKE_CURRENT_LIST_DIR}/src/Info.plist)
 
 setTargetPropertiesForGUIApp(${SOLUTION_NAME} $(APPWNDMENUANDTB_PLIST))
+setIDEPropertiesForGUIExecutable(${SOLUTION_NAME} ${CMAKE_CURRENT_LIST_DIR})
 
 setIDEPropertiesForExecutable(${SOLUTION_NAME})
 
 setPlatformDLLPath(${SOLUTION_NAME})
+
 
 
 
