@@ -30,7 +30,7 @@ void elementProperty::setLabelMinSize(int width) {
 	if (sz.width < width) {
 		p_name.setSize(gui::Size(width, sz.height));
 	}
-	this->reMeasure(gui::CellInfo());
+	this->reMeasure();
 }
 
 td::Variant elementProperty::getValue(){

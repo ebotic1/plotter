@@ -36,28 +36,28 @@ bool MainWindow::onClick(gui::FileDialog* pDlg, td::UINT4 dlgID)
     return false;
 }
 
-bool MainWindow::onActionItem(td::BYTE menuID, td::BYTE firstSubMenuID, td::BYTE lastSubMenuID, td::BYTE actionID, gui::ActionItem* pMenuAI)
+bool MainWindow::onActionItem(gui::ActionItemDescriptor& aiDesc)
 {
-    if (menuID == 1 && actionID == 4) {//open
+    if (aiDesc._menuID == 1 && aiDesc._actionItemID == 4) {//open
         gui::OpenFileDialog *p = new gui::OpenFileDialog(this, "Open model", {"*.txt", "*.xml"}, "Open");
         p->openModal(1, this);
         return true;
     }
 
-    if (menuID == 1 && actionID == 2) {//save
+    if (aiDesc._menuID == 1 && aiDesc._actionItemID == 2) {//save
         if (!_mainView.save())
             showAlert("Error", "Cant save file");
         return true;
        
     }
 
-    if (menuID == 1 && actionID == 3) { //save as
+    if (aiDesc._menuID == 1 && aiDesc._actionItemID == 3) { //save as
         gui::OpenFileDialog* p = new gui::OpenFileDialog(this, "Save as", {"*.txt"}, "Save as");
         p->openModal(2, this);
         return true;
     }
 
-    if (menuID == 1 && actionID == 5) { //export to xml
+    if (aiDesc._menuID == 1 && aiDesc._actionItemID == 5) { //export to xml
         gui::OpenFileDialog* p = new gui::OpenFileDialog(this, "Exporting XML for modelSolver", { "*.xml" }, "Export");
         p->openModal(2, this);
         return true;

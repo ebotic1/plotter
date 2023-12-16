@@ -12,7 +12,7 @@
 
 #include <cstdlib>
 #include <Windows.h>
-
+#include <limits>
 
 
 
@@ -158,7 +158,10 @@ void View::pokreniSolver(){
 	s += "\\modelSolver & .\\modelSolver.exe ";
 	s += root.getAttrib("type")->getValue();
 	s += " ";
-	s += root.getAttrib("domain")->getValue();
+	auto atrib = root.getAttrib("domain");
+	if(atrib == nullptr)
+		
+	s += atrib->getValue();
 	s += " \"";
 	s += currentPathXML;
 	s += "\" rezultat.txt ";
@@ -187,6 +190,8 @@ void View::pokreniSolver(){
 typedef cnt::StringBuilder<td::String, 1024*64> StringBuilder;
 
 
+#include<limits.h>
+
 
 bool getComment(td::String& comment, bool &alone, const char* path = nullptr) {
 	static std::ifstream file;
@@ -195,7 +200,9 @@ bool getComment(td::String& comment, bool &alone, const char* path = nullptr) {
 	if (path != nullptr) {
 		file.close();
 		file.open(path);
-		std::getline(file, std::string());
+		#undef max
+		file.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+		#define max ((() > ()) ? () : ())
 		std::getline(file, line);
 		return file.is_open();
 	}
@@ -418,7 +425,7 @@ PRINT_CHILDREN:
 	if (!skip_newline)
 		result << '\n';
 
-	auto &it = node.getChildNode();
+	auto it = node.getChildNode();
 	while (it.isOk()) {
 		if(dont_indent)
 			printNode(result, it, tabs);
@@ -465,18 +472,18 @@ bool View::loadFile(const td::String& path) {
 
 
 	if (path.endsWithCI(".xml", 4)) {
-
-		if (!par.parseFile(path) || !getComment(td::String(), x, path.c_str()))
+		td::String comment;
+		if (!par.parseFile(path) || !getComment(comment, x, path.c_str()))
 			return false;
 
 
-		auto& model = par.getRootNode();
+		auto model = par.getRootNode();
 
 		if (model->getName().cCompare("Model") != 0)
 			return false;
 
 		printNode(s, model);
-		td::String comment;
+		
 		while (getComment(comment, x))
 			if (!comment.isNull())
 				s << "//" << comment << '\n';

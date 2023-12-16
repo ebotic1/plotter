@@ -18,7 +18,7 @@ public:
     MainWindow();
 
     virtual bool onClick(gui::FileDialog* pDlg, td::UINT4 dlgID) override;
-    virtual bool onActionItem(td::BYTE menuID, td::BYTE firstSubMenuID, td::BYTE lastSubMenuID, td::BYTE actionID, gui::ActionItem* pMenuAI) override;
+    bool onActionItem(gui::ActionItemDescriptor& aiDesc) override;
     virtual void onInitialAppearance() override;
     
 

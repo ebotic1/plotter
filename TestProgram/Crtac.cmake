@@ -27,7 +27,3 @@ setIDEPropertiesForGUIExecutable(${SOLUTION_NAME} ${CMAKE_CURRENT_LIST_DIR})
 setPlatformDLLPath(${SOLUTION_NAME})
 
 
-
-#MU_DEBUG, MU_RELEASE, MU_64BIT, MU_32BIT
-addMUCompileDefinitions(${SOLUTION_NAME})
-

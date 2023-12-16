@@ -24,6 +24,80 @@ public:
 };
 
 
+class conditionNode : public baseNode {
+public:
+	enum class type { thenn, elsee };
+private:
+	type tip;
+public:
+	conditionNode(type);
+	virtual bool nodeAction(const td::String& command, baseNode*& newChild) override;
+	inline const char* getName() override {
+		return (tip == type::thenn) ? "Then" : "Else";
+	}
+};
+
+conditionNode::conditionNode(type t) : tip(t) {}
+
+class singleEquation : public baseNode {
+	bool added = false;
+	bool consumeEnd = false;
+public:
+	virtual bool nodeAction(const td::String& command, baseNode*& newChild) override {
+		if (command.beginsWithCI("then"))
+			return true;
+
+
+		if (command.beginsWithCI("end")) {
+			if (consumeEnd) {
+				added = true;
+				consumeEnd = false;
+				return true;
+			}
+			return false;
+		}
+
+		if (added)
+			return false;
+
+		if (command.beginsWithCI("else")) {
+			nodes.push_back(new conditionNode(conditionNode::type::elsee));
+			newChild = nodes.back();
+			added = true;
+			consumeEnd = true;
+			return true;
+		}
+
+		if (command.beginsWithCI("if")) {
+			setAttrib("cond", command.subStr(2, -1).trimLeft());
+			nodes.push_back(new conditionNode(conditionNode::type::thenn));
+			newChild = nodes.back();
+			consumeEnd = true;
+			return true;
+		}
+
+		added = true;
+		int wPoz = command.find("[");
+
+		if (wPoz != -1 && command.getLastChar() == ']') {
+			setAttrib("fx", command.subStr(0, wPoz - 1).trimRight());
+			setAttrib("w", command.subStr(wPoz + 1, command.length() - 2));
+		}
+		else
+			setAttrib("fx", command);
+
+
+
+		return true;
+	}
+	inline const char* getName() override {
+		return "Eq";
+	}
+};
+
+
+struct GroupName { static const char* val; };
+const char* GroupName::val = "Group";
 
 template<typename containerName, typename nodeType>
 class containerNode : public baseNode {
@@ -33,6 +107,7 @@ public:
 		if (done) return false;
 
 		if (command.cCompareNoCase("Group:") == 0) {
+			typedef containerNode<GroupName, singleEquation> GroupNode;
 			nodes.push_back(new GroupNode);
 			newChild = nodes.back();
 			return true;
@@ -83,77 +158,10 @@ public:
 	}
 };
 
-class conditionNode : public baseNode {
-public:
-	enum class type { thenn, elsee };
-private:
-	type tip;
-public:
-	conditionNode(type);
-	virtual bool nodeAction(const td::String& command, baseNode*& newChild) override;
-	inline const char* getName() override {
-		return (tip == type::thenn) ? "Then" : "Else";
-	}
-};
-
-conditionNode::conditionNode(type t): tip(t){}
 
 
-class singleEquation : public baseNode {
-	bool added = false;
-	bool consumeEnd = false;
-public:
-	virtual bool nodeAction(const td::String& command, baseNode*& newChild) override {
-		if (command.beginsWithCI("then"))
-			return true;
 
 
-		if (command.beginsWithCI("end")) {
-			if (consumeEnd) {
-				added = true;
-				consumeEnd = false;
-				return true;
-			}
-			return false;
-		}
-
-		if (added)
-			return false;
-
-		if (command.beginsWithCI("else")) {
-			nodes.push_back(new conditionNode(conditionNode::type::elsee));
-			newChild = nodes.back();
-			added = true;
-			consumeEnd = true;
-			return true;
-		}
-
-		if (command.beginsWithCI("if")) {
-			setAttrib("cond", command.subStr(2,-1).trimLeft());
-			nodes.push_back(new conditionNode(conditionNode::type::thenn));
-			newChild = nodes.back();
-			consumeEnd = true;
-			return true;
-		}
-
-		added = true;
-		int wPoz = command.find("[");
-		
-		if (wPoz != -1 && command.getLastChar() == ']') {
-			setAttrib("fx", command.subStr(0, wPoz - 1).trimRight());
-			setAttrib("w", command.subStr(wPoz + 1, command.length() - 2));
-		}
-		else 
-			setAttrib("fx", command);
-		
-		
-
-		return true;
-	}
-	inline const char* getName() override {
-		return "Eq";
-	}
-};
 
 
 bool conditionNode::nodeAction(const td::String& command, baseNode*& newChild){
@@ -197,9 +205,6 @@ const char* postProcName::val = "PostProc";
 struct MeasEqName { static const char* val; };
 const char* MeasEqName::val = "MeasEqs";
 
-struct GroupName { static const char* val; };
-const char* GroupName::val = "Group";
-
 struct LimitName { static const char* val; };
 const char* LimitName::val = "Limits";
 
@@ -215,7 +220,7 @@ typedef containerNode<NLEName, singleEquation> NLEquationsNode;
 typedef containerNode<ODEName, singleEquation> ODEquationsNode;
 typedef containerNode<postProcName, singleEquation> postProcNode;
 typedef containerNode<MeasEqName, singleEquation> MeasEqNode;
-typedef containerNode<GroupName, singleEquation> GroupNode;
+
 typedef containerNode<LimitName, singleEquation> LimitNode;
 typedef containerNode<ECsName, singleEquation> ECsNode;
 typedef containerNode<TfName, singleEquation> TFsNode;

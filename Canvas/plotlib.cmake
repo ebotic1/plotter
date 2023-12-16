@@ -25,10 +25,3 @@ setTargetPropertiesForGUIApp(${plotlib_lib} $(APPWNDMENUANDwST))
 
 target_compile_definitions(${plotlib_lib} PRIVATE EXPORT)
 
-if (WIN32)
- target_compile_definitions(${plotlib_lib} PUBLIC   MU_WINDOWS)
-elseif(APPLE)                                             
-target_compile_definitions(${plotlib_lib} PUBLIC   MU_MACOS)
-else()                                                    
-target_compile_definitions(${plotlib_lib} PUBLIC   MU_LINUX)
-endif()
