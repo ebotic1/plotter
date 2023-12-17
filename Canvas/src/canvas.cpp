@@ -358,13 +358,19 @@ void graph::readTXT(const td::String& path){
             header.clear();
         }
 
+        headerCount = headerCount / 2;
 
+        if (headerCount == 0)
+            return;
+
+        /*
         char c;
         size_t lines_cnt = 0;
         while (file.get(c)) {
             if (c == '\n')
                 ++lines_cnt;
         }
+        */
 
         file.clear();
         file.seekg(0, std::ios::beg);
@@ -390,7 +396,7 @@ void graph::readTXT(const td::String& path){
             }
 
             for (size_t i = 0; i < headerCount; ++i) {
-                addFunction(Function(tacke[i].data(), tacke[i].size(), nextColor(), names[i], 2));
+                addFunction(Function(tacke[i].data(), tacke[i].size(), nextColor(), names[i*2+1], 2));
             }
         }
     

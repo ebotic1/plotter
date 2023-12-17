@@ -17,7 +17,8 @@ class annotDiag : public gui::Dialog {
 
 public:
 
-	annotDiag(gui::Frame* pFrame, std::vector<gui::CoordType> &verticals, std::vector<gui::CoordType>& horizontals, td::UINT4 wndID = 0) : gui::Dialog(pFrame, { {gui::Dialog::Button::ID::Close, "Close"}}, gui::Size(500, 100), wndID),
+	annotDiag(gui::Frame* pFrame, std::vector<gui::CoordType> &verticals, std::vector<gui::CoordType>& horizontals, td::UINT4 wndID = 0) : 
+    gui::Dialog(pFrame, { {gui::Dialog::Button::ID::Close, "Close"}}, gui::Size(500, 100), wndID),
     horLabel("Horizontal annotations:"), varLabel("Vertical annotations:")
     {	
     
