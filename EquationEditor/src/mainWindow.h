@@ -17,7 +17,6 @@ protected:
 public:
     MainWindow();
 
-    virtual bool onClick(gui::FileDialog* pDlg, td::UINT4 dlgID) override;
     bool onActionItem(gui::ActionItemDescriptor& aiDesc) override;
     virtual void onInitialAppearance() override;
     

@@ -423,6 +423,7 @@ void graph::readXML(const td::String& path, bool onlyData){
     auto root = par.getRootNode();
 
     gui::CoordType minX = 0, maxX = 0, maxY = 0, minY = 0;
+    td::ColorID color = td::ColorID::Transparent;
 
     if (!onlyData) {
         for (auto & att : root->attribs) {
@@ -440,6 +441,8 @@ void graph::readXML(const td::String& path, bool onlyData){
                 maxY = att.value.toDouble();
             if (att.getName().cCompareNoCase("maxY") == 0)
                 minY = att.value.toDouble();
+            if (att.getName().cCompareNoCase("color") == 0)
+                color = to_color(att.getValue().c_str());
             if (att.getName().cCompareNoCase("background") == 0) {
                 backgroundColor = to_color(att.getValue().c_str());
                 setBackgroundColor(backgroundColor);
@@ -461,7 +464,6 @@ void graph::readXML(const td::String& path, bool onlyData){
             td::String name = "line";
             double width = 2;
             size_t points = 0;
-            td::ColorID color = td::ColorID::Transparent;
             td::LinePattern pattern = td::LinePattern::Solid;
             for (auto & att : funs->attribs) {
                 if (att.getName().cCompareNoCase("name") == 0)
@@ -470,8 +472,6 @@ void graph::readXML(const td::String& path, bool onlyData){
                     width = att.value.toDouble();
                 if (att.getName().cCompareNoCase("points") == 0)
                     points = att.value.toInt();
-                if (att.getName().cCompareNoCase("color") == 0)
-                    color = to_color(att.getValue().c_str());
                 if (att.getName().cCompareNoCase("pattern") == 0)
                     pattern = td::toLinePattern(att.getValue().c_str());
             }
@@ -631,7 +631,6 @@ void graph::showMargins(double reductionFactor){
 
 void graph::reset(){
     pastColors.clear();
-    lastColor = 0;
     verticals.clear();
     horizontals.clear();
     action = Actions::none;
@@ -671,8 +670,8 @@ void graph::addFunction(Function&& fun){
 }
 
 void graph::finishAddingFunction(Function& newFun) {
-    updateLimits(newFun);
     pastColors.push_back(newFun.getColor());
+    updateLimits(newFun);
     if (funkcije.size() == 1) {
         newFun.increaseScaleAndShiftY(-1, 0);
     }
@@ -896,7 +895,7 @@ void graph::changePattern(td::LinePattern pattern, size_t function){
 
 }
 
-void graph::changeColor(td::ColorID color, size_t function){
+void graph::changeColor(td::ColorID color, size_t function){ // todo: modifokovati pastColors da reflektuje promjenu
     if (checkRange(function))
         return;
 
@@ -913,30 +912,42 @@ void graph::changeColor(td::ColorID color, size_t function){
 
 td::ColorID graph::nextColor(){
     td::ColorID boja;
-    if (lastColor == 0 && pastColors.size() == 0) {
-        if (backgroundColor == td::ColorID::Black)
+if (pastColors.size() == 0) {
+            
+        switch (backgroundColor){
+        case td::ColorID::Black:
             boja = td::ColorID::White;
-        else
+            break;
+        case td::ColorID::SysSelectedItemBack:
+            boja = td::ColorID::SysText;
+            break;
+        case td::ColorID::SysText:
+            boja = td::ColorID::SysSelectedItemBack;
+            break;
+        default:
             boja = td::ColorID::Black;
+        }
     }
     else {
         bool repeat;
-        int current = lastColor;
+        int current = int(pastColors.back());
+        int infiniteLoopCheck = current;
         do {
             repeat = false;
-            lastColor += 23;
-            lastColor = lastColor % 137; //otprilike sve boje su obuhvacene i svaka boja ce se izabrati prije nego sto se pocnu ponavljati
+            current += 23;
+            current = current % 137; //otprilike sve boje su obuhvacene i svaka boja ce se izabrati prije nego sto se pocnu ponavljati
             for (td::ColorID boja : pastColors)
-                if (lastColor == int(boja) || lastColor == int(backgroundColor)) {
+                if (current == int(boja) || current == int(backgroundColor)) {
                     repeat = true;
                     break;
                 }
-            if (lastColor == current)
-                break;
+            if (infiniteLoopCheck == current)
+                pastColors.clear();
         } while (repeat);
-        boja = td::ColorID(lastColor);
+        boja = td::ColorID(current);
     }
 
+    //pastColors.push_back(boja);
     return boja;
 }
 
@@ -1116,7 +1127,9 @@ void graph::showInformation(){
 
 void graph::saveMenu(){
     auto f = new gui::FileDialog(this, "Save plot", { "*.eps", "*.jpg", "*.png", "*.svg", "*.txt", "*.xml", "*.pdf"}, "Save");
-    f->openModal(1, this);
+    f->openModal([this](gui::FileDialog* pDlg) {
+            return save(pDlg->getFileName());
+        });
 }
 
 void graph::onPrimaryButtonReleased(const gui::InputDevice& inputDevice){
@@ -1274,7 +1287,6 @@ bool graph::onKeyPressed(const gui::Key& key) {
         xAxisName = "";
         yAxisName = "";
         pastColors.clear();
-        lastColor = 0;
 
         openFile(lastPath, true);
 
@@ -1347,14 +1359,6 @@ bool graph::onClick(gui::Dialog* pDlg, td::UINT4 dlgID){
     return true;
 }
 
-bool graph::onClick(gui::FileDialog* pDlg, td::UINT4 dlgID){
-
-    if (dlgID == 1) {
-        return save(pDlg->getFileName());
-    }
-
-    return false;
-}
 
 
 graph::~graph(){

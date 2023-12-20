@@ -159,9 +159,10 @@ void View::pokreniSolver(){
 	s += root.getAttrib("type")->getValue();
 	s += " ";
 	auto atrib = root.getAttrib("domain");
-	if(atrib == nullptr)
-		
-	s += atrib->getValue();
+	if (atrib == nullptr)
+		s += "real";
+	else
+		s += atrib->getValue();
 	s += " \"";
 	s += currentPathXML;
 	s += "\" rezultat.txt ";

@@ -12,7 +12,6 @@ class IMPEXP graph : public gui::Canvas {
 
 	std::vector<Function> funkcije;
 	std::vector<td::ColorID> pastColors;
-	int lastColor = 0;
 	td::ColorID nextColor();
 	td::ColorID axisColor = td::ColorID::White;
 	td::ColorID backgroundColor = td::ColorID::Black;
@@ -80,7 +79,6 @@ protected:
 	void onCursorExited(const gui::InputDevice& inputDevice) override;
 	void onCursorEntered(const gui::InputDevice& inputDevice) override;
 	bool onClick(gui::Dialog* pDlg, td::UINT4 dlgID) override;
-	bool onClick(gui::FileDialog* pDlg, td::UINT4 dlgID) override;
 	void onPrimaryButtonDblClick(const gui::InputDevice& inputDevice) override;
 
 	void onDraw(const gui::Rect& rect) override;

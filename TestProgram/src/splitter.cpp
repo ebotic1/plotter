@@ -74,6 +74,10 @@ public:
 	void showFunction(size_t pos);
 	void showGraph();
 
+	virtual ~switcher() {
+
+	}
+
 };
 
 
@@ -183,4 +187,9 @@ bool splitterLayout::onChangedSelection(gui::ComboBox* pCmb){
 	refreshPicks();
 
 	return true;
+}
+
+splitterLayout::~splitterLayout()
+{
+	delete props;
 }

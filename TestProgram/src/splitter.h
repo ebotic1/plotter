@@ -25,8 +25,6 @@ public:
 
 	bool onChangedSelection(gui::ComboBox* pCmb) override;
 
-	~splitterLayout() {
-		delete props;
-	}
+	~splitterLayout();
 	
 };

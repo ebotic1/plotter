@@ -16,31 +16,14 @@ MainWindow::MainWindow()
 
 }
 
-bool MainWindow::onClick(gui::FileDialog* pDlg, td::UINT4 dlgID)
-{
-    if (dlgID == 1) {
-        if (!_mainView.loadFile(pDlg->getFileName()))
-            showAlert("Error", "Cant load file");
-
-        return true;
-    }
-
-    if (dlgID == 2) {
-        td::String path = pDlg->getFileName();
-
-        if(!_mainView.saveAs(path))
-            showAlert("Error", "Cant save file");
-        return true;
-    }
-
-    return false;
-}
-
 bool MainWindow::onActionItem(gui::ActionItemDescriptor& aiDesc)
 {
     if (aiDesc._menuID == 1 && aiDesc._actionItemID == 4) {//open
         gui::OpenFileDialog *p = new gui::OpenFileDialog(this, "Open model", {"*.txt", "*.xml"}, "Open");
-        p->openModal(1, this);
+        p->openModal([this](gui::FileDialog* pDlg) {
+            if (!_mainView.loadFile(pDlg->getFileName()))
+                showAlert("Error", "Cant load file");
+            });
         return true;
     }
 
@@ -53,13 +36,19 @@ bool MainWindow::onActionItem(gui::ActionItemDescriptor& aiDesc)
 
     if (aiDesc._menuID == 1 && aiDesc._actionItemID == 3) { //save as
         gui::OpenFileDialog* p = new gui::OpenFileDialog(this, "Save as", {"*.txt"}, "Save as");
-        p->openModal(2, this);
+        p->openModal([this](gui::FileDialog* pDlg) {
+            if (!_mainView.saveAs(pDlg->getFileName()))
+                showAlert("Error", "Cant save file");
+            });
         return true;
     }
 
     if (aiDesc._menuID == 1 && aiDesc._actionItemID == 5) { //export to xml
         gui::OpenFileDialog* p = new gui::OpenFileDialog(this, "Exporting XML for modelSolver", { "*.xml" }, "Export");
-        p->openModal(2, this);
+        p->openModal([this](gui::FileDialog* pDlg) {
+            if (!_mainView.saveAs(pDlg->getFileName()))
+                showAlert("Error", "Cant save file");
+            });
         return true;
     }
 

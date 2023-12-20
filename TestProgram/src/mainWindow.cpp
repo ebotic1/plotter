@@ -11,8 +11,6 @@ MainWindow::MainWindow()
     setTitle("Graph");
     _mainMenuBar.setAsMain(this);
 
-    _graph.showMargins(2);
-
     int broj = 1001;
     gui::CoordType* x = new gui::CoordType[broj];
     gui::CoordType* y = new gui::CoordType[broj];
@@ -31,14 +29,13 @@ MainWindow::MainWindow()
 
     _graph.addFunction(xx, yy, 6);
 
-    //_graph.addFunction(x, y, broj);
+    _graph.addFunction(x, y, broj);
 
   
     setCentralView(&splitter);
 
     
     splitter.refreshPicks();
-
 
 
 }
@@ -56,25 +53,36 @@ bool MainWindow::onActionItem(gui::ActionItemDescriptor& aiDesc) {
             resetGraph = true;
         }
 
-        
         auto f = new gui::FileDialog(this, "Read data", { "*.txt", "*.xml" }, "Open");
-        f->openModal(1, this);
+        f->openModal([this](gui::FileDialog* pDlg) {
+                open(pDlg->getFileName());
+            });
 
     }
     
     if (aiDesc._menuID == 2) {
+       
 
         if (aiDesc._actionItemID == 11) {
             
             auto a = new gui::SaveFileDialog(this, "export data to xml", "*.xml");
-            a->openModal(11, this);
+            
+            
+            
+            a->openModal([this](gui::FileDialog* pDlg) {
+                _graph.saveXML(pDlg->getFileName());
+                });
+
             return true;
         }
 
         if (aiDesc._actionItemID == 10) {
 
             auto a = new gui::SaveFileDialog(this, "export data to txt", "*.txt");
-            a->openModal(10, this);
+            a->openModal([this](gui::FileDialog* pDlg) {
+                _graph.saveTXT(pDlg->getFileName());
+                });
+        
             return true;
         }
 
@@ -83,24 +91,6 @@ bool MainWindow::onActionItem(gui::ActionItemDescriptor& aiDesc) {
     return false;
 }
 
-bool MainWindow::onClick(gui::FileDialog* pDlg, td::UINT4 dlgID){
-    if (dlgID == 1) {
-        return open(pDlg->getFileName());
-    }
-
-    if (dlgID == 11) {
-        _graph.saveXML(pDlg->getFileName());
-        return true;
-    }
-
-    if (dlgID == 10) {
-        _graph.saveTXT(pDlg->getFileName());
-        return true;
-    }
-
-
-    return false;
-}
 
 bool MainWindow::open(const td::String& path){
 
@@ -135,7 +125,10 @@ void MainWindow::loadFromTerminal(int argc, char** argv){
 }
 
 
-MainWindow::~MainWindow(){}
+MainWindow::~MainWindow(){
+
+
+}
 
 
 

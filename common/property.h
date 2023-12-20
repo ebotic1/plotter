@@ -25,6 +25,9 @@ public:
 
 	bool onFinishEdit(gui::LineEdit* pCtrl) override;
 	std::function<void(const td::Variant &)> Action = nullptr;
+	bool onActivate(gui::LineEdit* pCtrl);
+
+	~elementProperty();
 
 };
 

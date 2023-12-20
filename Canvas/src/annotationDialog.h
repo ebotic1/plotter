@@ -55,8 +55,9 @@ public:
     }
 
     ~annotDiag() {
-        for (size_t i = 0; i < props.size(); ++i)
+        for (size_t i = 0; i < props.size(); ++i) {
             delete props[i];
+        }
         delete verLay;
     }
 

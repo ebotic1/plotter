@@ -22,6 +22,8 @@ elementProperty::elementProperty(const td::String& name, td::DataType type, cons
 	layout << *edit;
 	setLayout(&layout);
 
+	
+
 }
 
 void elementProperty::setLabelMinSize(int width) {
@@ -46,7 +48,6 @@ td::Variant elementProperty::getValue(){
 
 void elementProperty::setValue(const td::Variant &value, bool doAction){
 
-	auto debug = value.getType();
 	
 
 	if (numeric)
@@ -68,4 +69,15 @@ bool elementProperty::onFinishEdit(gui::LineEdit* pCtrl){
 		return false;
 
 	return true;
+}
+
+bool elementProperty::onActivate(gui::LineEdit* pCtrl){
+	edit->hide(true, false);
+	edit->hide(false, false);
+	return true;
+}
+
+elementProperty::~elementProperty()
+{
+	delete edit;
 }
