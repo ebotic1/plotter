@@ -966,9 +966,11 @@ void graph::drawAxis(){
     gui::CoordType scaleX, scaleY;
     funkcije[0].getScale(scaleX, scaleY);
 
+    static double gridLineSpaceX = std::log(5000.0 / gui::Display::getDefaultLogicalPixelToMmVRatio());  //200 mm za svaku grid liniju
+    static double gridLineSpaceY = std::log(5000.0 / gui::Display::getDefaultLogicalPixelToMmHRatio());
 
     gui::CoordType len = drawingWindow.size.width / scaleX;
-    gui::CoordType razmak = 7.64385618977 + std::log2(1 / scaleX); // log2(200) =7.64385618977 sto prouzrokuje otprilike jednu grid vertikalnu liniju svakih 200 jedinica duzine
+    gui::CoordType razmak = gridLineSpaceX + std::log2(1 / scaleX);
     razmak = std::round(razmak);
     razmak = std::pow(2.0, razmak);
     gui::CoordType startVal = std::ceil(funkcije[0].transformedToRealX(drawingWindow.point.x) / razmak) * razmak;
@@ -976,7 +978,7 @@ void graph::drawAxis(){
 
 
 
-    gui::CoordType razmakY = 7.64385618977 + std::log2(-1 / scaleY);
+    gui::CoordType razmakY = gridLineSpaceY + std::log2(-1 / scaleY);
     razmakY = std::round(razmakY);
     razmakY = std::pow(2.0, razmakY);
     gui::CoordType startValY = std::ceil(funkcije[0].TrasformedToRealY(drawingWindow.point.y + drawingWindow.size.height) / razmakY) * razmakY;

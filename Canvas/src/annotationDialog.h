@@ -39,6 +39,7 @@ public:
                 td::Variant v(vector[i]);
                 auto ptr = new elementProperty(name, v.getType(), "x axis value that the vertical line is crossing", v);
                 gui::CoordType& val = vector[i];
+                
                 ptr->Action = [&val](const td::Variant& v) {
                     v.getValue(&val, td::real8);
                 };

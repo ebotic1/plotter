@@ -191,7 +191,7 @@ void View::pokreniSolver(){
 typedef cnt::StringBuilder<td::String, 1024*64> StringBuilder;
 
 
-#include<limits.h>
+
 
 
 bool getComment(td::String& comment, bool &alone, const char* path = nullptr) {

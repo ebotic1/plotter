@@ -1,14 +1,14 @@
 <?xml version='1.0'?>
 <DevRes>
 	<Images>
-		<Res id="save" path=":plotter/save.png"/>
-		<Res id="grid" path=":plotter/grid.png"/>
-		<Res id="fullScreen" path=":plotter/fullscreen.png"/>
-		<Res id="meni" path=":plotter/annotations.png"/>
-		<Res id="legend" path=":plotter/legend.png"/>
-		<Res id="reset" path=":plotter/delete.png"/>
-		<Res id="info" path=":plotter/info.png"/>
-		<Res id="fitToWindow" path=":plotter/fitToWindow.png"/>
+		<Res id="save" path=":@cnf/plotter/save.png"/>
+		<Res id="grid" path=":@cnf/plotter/grid.png"/>
+		<Res id="fullScreen" path=":@cnf/plotter/fullscreen.png"/>
+		<Res id="meni" path=":@cnf/plotter/annotations.png"/>
+		<Res id="legend" path=":@cnf/plotter/legend.png"/>
+		<Res id="reset" path=":@cnf/plotter/delete.png"/>
+		<Res id="info" path=":@cnf/plotter/info.png"/>
+		<Res id="fitToWindow" path=":@cnf/plotter/fitToWindow.png"/>
 	</Images>
 	<Symbols>
 
