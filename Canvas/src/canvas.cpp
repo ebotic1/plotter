@@ -156,7 +156,7 @@ bool graph::saveXML(const td::String& path){
 void graph::saveTXT(const td::String& path){
     txtPut = path;
     auto d = new txtDiag(this, 10);
-    d->openModal(10, this);
+    d->openModal();
 }
 
 bool graph::saveTXT(const td::String& path, bool horizontal){
