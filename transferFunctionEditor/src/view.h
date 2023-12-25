@@ -16,6 +16,7 @@ modelSettings *globals::model_settings = nullptr;
 
 
 
+
 class properties : public gui::ViewSwitcher {
 	modelSettings modSettings;
 	blockSettings bSettings;
@@ -27,7 +28,7 @@ public:
 		addView(&bSettings);
 		showView(0, true);
 
-		modSettings.edit.hide(false, false);
+		//modSettings.edit.hide(false, false);
 		
 	}
 
@@ -44,7 +45,6 @@ class mainView : public gui::View {
 	gui::ViewScroller scroller;
 	
 	kanvas _canvas;
-
 
 public:
 	mainView(): spliter(gui::SplitterLayout::Orientation::Horizontal), scroller(gui::ViewScroller::Type::ScrollAndAutoHide, gui::ViewScroller::Type::ScrollAndAutoHide){

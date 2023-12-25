@@ -33,6 +33,7 @@ public:
 		menu.setAsMain(this);
 		//menu.forwardMessagesTo(view.getCanvas());
 		setCentralView(&view);
+		
 	}
 
 	virtual bool onFinishEdit(gui::LineEdit* pCtrl) {

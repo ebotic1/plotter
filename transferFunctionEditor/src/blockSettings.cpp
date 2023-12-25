@@ -41,7 +41,6 @@ outputName("output var: ", td::string8, "variable name that will be created when
 void blockSettings::showBlock(BlockBase* block) {
 	globals::switcher->showView(1, false);
 	gui::Size sz(100, 100);
-	globals::switcher->getView(1)->reMeasure(gui::CellInfo());
 
 	currentBlock = block;
 	td::String num, dem, out, in;
