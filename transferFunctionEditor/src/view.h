@@ -20,13 +20,22 @@ modelSettings *globals::model_settings = nullptr;
 class properties : public gui::ViewSwitcher {
 	modelSettings modSettings;
 	blockSettings bSettings;
+
+	gui::VerticalLayout vl;
+	gui::LineEdit edit;
+	gui::View pogled;
+
 public:
-	properties() {
+	properties(): vl(1) {
+
+		vl << edit;
+		pogled.setLayout(&vl);
+
 		globals::switcher = this;
 		globals::block_properties = &bSettings;
-		addView(&modSettings);
-		addView(&bSettings);
-		showView(0, true);
+		addView(&pogled, true);
+		//addView(&bSettings);
+		
 
 		//modSettings.edit.hide(false, false);
 		

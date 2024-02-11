@@ -154,10 +154,13 @@ bool graph::saveXML(const td::String& path){
 }
 
 void graph::saveTXT(const td::String& path){
-    txtPut = path;
     auto d = new txtDiag(this, 10);
-    d->openModal();
+    d->openModal([path, this](gui::Dialog* dDlg) {
+            saveTXT(path, ((txtDiag*)dDlg)->horizontal);
+        });
 }
+
+
 
 bool graph::saveTXT(const td::String& path, bool horizontal){
     std::ofstream out;
@@ -1128,7 +1131,9 @@ void graph::showInformation(){
 }
 
 void graph::saveMenu(){
-    auto f = new gui::FileDialog(this, "Save plot", { "*.eps", "*.jpg", "*.png", "*.svg", "*.txt", "*.xml", "*.pdf"}, "Save");
+    auto f = new gui::SaveFileDialog(this, "Save plot", { {"Encapsulated PostScript vector graphics format", "*.eps"}, {"Joint Photographic Experts Group image format", "*.jpg"}, 
+        {"Portable Network Graphics image format", "*.png"}, {"Scalable Vector Graphics image format", "*.svg"}, 
+        {"Plain text file format", "*.txt"}, {"Extensible Markup Language data format", "*.xml"}, {"Portable Document Format document format", "*.pdf"} });
     f->openModal([this](gui::FileDialog* pDlg) {
             return save(pDlg->getFileName());
         });
@@ -1351,15 +1356,6 @@ void graph::onCursorEntered(const gui::InputDevice& inputDevice) {
     active = true;
 }
 
-bool graph::onClick(gui::Dialog* pDlg, td::UINT4 dlgID){
-
-    if (dlgID == 10) {
-        saveTXT(txtPut, ((txtDiag*)pDlg)->horizontal);
-    }
-
-    reDraw();
-    return true;
-}
 
 
 

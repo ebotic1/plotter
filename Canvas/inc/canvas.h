@@ -78,7 +78,6 @@ protected:
 	bool onKeyPressed(const gui::Key& key) override;
 	void onCursorExited(const gui::InputDevice& inputDevice) override;
 	void onCursorEntered(const gui::InputDevice& inputDevice) override;
-	bool onClick(gui::Dialog* pDlg, td::UINT4 dlgID) override;
 	void onPrimaryButtonDblClick(const gui::InputDevice& inputDevice) override;
 
 	void onDraw(const gui::Rect& rect) override;

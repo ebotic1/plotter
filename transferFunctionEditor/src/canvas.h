@@ -310,7 +310,7 @@ inline bool kanvas::onKeyPressed(const gui::Key& key)
 
 void kanvas::onSecondaryButtonPressed(const gui::InputDevice& inputDevice){
 	lastMousePos = inputDevice.getModelPoint();
-	openContextMenu(inputDevice);
+	Frame::openContextMenu(100, inputDevice);
 }
 
 

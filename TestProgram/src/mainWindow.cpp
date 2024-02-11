@@ -53,11 +53,11 @@ bool MainWindow::onActionItem(gui::ActionItemDescriptor& aiDesc) {
             resetGraph = true;
         }
 
-        auto f = new gui::FileDialog(this, "Read data", { "*.txt", "*.xml" }, "Open");
+        auto f = new gui::OpenFileDialog(this, "Read data", { {"","*.txt"},{"", "*.xml"} }, "plot");
         f->openModal([this](gui::FileDialog* pDlg) {
                 open(pDlg->getFileName());
             });
-
+            
     }
     
     if (aiDesc._menuID == 2) {
