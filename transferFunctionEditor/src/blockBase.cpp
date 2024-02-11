@@ -15,7 +15,7 @@ const gui::Point & BlockBase::getOutput() const{
 }
 
 
-const gui::Point& BlockBase::getLocation() const{
+const gui::Point BlockBase::getLocation() const{
 	return gui::Point(_r.left, _r.top);
 }
 

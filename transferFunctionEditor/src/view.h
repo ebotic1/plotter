@@ -21,23 +21,13 @@ class properties : public gui::ViewSwitcher {
 	modelSettings modSettings;
 	blockSettings bSettings;
 
-	gui::VerticalLayout vl;
-	gui::LineEdit edit;
-	gui::View pogled;
 
 public:
-	properties(): vl(1) {
+	properties(): gui::ViewSwitcher(2) {
 
-		vl << edit;
-		pogled.setLayout(&vl);
-
-		globals::switcher = this;
-		globals::block_properties = &bSettings;
-		addView(&pogled, true);
-		//addView(&bSettings);
+		addView(&modSettings, true);
+		addView(&bSettings);
 		
-
-		//modSettings.edit.hide(false, false);
 		
 	}
 

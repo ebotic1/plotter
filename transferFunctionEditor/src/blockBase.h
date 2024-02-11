@@ -26,7 +26,7 @@ public:
 	const bool getInputSwitched() const;
 	const gui::Point& getOutput() const;
 	virtual const gui::Point& getInput(int poz) const = 0;
-	const gui::Point& getLocation() const;
+	const gui::Point getLocation() const;
 	const std::set<BlockBase*>& getConnectedToBlocks() const;
 	const std::vector<std::set<BlockBase*>> &getConnectedFromBlocks() const;
 

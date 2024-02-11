@@ -39,7 +39,7 @@ outputName("output var: ", td::string8, "variable name that will be created when
 }
 
 void blockSettings::showBlock(BlockBase* block) {
-	globals::switcher->showView(1, false);
+	globals::switcher->showView(1, true);
 	gui::Size sz(100, 100);
 
 	currentBlock = block;

@@ -1300,6 +1300,7 @@ bool graph::onKeyPressed(const gui::Key& key) {
         funkcije.erase(funkcije.begin(), funkcije.begin() + funCnt);
         reDraw();
 
+
         return true;
     }
 

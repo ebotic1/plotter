@@ -112,8 +112,11 @@ bool switcher::onChangedValue(gui::ColorPicker* pCP){
 }
 
 void switcher::showFunction(size_t pos){
-	index = pos;
 	auto& funs = mainGraph.getFunctions();
+	if (pos >= funs.size())
+		return;
+	index = pos;
+	
 	td::Variant var(funs[pos].name->c_str());
 	name.setValue(var, false);
 
@@ -174,17 +177,18 @@ bool splitterLayout::onChangedSelection(gui::ComboBox* pCmb){
 	
 	if (pCmb != &picker)
 		return false;
-	
+
 
 	if (pCmb->getSelectedIndex() == 0) {
 		props->showGraph();
 		return true;
 	}
 
+
 	props->showFunction(pCmb->getSelectedIndex() - 1);
 
 	if(!ignoreSelections)
-	refreshPicks();
+		refreshPicks();
 
 	return true;
 }
