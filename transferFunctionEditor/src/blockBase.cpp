@@ -1,6 +1,7 @@
 #include "blockBase.h"
 #include "globals.h"
 
+
 const gui::Rect& BlockBase::getRect() const{
 	return _r;
 }
@@ -10,23 +11,20 @@ const bool BlockBase::getInputSwitched() const{
 }
 
 
-const gui::Point & BlockBase::getOutput() const{
-	return outputPoint;
-}
-
-
 const gui::Point BlockBase::getLocation() const{
 	return gui::Point(_r.left, _r.top);
 }
 
-
-const std::set<BlockBase*>& BlockBase::getConnectedToBlocks() const{
+const std::vector<std::pair<BlockBase*, int>>& BlockBase::getConnectedToBlocks() const
+{
 	return connectedTo;
 }
 
-const std::vector<std::set<BlockBase*>>& BlockBase::getConnectedFromBlocks() const{
+const std::vector<std::pair<BlockBase*, int>>& BlockBase::getConnectedFromBlocks() const
+{
 	return connectedFrom;
 }
+
 
 
 
@@ -34,58 +32,101 @@ bool BlockBase::intersectsBlock(const gui::Point& p) {
 	return _r.contains(p);
 }
 
-bool BlockBase::intersectsOutput(const gui::Point& p){
-	return gui::Circle(outputPoint, 14).contains(p); 
+int BlockBase::intersectsInput(const gui::Point& p) const
+{
+	for (int i = 0; i < getInputCnt(); ++i)
+		if (gui::Circle(getInput(i), 14).contains(p))
+			return i;
+
+	return -1;
+}
+
+int BlockBase::intersectsOutput(const gui::Point& p) const
+{
+	for (int i = 0; i < getOutputCnt(); ++i)
+		if (gui::Circle(getOutput(i), 14).contains(p))
+			return i;
+
+	return -1;
 }
 
 
-void BlockBase::connectTo(BlockBase* block, int poz) {
+void BlockBase::connectTo(BlockBase* block, int pozFrom, int pozTo) {
 	if (block == this)
 		return;
 
-	if (block->connectedFrom.size() < poz+1)
-		block->connectedFrom.resize(poz+1);
+	connectedTo.at(pozFrom) = { block, pozTo };
+	block->connectedFrom.at(pozTo) = { this, pozFrom };
 
-	block->connectedFrom[poz].insert(this);
-	connectedTo.insert(block);
-	setUpWires(true);
+	if(!disableSetUp)
+		setUpWires(true);
 }
 
 void BlockBase::disableLogic(bool disable){
 	disableSetUp = disable;
 }
 
-void BlockBase::removeConnections() {
-	for(BlockBase*var : connectedTo){
-		for(std::set<BlockBase*> &block : var->connectedFrom)
-			block.erase(this);
-		
 
-	}
-	connectedTo.clear();
-	for(std::set<BlockBase*> &var : connectedFrom)
-		for (BlockBase* block : var) {
-			block->connectedTo.erase(this);
-			block->setUpWires(false);
-		}
-	
-	connectedFrom.clear();
+
+
+void BlockBase::removeConnections() {
+	disableSetUp = true;
+	for (int i = 0; i < getOutputCnt(); ++i)
+		disconnectOutput(i);
+
+	for (int i = 0; i < getInputCnt(); ++i)
+		disconnectInput(i);
+
+	disableSetUp = false;
 	setUpWires(true);
+}
+
+void BlockBase::disconnectInput(int poz){
+	auto &par = connectedFrom.at(poz);
+	if (par.first == nullptr) return;
+	par.first->connectedTo.at(par.second).first = nullptr;
+	if(!par.first->disableSetUp)
+		par.first->setUpWires(false);
+	par.first = nullptr;
+
+	if (!disableSetUp)
+		setUpWires(false);
+}
+
+void BlockBase::disconnectOutput(int poz){
+	auto& par = connectedTo.at(poz);
+	if (par.first == nullptr) return;
+	par.first->connectedFrom.at(par.second).first = nullptr;
+	if (!par.first->disableSetUp)
+		par.first->setUpWires(false);
+	par.first = nullptr;
+
+	if (!disableSetUp)
+		setUpWires(false);
 }
 
 
 void BlockBase::switchInput() {
 	switchOutput = !switchOutput;
-	this->setUpAll();
+	if (!disableSetUp)
+		this->setUpAll();
 }
 
 void BlockBase::setPosition(const gui::Point& position){
 	_r.setOrigin(position);
-	this->setUpAll();
+	if (!disableSetUp)
+		this->setUpAll();
 }
 
 
-BlockBase::BlockBase(const gui::Point& position){
+gui::View& BlockBase::updateSettingsView(settingsView& view)
+{
+	return view;
+}
+
+
+BlockBase::BlockBase(const gui::Point& position)
+{
 	_r.setOrigin(position);
 }
 
@@ -93,3 +134,4 @@ BlockBase::BlockBase(const gui::Point& position){
 BlockBase::~BlockBase(){
 
 }
+

@@ -3,10 +3,6 @@
 
 
 
-const gui::Point& Block::getInput(int poz) const{
-	return inputPoint;
-}
-
 
 const td::String& Block::getOutputName() const{
 	return izlazName;
@@ -17,24 +13,12 @@ const td::String& Block::getInputName() const{
 }
 
 
-int Block::intersectsInput(const gui::Point& p) {
-	return gui::Circle(inputPoint, 20).contains(p);
-}
-
-void Block::getAllProps(td::String& nominator, td::String& denominator, bool& connected, bool& switchedInput, td::String& inputName, td::String& outputName){
-	nominator = nom;
-	denominator = dem;
-	switchedInput = this->switchOutput;
-	connected = (connectedFrom.size() > 0 || connectedTo.size() > 0) ? true : false;
-	inputName = ulazName;
-	outputName = izlazName;
-}
-
 void Block::setNominator(const td::String& nominator){
 	nom = nominator.isNull() ? "1" : nominator;
 	drawNom = nom;
 	setUpAll();
 }
+
 
 void Block::setDenominator(const td::String& denominator){
 	dem = denominator.isNull() ? "1" : denominator;
@@ -42,26 +26,6 @@ void Block::setDenominator(const td::String& denominator){
 	setUpAll();
 }
 
-void Block::setInputName(const td::String& name){
-	if (name.trim().isNull())
-		ulazName = "input";
-	else
-		ulazName = name;
-
-	drawUlaz = ulazName;
-	globals::refreshCanvas();
-}
-
-void Block::setOutputName(const td::String& name){
-	if (name.trim().isNull())
-		izlazName = "output";
-	else
-		izlazName = name;
-
-	drawIzlaz = izlazName;
-
-	globals::refreshCanvas();
-}
 
 
 
@@ -71,6 +35,9 @@ void Block::setUpAll() {
 
 	if (disableSetUp)
 		return;
+
+	drawUlaz = ulazName;
+	drawIzlaz = izlazName;
 
 	if (drawNom.isInitialized() && drawDem.isInitialized()) {
 		gui::Size s1, s2;
@@ -144,72 +111,13 @@ void Block::setUpAll() {
 		outputRect.setWidth(armLenght*2/1.2);
 	}
 
-	for (std::set<BlockBase*>& var : connectedFrom)
-		for (BlockBase* block : var) 
-			block->setUpWires(false);
+	for (const auto& var : connectedFrom)
+		if(var.first != nullptr)
+			var.first->setUpWires(false);
 
 	setUpWires(true); // will refresh canvas
-
 }
 
-void Block::setUpWires(bool refreshCanvas){
-
-	if (disableSetUp)
-		return;
-
-	connectionLines.resize(connectedTo.size());
-	int i = 0;
-	for(const BlockBase *block : connectedTo){
-		const gui::Point& input = block->getInput(i); //POPRAVITI!!!
-
-		if (outputPoint.x < input.x) { // linija ide prema desno
-			if (outputPoint.x > inputPoint.x) {
-				gui::Point tacke[] = { outputPoint,  { input.x, outputPoint.y }, input };
-				connectionLines[i].createPolyLine(tacke, 3, 2);
-			}
-			else if(block->getOutput().x > input.x) {
-				gui::Point tacke[] = { outputPoint,  { outputPoint.x, input.y }, input };
-				connectionLines[i].createPolyLine(tacke, 3, 2);
-			}
-			else {
-				gui::CoordType middleY = (outputPoint.y + input.y) / 2; 
-				gui::Point tacke[] = { outputPoint,  { outputPoint.x, middleY},  { input.x, middleY }, input };
-				connectionLines[i].createPolyLine(tacke, 4, 2);
-			}
-
-
-			/*
-			* 
-			* moze se i ovo koristiti. Kada se spaja blok prelama liniju na pola puta umjesto na kraju 
-			* 
-			gui::CoordType middle = (outputPoint.x + input.x) / 2;  //(input.x - outputPoint.x)/2 + outputPoint.x ;
-			gui::Point tacke[] = { outputPoint,  { middle, outputPoint.y },  { middle, input.y }, input };
-			connectionLines[i].createPolyLine(tacke, 4, 2);
-			*/
-		}
-		else { //linija ide prema lijevo
-			
-			if (outputPoint.x < inputPoint.x) {
-				gui::Point tacke[] = { outputPoint,  { input.x, outputPoint.y}, input };
-				connectionLines[i].createPolyLine(tacke, 3, 2);
-			}
-			else if (block->getOutput().x < input.x) {
-				gui::Point tacke[] = { outputPoint,  { outputPoint.x, input.y}, input };
-				connectionLines[i].createPolyLine(tacke, 3, 2);
-			}else{
-				gui::CoordType middleY = (outputPoint.y + input.y) / 2;
-				gui::Point tacke[] = { outputPoint,  { outputPoint.x, middleY},  { input.x, middleY }, input };
-				connectionLines[i].createPolyLine(tacke, 4, 2);
-			}
-
-		}
-
-		++i;
-	}
-
-	if(refreshCanvas)
-		globals::refreshCanvas();
-}
 
 
 void Block::drawBlock(td::ColorID color) {
@@ -238,7 +146,11 @@ void Block::drawBlock(td::ColorID color) {
 }
 
 
-Block::Block(const gui::Point& position, const td::String& inputName, const td::String& outputName): BlockBase(position){
+Block::Block(const gui::Point& position, const td::String& inputName, const td::String& outputName):  
+	squareBlockSI(inputName),
+	squareBlockSO(outputName),
+	BlockBase::BlockBase(position)
+{
 	setNominator("1");
 	setDenominator("s");
 

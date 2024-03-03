@@ -1,6 +1,7 @@
 #include "blockSettings.h"
 #include "globals.h"
 #include "tBlock.h"
+#include "./../../common/property.h"
 
 blockSettings::blockSettings() : v(8), num("numerator: ", td::string8, "Numerator of the transfer function (use 's' as a variable OR use space as an operator)", td::Variant("1")),
 dem("denominator: ", td::string8, "Denominator of the transfer function (use 's' as a variable OR use space as an operator)", td::Variant("s")), 
@@ -48,7 +49,7 @@ void blockSettings::showBlock(BlockBase* block) {
 
 	Block* b = dynamic_cast<Block*>(block);
 
-	b->getAllProps(num, dem, connected, switched, in, out);
+	//b->getAllProps(num, dem, connected, switched, in, out);
 	this->num.setValue(num);
 	this->dem.setValue(dem);
 	inputSwitch.setChecked(switched, false);
