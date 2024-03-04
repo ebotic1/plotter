@@ -1,6 +1,4 @@
 #pragma once
-#include "gui/Shape.h"
-#include "gui/DrawableString.h"
 #include <vector>
 #include <gui/View.h>
 #include "../../EquationToXML/inc/nodes.h"
@@ -8,6 +6,7 @@
 #include "gui/CheckBox.h"
 #include "gui/Button.h"
 #include "gui/Label.h"
+#include "./../../common/property.h"
 #include "gui/VerticalLayout.h"
 
 #define FONT_ID gui::Font::ID::SystemRegular
@@ -21,12 +20,15 @@ public:
 		BlockBase* currentBlock = nullptr;
 		gui::CheckBox checkBoxSwitch;
 		gui::Button buttonDisconnect;
+		gui::VerticalLayout vL;
 	public:
 		settingsView() :
 			checkBoxSwitch("switch input/output"),
-			buttonDisconnect("disconnect wires", "remove all incomming and outgoing connections from the selected block")
+			buttonDisconnect("disconnect wires", "remove all incomming and outgoing connections from the selected block"),
+			vL(2)
 		{
-
+			vL << checkBoxSwitch << buttonDisconnect;
+			setLayout(&vL);
 		}
 
 		bool onClick(gui::CheckBox* pBtn) {
@@ -36,7 +38,7 @@ public:
 
 		bool onClick(gui::Button* pBtn) {
 			currentBlock->removeConnections();
-			return false;
+			return true;
 		}
 
 		friend class BlockBase;
@@ -86,7 +88,7 @@ public:
 	void disableLogic(bool disable);
 
 
-	virtual gui::View& updateSettingsView(settingsView& view);
+	virtual gui::View& updateSettingsView(settingsView* view);
 
 	//virtual void writeToModel(modelNode& model) = 0;
 	//virtual void saveToFile

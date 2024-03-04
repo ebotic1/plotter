@@ -34,6 +34,20 @@ public:
 
 
 class squareBlockSO : virtual public BlockBase {
+public:
+	class settingsView : public gui::View {
+		gui::VerticalLayout vL;
+		elementProperty outputProp;
+		
+	public:
+		settingsView() :
+			vL(1),
+			outputProp("output var: ", td::string8, "variable name that will be created when exporting XML file for this block's output")
+		{
+			
+		}
+		friend class squareBlockSO;
+	};
 protected:
 	td::String izlazName;
 	gui::Point outputPoint;
@@ -48,5 +62,5 @@ public:
 	int getOutputCnt() const { return 1; }
 
 	void setOutputName(const td::String& name);
-
+	virtual gui::View& updateSettingsView(settingsView* view);
 };

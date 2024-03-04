@@ -89,3 +89,8 @@ void squareBlockSO::setOutputName(const td::String& name)
 	if (!disableSetUp)
 		setUpAll();
 }
+
+gui::View& squareBlockSO::updateSettingsView(settingsView* view)
+{
+	
+}

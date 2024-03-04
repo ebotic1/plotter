@@ -119,9 +119,10 @@ void BlockBase::setPosition(const gui::Point& position){
 }
 
 
-gui::View& BlockBase::updateSettingsView(settingsView& view)
+gui::View& BlockBase::updateSettingsView(settingsView* view)
 {
-	return view;
+	view->checkBoxSwitch.setChecked(switchOutput, false);
+	return *view;
 }
 
 
