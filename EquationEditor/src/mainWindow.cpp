@@ -19,7 +19,7 @@ MainWindow::MainWindow()
 bool MainWindow::onActionItem(gui::ActionItemDescriptor& aiDesc)
 {
     if (aiDesc._menuID == 1 && aiDesc._actionItemID == 4) {//open
-        gui::OpenFileDialog *p = new gui::OpenFileDialog(this, "Open model", {"*.txt", "*.xml"}, "Open");
+        gui::OpenFileDialog* p = new gui::OpenFileDialog(this, "Open model", { {"Text", "*.txt"},{"XML model solver", "*.xml"} }, "Open");
         p->openModal([this](gui::FileDialog* pDlg) {
             if (!_mainView.loadFile(pDlg->getFileName()))
                 showAlert("Error", "Cant load file");

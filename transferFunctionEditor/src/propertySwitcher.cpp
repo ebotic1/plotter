@@ -17,14 +17,20 @@ properties::properties() :
 
 }
 
-void properties::showSettings(size_t hash_code)
+void properties::showSettings(BlockBase* block)
 {
+	if (block == nullptr) {
+		showView(0);
+		return;
+	}
 	for (int i = 0; i < settingsCnt; ++i)
-	{
-		if (pogledi_ID[i] == hash_code) {
+		if (pogledi_ID[i] == typeid(*block).hash_code()) {
+			block->updateSettingsView(pogledi[i]);
 			showView(i + 1);
 			return;
 		}
-		showView(0);
-	}
+		
+	int i = 0;
+	
+	
 }

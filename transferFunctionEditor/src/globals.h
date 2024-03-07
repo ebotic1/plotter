@@ -1,5 +1,4 @@
 #pragma once
-#include "blockSettings.h"
 #include "gui/ViewSwitcher.h"
 #include "modelSettings.h"
 #include "propertySwitcher.h"

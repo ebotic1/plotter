@@ -8,8 +8,8 @@ class properties : public gui::ViewSwitcher {
 	modelSettings modSettings;
 	static constexpr int settingsCnt = 1;
 
-	gui::View* pogledi[settingsCnt] = {new BlockBase::settingsView() };
-	size_t pogledi_ID[settingsCnt] = {typeid(Block).hash_code() };
+	BlockBase::settingsView* pogledi[settingsCnt] = {new TFBlock::settingsView()};
+	size_t pogledi_ID[settingsCnt] = {typeid(TFBlock).hash_code() };
 
 
 public:
@@ -20,6 +20,6 @@ public:
 			delete pok;
 	}
 
-	void showSettings(size_t hash_code);
+	void showSettings(BlockBase *block);
 
 };

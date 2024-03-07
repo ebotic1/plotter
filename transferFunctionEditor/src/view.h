@@ -3,7 +3,6 @@
 #include "gui/View.h"
 #include "canvas.h"
 #include "gui/ViewScroller.h"
-//#include "./../../common/property.h"
 #include "propertySwitcher.h"
 
 

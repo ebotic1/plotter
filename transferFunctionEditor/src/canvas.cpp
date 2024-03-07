@@ -1,5 +1,6 @@
 #include "canvas.h"
 
+
 #define BLOCK_COLOR td::ColorID::Black
 #define BLOCK_COLOR_SELECTED td::ColorID::DeepSkyBlue
 
@@ -24,7 +25,7 @@ inline bool kanvas::getModelSize(gui::Size& size) const {
 	return true;
 }
 
-kanvas::kanvas() : gui::Canvas({ gui::InputDevice::Event::PrimaryClicks, gui::InputDevice::Event::SecondaryClicks, gui::InputDevice::Event::PrimaryDblClick, gui::InputDevice::Event::Zoom, gui::InputDevice::Event::CursorDrag, gui::InputDevice::Event::Keyboard }) {
+kanvas::kanvas() : gui::Canvas({ gui::InputDevice::Event::PrimaryClicks, gui::InputDevice::Event::SecondaryClicks, gui::InputDevice::Event::PrimaryDblClick, gui::InputDevice::Event::Zoom, gui::InputDevice::Event::CursorDrag, gui::InputDevice::Event::Keyboard, gui::InputDevice::Event::CursorMove }) {
 
 
 
@@ -33,8 +34,9 @@ kanvas::kanvas() : gui::Canvas({ gui::InputDevice::Event::PrimaryClicks, gui::In
 
 
 void kanvas::onDraw(const gui::Rect& rect) {
+
 	for (int i = 0; i < blocks.size(); ++i)
-		if (blocks[i] != tempCurrentBlock.Block)
+		if (blocks[i] != tempCurrentBlock.TFBlock)
 			blocks[i]->drawBlock(BLOCK_COLOR);
 		else
 			blocks[i]->drawBlock(BLOCK_COLOR_SELECTED);
@@ -42,10 +44,15 @@ void kanvas::onDraw(const gui::Rect& rect) {
 
 
 	if (lastAction == Actions::wiring) {
-		gui::Shape::drawLine(tempCurrentBlock.Block->getOutput(tempCurrentBlock.outputPoz), lastMousePos, BLOCK_COLOR, 2, td::LinePattern::Dash);
+		gui::Shape::drawLine(tempCurrentBlock.TFBlock->getOutput(tempCurrentBlock.outputPoz), lastMousePos, BLOCK_COLOR, 2, td::LinePattern::Dash);
 	}
 
 
+}
+
+void kanvas::createBlock(const gui::Point& p)
+{
+	blocks.push_back(new TFBlock(p));
 }
 
 inline void kanvas::onPrimaryButtonPressed(const gui::InputDevice& inputDevice) {
@@ -55,24 +62,24 @@ inline void kanvas::onPrimaryButtonPressed(const gui::InputDevice& inputDevice) 
 		if (blocks[i]->intersectsBlock(inputDevice.getModelPoint())) {
 			lastMousePos = inputDevice.getModelPoint();
 			lastAction = Actions::dragging;
-			if (blocks[i] == tempCurrentBlock.Block)
+			if (blocks[i] == tempCurrentBlock.TFBlock)
 				return;
-			tempCurrentBlock.Block = blocks[i];
-			globals::switcher->showSettings(typeid(*tempCurrentBlock.Block).hash_code());
+			tempCurrentBlock.TFBlock = blocks[i];
+			globals::switcher->showSettings(tempCurrentBlock.TFBlock);
 			reDraw();
 			return;
 		}
 
 	for (int i = 0; i < blocks.size(); ++i)
 		if (blocks[i]->intersectsOutput(inputDevice.getModelPoint()) != -1) {
-			tempCurrentBlock.Block = blocks[i];
+			tempCurrentBlock.TFBlock = blocks[i];
 			tempCurrentBlock.outputPoz = blocks[i]->intersectsOutput(inputDevice.getModelPoint());
 			lastAction = Actions::wiring;
 			return;
 		}
 
-	tempCurrentBlock.Block = nullptr;
-	globals::switcher->showSettings(0);
+	tempCurrentBlock.TFBlock = nullptr;
+	globals::switcher->showSettings(nullptr);
 	reDraw();
 
 }
@@ -87,7 +94,7 @@ inline void kanvas::onCursorDragged(const gui::InputDevice& inputDevice) {
 		gui::CoordType deltaX = inputDevice.getModelPoint().x - lastMousePos.x;
 		gui::CoordType deltaY = inputDevice.getModelPoint().y - lastMousePos.y;
 
-		tempCurrentBlock.Block->setPosition({ tempCurrentBlock.Block->getRect().left + deltaX, tempCurrentBlock.Block->getRect().top + deltaY });
+		tempCurrentBlock.TFBlock->setPosition({ tempCurrentBlock.TFBlock->getRect().left + deltaX, tempCurrentBlock.TFBlock->getRect().top + deltaY });
 		lastMousePos = inputDevice.getModelPoint();
 		return;
 	}
@@ -99,7 +106,7 @@ inline void kanvas::onPrimaryButtonReleased(const gui::InputDevice& inputDevice)
 		for (int i = 0; i < blocks.size(); ++i)
 			if (blocks[i]->intersectsInput(inputDevice.getModelPoint()) != -1) {
 				const int& poz = blocks[i]->intersectsInput(inputDevice.getModelPoint());
-				tempCurrentBlock.Block->connectTo(blocks[i], poz, tempCurrentBlock.outputPoz);
+				tempCurrentBlock.TFBlock->connectTo(blocks[i], poz, tempCurrentBlock.outputPoz);
 				break;
 			}
 		lastAction = Actions::none;
@@ -114,6 +121,7 @@ inline void kanvas::onPrimaryButtonDblClick(const gui::InputDevice& inputDevice)
 	//createBlock(inputDevice.getModelPoint());
 }
 
+
 inline bool kanvas::onZoom(const gui::InputDevice& inputDevice) {
 	scale *= inputDevice.getScale() > 1 ? 1.5 : 0.66667;
 	this->scaleToPoint(scale, inputDevice.getModelPoint());
@@ -121,37 +129,32 @@ inline bool kanvas::onZoom(const gui::InputDevice& inputDevice) {
 }
 
 
-/*
+
 inline bool kanvas::saveState(const td::String& file){
 
 	arch::FileSerializerOut temp;
 	if (!temp.open(file))
 		return false;
 
-	arch::ArchiveOut out("TFv1", temp);
+	arch::ArchiveOut out("TFv2", temp);
 	try {
 		out << int(blocks.size());
-		for(Block * var : blocks) {
-			td::String nom, dem, inputName, outputName;
-			bool connected, switched;
-			var->getAllProps(nom, dem, connected, switched, inputName, outputName);
-			double x, y;
-			x = var->getLocation().x;
-			y = var->getLocation().y;
-			out << x << y;
-			out << nom << dem << switched << inputName << outputName;
-		}
+		for (BlockBase* b : blocks)
+			b->saveToFile(out);
 
 		for (int i = 0; i < blocks.size(); ++i) {
-			auto& vec = blocks[i]->getConnectedBlocks();
+			auto& vec = blocks[i]->getConnectedToBlocks();
 			out << int(vec.size());
 
-			for  (Block * var : vec) {
-				auto it = std::find(blocks.begin(), blocks.end(), var);
-				out << int(it - blocks.begin());
+			for  (auto &set : vec) {
+				out << int(set.size());
+				for (auto& par : set) {
+					auto it = std::find(blocks.begin(), blocks.end(), par.first);
+					out << int(it - blocks.begin()) << par.second;
+				}
 			}
 		}
-		out << cntBlock;
+
 		out << globals::model_settings->name.getValue().strVal();
 		td::Variant v;
 		globals::model_settings->edit.getValue(v);
@@ -165,59 +168,65 @@ inline bool kanvas::saveState(const td::String& file){
 	}
 
 	return true;
+
 }
 
 inline bool kanvas::restoreState(const td::String& file){
+	
 	arch::FileSerializerIn temp;
 	if (!temp.open(file))
 		return false;
 
 	arch::ArchiveIn in(temp);
-	in.setSupportedMajorVersion("TFv1");
-	std::vector<Block*> kopija;
+	in.setSupportedMajorVersion("TFv2");
+	std::vector<TFBlock*> kopija;
+	td::Variant titl_v, param_v;
 
 
 	try {
 		int size = 0;
 		in >> size;
 		kopija.resize(size, nullptr);
+
+		td::String ID;
 		for (int i = 0; i < size; ++i) {
-			td::String nom, dem, inputName, outputName;
-			bool connected, switched;
-			double x, y;
-
-			in >> x >> y;
-			in >> nom >> dem >> switched >> inputName >> outputName;
-
-			kopija[i] = new Block({ x,y }, inputName, outputName);
-			kopija[i]->disableLogic(true);
-			if(switched)
-				kopija[i]->switchInput();
-			kopija[i]->setNominator(nom);
-			kopija[i]->setDenominator(dem);
+			in >> ID;
+			if (ID == TFBlock::getID())
+				kopija[i] = TFBlock::restoreFromFile(in);
+			else
+				throw std::exception("unknown block");
 		}
 		for (int i = 0; i < size; ++i) {
-			int connectionsCnt;
+			int setCnt, connectionsCnt;
 			in >> connectionsCnt;
 			for (int j = 0; j < connectionsCnt; ++j) {
-				int broj;
-				in >> broj;
-				kopija[i]->connectTo(kopija[broj]);
+				in >> setCnt;
+				for (int k = 0; k < setCnt; ++k) {
+					int broj, ulazCnt;
+					in >> broj >> ulazCnt;
+					kopija[i]->connectTo(kopija[broj], j, ulazCnt);
+				}
 			}
-			kopija[i]->disableLogic(false);
-			kopija[i]->setUpAll();
+
 		}
 
-		in >> cntBlock;
+		for (auto& block : kopija) {
+			block->disableLogic(false);
+			block->setUpBlock();
+		}
+
+		for (auto& block : kopija)
+			block->setUpWires(true);
+		
 
 		td::String titl;
 		in >> titl;
-		globals::model_settings->name.setValue(titl);
+		titl_v = std::move(titl);
 
 		td::String params;
 		in >> params;
-		td::Variant v(std::move(params));
-		globals::model_settings->edit.setValue(v, false);
+		param_v = std::move(params);
+		
 
 	}
 	catch (...) {
@@ -227,23 +236,27 @@ inline bool kanvas::restoreState(const td::String& file){
 	}
 
 
-	for (int i = 0; i < blocks.size(); ++i)
-		delete blocks[i];
+	resetModel();
+
+
 	blocks = std::move(kopija);
+	globals::model_settings->edit.setValue(param_v, false);
+	globals::model_settings->name.setValue(titl_v);
 
 	currentPath = file;
 
 	return true;
 }
-*/
+
 
 inline bool kanvas::onKeyPressed(const gui::Key& key)
 {
 	if (key.getVirtual() == gui::Key::Virtual::Delete) {
-		if (tempCurrentBlock.Block != nullptr) {
-			tempCurrentBlock.Block->removeConnections();
-			blocks.erase(std::find(blocks.begin(), blocks.end(), tempCurrentBlock.Block));
-			tempCurrentBlock.Block = nullptr;
+		if (tempCurrentBlock.TFBlock != nullptr) {
+			tempCurrentBlock.TFBlock->removeConnections();
+			blocks.erase(std::find(blocks.begin(), blocks.end(), tempCurrentBlock.TFBlock));
+			globals::switcher->showSettings(nullptr);
+			tempCurrentBlock.TFBlock = nullptr;
 			lastAction = Actions::none;
 			reDraw();
 		}
@@ -255,10 +268,47 @@ inline bool kanvas::onKeyPressed(const gui::Key& key)
 
 
 void kanvas::onSecondaryButtonPressed(const gui::InputDevice& inputDevice) {
-	lastMousePos = inputDevice.getModelPoint();
-	Frame::openContextMenu(100, inputDevice);
+	lastAction = Actions::secondary;
+	lastMousePos = inputDevice.getModelPoint();	
 }
 
+void kanvas::onSecondaryButtonReleased(const gui::InputDevice& inputDevice)
+{
+	if (lastAction == Actions::secondary) {
+		Frame::openContextMenu(100, inputDevice);
+	}
+	lastAction = Actions::none;
+}
+
+void kanvas::onCursorMoved(const gui::InputDevice& inputDevice)
+{
+	/*
+	if (lastAction == Actions::translate) {
+		gui::CoordType deltaX = inputDevice.getModelPoint().x - lastMousePos.x;
+		gui::CoordType deltaY = inputDevice.getModelPoint().y - lastMousePos.y;
+
+		trans.translate({ deltaX, deltaY });
+		reDraw();
+
+		lastMousePos = inputDevice.getModelPoint();
+		return;
+	}
+
+	if (lastAction == Actions::secondary)
+		lastAction = Actions::translate;
+
+	*/
+}
+
+void kanvas::resetModel()
+{
+	for (int i = 0; i < blocks.size(); ++i)
+		delete blocks[i];
+	blocks.clear();
+	globals::switcher->showView(0);
+	TFBlock::resetCnt();
+	globals::model_settings->edit.clean();
+}
 
 inline bool kanvas::onContextMenuUpdate(td::BYTE menuID, gui::ContextMenu* pMenu)
 {
@@ -277,24 +327,17 @@ inline bool kanvas::onActionItem(gui::ActionItemDescriptor& aiDesc) {
 		}
 	}
 
-	return false;
 
 	if (aiDesc._menuID == 1) {
 		if (aiDesc._actionItemID == 1) {
-			for (int i = 0; i < blocks.size(); ++i)
-				delete blocks[i];
-			blocks.clear();
-			globals::switcher->showView(0);
-			cntBlock = 0;
-			globals::model_settings->edit.clean();
-			return true;
+			resetModel();
 		}
 	}
-	/*
+	
 
 	if (aiDesc._actionItemID == 2) { // open
-		gui::OpenFileDialog* p = new gui::OpenFileDialog(this, "Open model", { "*.tfstate" }, "Open");
-		p->openModal(2,this);
+		gui::OpenFileDialog* p = new gui::OpenFileDialog(this, "Open model", { {"TFeditor save file", "*.tfstate"} }, "Open");
+		p->openModalWithID(2,this);
 		return true;
 	}
 
@@ -313,29 +356,25 @@ inline bool kanvas::onActionItem(gui::ActionItemDescriptor& aiDesc) {
 	}
 
 	if (aiDesc._actionItemID == 4) { // save as
-		gui::FileDialog* p = new gui::FileDialog(this, gui::FileDialog::Type::SaveFile, "Save as", ".tfstate", "Save");
-		p->openModal(4, this);
+		gui::SaveFileDialog* p = new gui::SaveFileDialog(this, "Save as", { {"TFeditor save file", "*.tfstate"} }, "SavedModel.tfstate");
+		p->openModalWithID(4, this);
 		return true;
 	}
 
 
 
 	if (aiDesc._actionItemID == 100) { // export
-		gui::FileDialog* p = new gui::FileDialog(this, gui::FileDialog::Type::SaveFile, "Export to", ".xml", "Export");
-		p->openModal(5, this);
+		gui::SaveFileDialog* p = new gui::SaveFileDialog(this, "Export to", ".xml", "Export");
+		p->openModalWithID(5, this);
 		return true;
 	}
 
 }
 
-	*/
-
-	return false;
-}
 
 
 inline bool kanvas::onClick(gui::FileDialog* pDlg, td::UINT4 dlgID) {
-	/*
+	
 	if (dlgID == 2) {//open
 		if (!restoreState(pDlg->getFileName()))
 			showAlert("error", "cannot open file");
@@ -355,12 +394,12 @@ inline bool kanvas::onClick(gui::FileDialog* pDlg, td::UINT4 dlgID) {
 			showAlert("error", "cannot export model");
 		return true;
 	}
-	*/
+	
 	return false;
 }
 
 
-/*
+
 bool kanvas::exportToXML(const td::String &path){
 
 	xml::Writer w;
@@ -371,88 +410,14 @@ bool kanvas::exportToXML(const td::String &path){
 
 	modelNode mod;
 
-	mod.processCommands("Vars: ; Params: ; TFs: ; NLEqs:");
+	mod.processCommands("Params:");
+	BlockBase::Nodes nodes;
 
-	baseNode &vars = *mod.nodes[0];
-	baseNode& params = *mod.nodes[1];
-	baseNode& tfs = *mod.nodes[2];
-	baseNode& nle = *mod.nodes[3];
-
-	for (int i = 0; i < blocks.size(); ++i) {
-		td::String nom, dem, inputName, outputName;
-		bool connected, switched;
-
-		blocks[i]->getAllProps(nom, dem, connected, switched, inputName, outputName);
-		vars.processCommands(inputName);
-		if (blocks[i]->getConnectedFromBlocks().empty())
-			vars.nodes.back()->attribs["out"] = "true";
-
-		vars.processCommands(outputName);
-		if (blocks[i]->getConnectedBlocks().empty())
-			vars.nodes.back()->attribs["out"] = "true";
+	baseNode& params = *mod.nodes[0];
 
 
-		inputName = inputName.subStr(0, inputName.find("=")-1);
-		outputName = outputName.subStr(0, outputName.find("=")-1);
-		cnt::StringBuilder cmnd;
-
-		auto hasLaplaceOperator = [](const td::String& s) {
-			int poz = 0;
-
-			while (true) {
-				poz = s.find("s", poz);
-				if (poz == -1)
-					break;
-
-				char c = (s.length() > poz + 1) ? s.getAt(poz + 1) : '*';
-				if (std::isdigit(c) || c == '*' || c == '/' || c == '+' || c == '-' || c == ' ') {
-					c = (poz > 0) ? s.getAt(poz - 1) : c = '*';
-					if (c == '*' || c == '/' || c == '+' || c == '-' || c == ' ')
-						return true;
-				}
-				++poz;
-			}
-			return false;
-		};
-
-
-
-		if (hasLaplaceOperator(nom) || hasLaplaceOperator(dem)) {
-			cmnd << outputName << "/" << inputName << " = " << "(" << nom << ")" << "/(" << dem << ")";
-			tfs.processCommands(cmnd.toString());
-		}
-		else {
-			cmnd << outputName << " = " << "(" << nom  << " * " <<  inputName  << ")/(" << dem << ")";
-			nle.processCommands(cmnd.toString());
-		}
-
-
-		cmnd.reset();
-
-		if (blocks[i]->getConnectedFromBlocks().size() == 0) {
-			inputName = blocks[i]->getInputName();
-			if (inputName.find('=') == -1)
-				cmnd << inputName << " = 0";
-			else
-				cmnd << inputName;
-
-
-
-			nle.processCommands(cmnd.toString());
-			continue;
-		}
-
-		cmnd << inputName << " = ";
-		auto& connectedFrom = blocks[i]->getConnectedFromBlocks();
-		for (int j = 0; j < connectedFrom.size(); ++j){
-			cmnd << connectedFrom[j]->getOutputName();
-			if (j != connectedFrom.size() - 1)
-				cmnd << " + ";
-		}
-
-		nle.processCommands(cmnd.toString());
-
-	}
+	for (auto &block : blocks)
+		block->writeToModel(mod, nodes);
 
 	td::Variant v;
 	globals::model_settings->edit.getValue(v);
@@ -474,7 +439,7 @@ bool kanvas::exportToXML(const td::String &path){
 
 	return true;
 }
-*/
+
 
 inline kanvas::~kanvas() {
 	for (int i = 0; i < blocks.size(); ++i)

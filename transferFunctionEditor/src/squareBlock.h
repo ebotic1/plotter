@@ -5,62 +5,91 @@
 #include "td/String.h"
 
 class squareBlock : virtual public BlockBase {
+
+	gui::Rect inputRect, outputRect;
+
+	void createArrow(gui::Shape& arrow, const gui::Point &posBegin, const gui::Point &posEnd, const double &lenght);
+	std::vector<gui::Shape> arrows;
+
+	std::vector<gui::Point> inputPoints, outputPoints;
+
 protected:
 	std::vector<gui::Shape> connectionLines;
+	gui::Shape recShape;
 
 public:
-	squareBlock(){}
+	squareBlock();
 	void setUpWires(bool refreshCanvas);
+	void drawBlock(td::ColorID color) override;
+	void setUpBlock();
 
+	const gui::Point& getInput(int poz) const {
+		return inputPoints.at(poz);
+	}
+
+	const gui::Point& getOutput(int poz) const {
+		return outputPoints.at(poz);
+	}
 };
 
 
 class squareBlockSI : virtual public BlockBase {
+public:
+	class settingsView{
+		elementProperty inputProp;
+	protected:
+		gui::VerticalLayout vL;
+	public:
+		settingsView() :
+			vL(1),
+			inputProp("input var: ", td::string8, "variable name of this block's output")
+		{
+			vL << inputProp;
+		}
+		friend class squareBlockSI;
+	};
 protected:
 	td::String ulazName;
-	gui::Point inputPoint;
+	squareBlockSI(){
+		connectedFrom.resize(1);
+	}
 public:
 	squareBlockSI(const td::String& inputName): ulazName(inputName){
 		connectedFrom.resize(1);
 	}
-	const gui::Point& getInput(int poz) const {
-		return inputPoint;
-	}
+
 	int getInputCnt() const { return 1; }
 
 	void setInputName(const td::String& name);
-
+	const td::String& getInputName(int pos) const override{ return ulazName; }
+	void updateSettingsView(BlockBase::settingsView* view);
 };
 
 
 class squareBlockSO : virtual public BlockBase {
 public:
-	class settingsView : public gui::View {
-		gui::VerticalLayout vL;
+	class settingsView{
 		elementProperty outputProp;
-		
+	protected:
+		gui::VerticalLayout vL;
 	public:
 		settingsView() :
 			vL(1),
-			outputProp("output var: ", td::string8, "variable name that will be created when exporting XML file for this block's output")
+			outputProp("output var: ", td::string8, "variable name of this block's input")
 		{
-			
+			vL << outputProp;
 		}
 		friend class squareBlockSO;
 	};
 protected:
 	td::String izlazName;
-	gui::Point outputPoint;
+	squareBlockSO() { connectedTo.resize(1); }
+
 public:
-	squareBlockSO(const td::String& outputName): izlazName(outputName){
-		connectedTo.resize(1);
-	}
-
-	const gui::Point& getOutput(int poz) const {
-		return outputPoint;
-	}
+	squareBlockSO(const td::String& outputName);
 	int getOutputCnt() const { return 1; }
-
+	const td::String& getOutputName(int pos) const override { return izlazName; }
 	void setOutputName(const td::String& name);
-	virtual gui::View& updateSettingsView(settingsView* view);
+	void updateSettingsView(BlockBase::settingsView* view);
+
 };

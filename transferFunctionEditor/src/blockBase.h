@@ -8,6 +8,8 @@
 #include "gui/Label.h"
 #include "./../../common/property.h"
 #include "gui/VerticalLayout.h"
+#include "arch/ArchiveIn.h"
+#include "arch/ArchiveOut.h"
 
 #define FONT_ID gui::Font::ID::SystemRegular
 
@@ -20,6 +22,7 @@ public:
 		BlockBase* currentBlock = nullptr;
 		gui::CheckBox checkBoxSwitch;
 		gui::Button buttonDisconnect;
+	protected:
 		gui::VerticalLayout vL;
 	public:
 		settingsView() :
@@ -27,33 +30,31 @@ public:
 			buttonDisconnect("disconnect wires", "remove all incomming and outgoing connections from the selected block"),
 			vL(2)
 		{
+			buttonDisconnect.onClick([this]() {currentBlock->removeConnections(); });
+			checkBoxSwitch.onClick([this]() {currentBlock->switchInput(); });
 			vL << checkBoxSwitch << buttonDisconnect;
-			setLayout(&vL);
-		}
-
-		bool onClick(gui::CheckBox* pBtn) {
-			currentBlock->switchInput();
-			return true;
-		}
-
-		bool onClick(gui::Button* pBtn) {
-			currentBlock->removeConnections();
-			return true;
 		}
 
 		friend class BlockBase;
 	};
 
+	struct Nodes {
+		enum class name{tf, nl, var, par};
+		baseNode* nodes[4] = { nullptr, nullptr, nullptr, nullptr };
+	};
+
+private:
 
 
 protected:
 
 	gui::Rect _r;
 	bool switchOutput = false;
-	std::vector<std::pair<BlockBase*, int>> connectedTo;
+	std::vector<std::set<std::pair<BlockBase*, int>>> connectedTo;
 	std::vector<std::pair<BlockBase*, int>> connectedFrom;
 
 	bool disableSetUp = false;
+	static void populateNodes(const Nodes::name *id, int array_size, modelNode& model, Nodes &nodes);
 
 
 public:
@@ -64,12 +65,17 @@ public:
 	virtual const gui::Point& getInput(int poz) const = 0;
 	virtual int getOutputCnt() const = 0;
 	virtual int getInputCnt() const = 0;
+	virtual const td::String& getOutputName(int pos) const = 0;
+	virtual const td::String& getInputName(int pos) const = 0;
 	const gui::Point getLocation() const;
-	const std::vector<std::pair<BlockBase*, int>>& getConnectedToBlocks() const;
+	const std::vector<std::set<std::pair<BlockBase*, int>>>& getConnectedToBlocks() const;
 	const std::vector<std::pair<BlockBase*, int>>& getConnectedFromBlocks() const;
+	bool getIsConnectedFrom() const;
+	bool getIsConnectedTo() const;
 
 
-	virtual void setUpAll() = 0;
+	virtual void setUpAll(bool ignoreRelatedBlocks = false) = 0;
+	virtual void setUpBlock() = 0;
 	virtual void setUpWires(bool refreshCanvas) = 0;
 	void switchInput();
 	void setPosition(const gui::Point& position);
@@ -88,10 +94,12 @@ public:
 	void disableLogic(bool disable);
 
 
-	virtual gui::View& updateSettingsView(settingsView* view);
+	virtual void updateSettingsView(settingsView* view);
 
-	//virtual void writeToModel(modelNode& model) = 0;
-	//virtual void saveToFile
+	virtual void writeToModel(modelNode& model, Nodes &nodes) = 0;
+
+	virtual void saveToFile(arch::ArchiveOut& f) = 0;
+	
 
 	virtual ~BlockBase();
 

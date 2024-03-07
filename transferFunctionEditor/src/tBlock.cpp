@@ -1,26 +1,16 @@
 #include "tBlock.h"
 #include "globals.h"
 
+int TFBlock::cnt = 0;
 
-
-
-const td::String& Block::getOutputName() const{
-	return izlazName;
-}
-
-const td::String& Block::getInputName() const{
-	return ulazName;
-}
-
-
-void Block::setNominator(const td::String& nominator){
+void TFBlock::setNumerator(const td::String& nominator){
 	nom = nominator.isNull() ? "1" : nominator;
 	drawNom = nom;
 	setUpAll();
 }
 
 
-void Block::setDenominator(const td::String& denominator){
+void TFBlock::setDenominator(const td::String& denominator){
 	dem = denominator.isNull() ? "1" : denominator;
 	drawDem = dem;
 	setUpAll();
@@ -31,97 +21,84 @@ void Block::setDenominator(const td::String& denominator){
 
 
 
-void Block::setUpAll() {
+void TFBlock::setUpBlock()
+{
 
 	if (disableSetUp)
 		return;
-
-	drawUlaz = ulazName;
-	drawIzlaz = izlazName;
 
 	if (drawNom.isInitialized() && drawDem.isInitialized()) {
 		gui::Size s1, s2;
 		drawNom.measure(FONT_ID, s1);
 		drawDem.measure(FONT_ID, s2);
 
-		gui::CoordType& bigWidth = s1.width > s2.width ? s1.width : s2.width;
+		gui::CoordType& bigWidth = (s1.width > s2.width) ? s1.width : s2.width;
 
-		_r.setWidth( 100 + bigWidth);
-		_r.setHeight(2 * s1.height + 50);
+		_r.setWidth(100 + bigWidth);
+		squareBlock::setUpBlock();
 
 		constexpr int offset = 6;
 
-		rectangleNominator.setOrigin({ _r.left, _r.center().y - offset - s1.height});
-		rectangleNominator.setSize({_r.width(), 0});
+		rectangleNominator.setOrigin({ _r.left, _r.center().y - offset - s1.height });
+		rectangleNominator.setSize({ _r.width(), 0 });
 
-		rectangleDenominator.setOrigin({ _r.left, _r.center().y + offset});
-		rectangleDenominator.setSize({ _r.width(), 0});
+		rectangleDenominator.setOrigin({ _r.left, _r.center().y + offset });
+		rectangleDenominator.setSize({ _r.width(), 0 });
 
-		gui::Point p[] = { {_r.center().x - bigWidth/2 - offset, _r.center().y}, {_r.center().x + bigWidth/2 + offset, _r.center().y}};
+		gui::Point p[] = { {_r.center().x - bigWidth / 2 - offset, _r.center().y}, {_r.center().x + bigWidth / 2 + offset, _r.center().y} };
 		fracLine.createLines(p, 2, 1);
 
 	}
-	else{
-		_r.setWidth(100);
-		_r.setHeight(50);
-	}
-
-
-	gui::Point centar = _r.center();
-	const gui::CoordType arrowLenght = _r.height() / 8;
-	const gui::CoordType armLenght = _r.height() / 1.5;
-
-	inputPoint.x = _r.left - armLenght;
-	inputPoint.y = centar.y;
-
-	outputPoint.x = _r.right + armLenght;
-	outputPoint.y = centar.y;
-
-	if (switchOutput)
-		std::swap(inputPoint, outputPoint);
-
-
-	if (switchOutput) {
-		gui::Point tacke[] = { {_r.left, _r.bottom},  {_r.left, centar.y}, outputPoint,  {_r.left - armLenght + arrowLenght, centar.y + arrowLenght},
-		outputPoint,  {_r.left - armLenght + arrowLenght, centar.y - arrowLenght}, outputPoint, {_r.left, centar.y}, {_r.left, _r.top},
-		{_r.right, _r.top}, {_r.right, centar.y},{_r.right + arrowLenght, centar.y + arrowLenght}, {_r.right, centar.y}, {_r.right + arrowLenght, centar.y - arrowLenght},
-		{_r.right, centar.y}, inputPoint, {_r.right, centar.y}, {_r.right, _r.bottom}, {_r.left, _r.bottom} };
-		recShape.createPolyLine(tacke, 19, 2);
-
-	}
 	else {
-		gui::Point tacke[] = { {_r.left, _r.bottom},  {_r.left, centar.y}, {_r.left - arrowLenght,centar.y + arrowLenght}, {_r.left, centar.y},   {_r.left - arrowLenght,centar.y - arrowLenght},
-			{_r.left, centar.y}, inputPoint, {_r.left, centar.y}, {_r.left, _r.top}, {_r.right, _r.top}, {_r.right, centar.y},
-			outputPoint, {_r.right + armLenght - arrowLenght, centar.y + arrowLenght}, outputPoint,
-			{_r.right + armLenght - arrowLenght, centar.y - arrowLenght}, outputPoint, {_r.right, centar.y}, {_r.right, _r.bottom}, {_r.left, _r.bottom} };
-		recShape.createPolyLine(tacke, 19, 2);
+		drawNom = nom;
+		drawDem = dem;
+		setUpBlock();
+		return;
 	}
+
+
+	
+
 
 	{
+		drawUlaz = ulazName;
+		drawIzlaz = izlazName;
+
 		gui::Size sz;
-		constexpr int offset = 13;
+		constexpr int offset = 15;
 		drawUlaz.measure(FONT_ID, sz);
 
-		inputRect.setOrigin({ inputPoint.x - armLenght / 1.1, inputPoint.y - sz.height - offset});
-		inputRect.setWidth(armLenght*2/1.2);
+		const char direction = (switchOutput) ? -1 : 1;
+		const double width = ((direction == 1) ? getOutput(0).x : getInput(0).x) - _r.right;
+
+
+		inputRect.setOrigin({ getInput(0).x - width / 2, getInput(0).y - offset - sz.height });
+		inputRect.setWidth(width);
 
 		drawIzlaz.measure(FONT_ID, sz);
 
-		outputRect.setOrigin({ outputPoint.x - armLenght / 1.1, outputPoint.y - sz.height - offset});
-		outputRect.setWidth(armLenght*2/1.2);
+		outputRect.setOrigin({ getOutput(0).x - width / 2, getOutput(0).y - offset - sz.height });
+		outputRect.setWidth(width);
 	}
+}
 
-	for (const auto& var : connectedFrom)
-		if(var.first != nullptr)
-			var.first->setUpWires(false);
+void TFBlock::setUpAll(bool ignoreRelatedBlocks)
+{
+	setUpBlock();
+	
+	if(!ignoreRelatedBlocks)
+		for (const auto& var : connectedFrom)
+			if(var.first != nullptr)
+				var.first->setUpWires(false);
+
 
 	setUpWires(true); // will refresh canvas
 }
 
 
 
-void Block::drawBlock(td::ColorID color) {
-	recShape.drawWire(color);
+void TFBlock::drawBlock(td::ColorID color) {
+	
 	if (drawNom.isInitialized() && drawDem.isInitialized()) {
 		drawNom.draw(rectangleNominator, FONT_ID, color, td::TextAlignment::Center);
 		drawDem.draw(rectangleDenominator, FONT_ID, color, td::TextAlignment::Center);
@@ -131,27 +108,52 @@ void Block::drawBlock(td::ColorID color) {
 	for (int i = 0; i < connectionLines.size(); ++i)
 		connectionLines[i].drawWire(color);
 
-	if (connectedFrom.size() != 0) {
+	if (connectedFrom[0].first != nullptr) {
 		gui::Shape dot;
-		dot.createCircle(gui::Circle(inputPoint, 4), 1);
+		dot.createCircle(gui::Circle(getInput(0), 4), 1);
 		dot.drawFill(color);
 	}
 	else {
 		drawUlaz.draw(inputRect, FONT_ID, color, td::TextAlignment::Center);
 	}
-	if(connectedTo.size() == 0)
+	if(connectedTo[0].empty())
 		drawIzlaz.draw(outputRect, FONT_ID, color, td::TextAlignment::Center);
 	
-
+	squareBlock::drawBlock(color);
 }
 
 
-Block::Block(const gui::Point& position, const td::String& inputName, const td::String& outputName):  
+bool TFBlock::hasLaplaceOperator(const td::String& s)
+{
+	int poz = 0;
+
+	while (true) {
+		poz = s.find("s", poz);
+		if (poz == -1)
+			break;
+
+		char c = (s.length() > poz + 1) ? s.getAt(poz + 1) : '*';
+		if (std::isdigit(c) || c == '*' || c == '/' || c == '+' || c == '-' || c == ' ') {
+			c = (poz > 0) ? s.getAt(poz - 1) : c = '*';
+			if (c == '*' || c == '/' || c == '+' || c == '-' || c == ' ')
+				return true;
+		}
+		++poz;
+	}
+	return false;
+}
+
+TFBlock::TFBlock(): BlockBase({0,0}) {
+	disableSetUp = true;
+	++cnt;
+}
+
+TFBlock::TFBlock(const gui::Point& position, const td::String& inputName, const td::String& outputName):
 	squareBlockSI(inputName),
 	squareBlockSO(outputName),
 	BlockBase::BlockBase(position)
 {
-	setNominator("1");
+	setNumerator("1");
 	setDenominator("s");
 
 	setInputName(inputName);
@@ -161,7 +163,110 @@ Block::Block(const gui::Point& position, const td::String& inputName, const td::
 	globals::refreshCanvas();
 }
 
+TFBlock::TFBlock(const gui::Point& position):
+	BlockBase::BlockBase(position)
+{
+	td::String ul, izl;
+	ul.format("tf%d_in", cnt);
+	izl.format("tf%d_out", cnt);
+	disableSetUp = true;
+	setInputName(ul);
+	disableSetUp = false;
+	setOutputName(izl);
+	++cnt;
 
-Block::~Block(){
+
+	setNumerator("1");
+	setDenominator("s");
+	setUpAll();
+	globals::refreshCanvas();
+}
+
+
+TFBlock::~TFBlock(){
+	disableSetUp = true;
 	removeConnections();
 }
+
+td::String TFBlock::getID()
+{
+	return "TFBlock";
+}
+void TFBlock::saveToFile(arch::ArchiveOut& f)
+{
+	f << TFBlock::getID() << getLocation().x << getLocation().y << getInputName(0) << getOutputName(0) << nom << dem << switchOutput;
+}
+
+TFBlock* TFBlock::restoreFromFile(arch::ArchiveIn& f)
+{
+	TFBlock* block = new TFBlock();
+	f >> block->_r.left >> block->_r.top >> block->ulazName >> block->izlazName;
+	f >> block->nom >> block->dem >> block->switchOutput;
+	return block;
+}
+
+void TFBlock::updateSettingsView(BlockBase::settingsView* view)
+{
+	BlockBase::updateSettingsView(view);
+	squareBlockSI::updateSettingsView(view);
+	squareBlockSO::updateSettingsView(view);
+
+	auto viewTf = dynamic_cast<settingsView*>(view);
+	if (viewTf == nullptr) return;
+
+	viewTf->currentBlock = this;
+	viewTf->num.setValue(nom);
+	viewTf->dem.setValue(dem);
+}
+
+void TFBlock::writeToModel(modelNode& model, Nodes& nodes)
+{
+	static constexpr Nodes::name pop_nodes[] = {Nodes::name::var, Nodes::name::nl, Nodes::name::tf};
+	BlockBase::populateNodes(pop_nodes, 3, model, nodes);
+	
+	auto& var = *nodes.nodes[(int)Nodes::name::var];
+	auto& tfs = *nodes.nodes[(int)Nodes::name::tf];
+	auto& nle = *nodes.nodes[(int)Nodes::name::nl];
+
+	td::String inputName = getInputName(0);
+	td::String outputName = getOutputName(0);
+
+	bool isConnectedFrom = getIsConnectedFrom();
+
+	var.processCommands(inputName);
+	if (!isConnectedFrom) {
+		var.nodes.back()->attribs["out"] = "true";
+
+		if (inputName.find('=') != -1)
+			nle.processCommands(inputName);
+	}
+
+	var.processCommands(outputName);
+	if (getIsConnectedTo())
+		var.nodes.back()->attribs["out"] = "true";
+
+	inputName = inputName.subStr(0, inputName.find("=") - 1);
+	outputName = outputName.subStr(0, outputName.find("=") - 1);
+	cnt::StringBuilder cmnd;
+	
+
+
+	if (isConnectedFrom) {
+		cmnd << inputName << " = " << getConnectedFromBlocks()[0].first->getOutputName(getConnectedFromBlocks()[0].second);
+		nle.processCommands(cmnd.toString());
+		cmnd.reset();
+	}
+
+	if (hasLaplaceOperator(nom) || hasLaplaceOperator(dem)) {
+		cmnd << outputName << "/" << inputName << " = " << "(" << nom << ")" << "/(" << dem << ")";
+		tfs.processCommands(cmnd.toString());
+	}
+	else {
+		cmnd << outputName << " = " << "(" << nom << " * " << inputName << ")/(" << dem << ")";
+		nle.processCommands(cmnd.toString());
+	}
+
+
+
+}
+

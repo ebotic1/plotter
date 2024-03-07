@@ -24,6 +24,7 @@ source_group("header"            FILES ${HEADERS})
 source_group("common"            FILES ${COMMON})
 
 
+
 add_executable(${SOLUTION_NAME} ${HEADERS} ${SOURCES} ${COMMON})
 
 include(${CMAKE_CURRENT_LIST_DIR}/../EquationToXML/EqToXML.cmake)
