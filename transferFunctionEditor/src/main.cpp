@@ -11,10 +11,12 @@ class contextMenuModel : public gui::ContextMenu{
 private:
 	gui::SubMenu sub;
 public:
-	contextMenuModel(): sub(100, "cm1", 1)
+	contextMenuModel(): sub(100, "cm1", 2)
 	{
 		auto& items = sub.getItems();
-		items[0].initAsActionItem("new block", 10); 
+		items[0].initAsActionItem("new tf block", 10);
+		items[1].initAsActionItem("new sum block", 11);
+
 		setItem(&sub);
 	}
 };

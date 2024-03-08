@@ -1,6 +1,18 @@
 #include "squareBlock.h"
 #include "globals.h"
 
+inline void setUpTextRect(gui::DrawableString &string, gui::Rect &areaRect, const bool &switchOutput, const gui::Point &origin, const gui::Rect _r) {
+	gui::Size sz;
+	constexpr int offset = 15;
+
+	string.measure(FONT_ID, sz);
+
+	const double width = (switchOutput ? -origin.x : origin.x) - (switchOutput ? -_r.left : _r.right);
+
+	areaRect.setOrigin({ origin.x - width / 2,  origin.y - offset - sz.height });
+	areaRect.setWidth(width);
+}
+
 
 squareBlock::squareBlock()
 {
@@ -29,32 +41,29 @@ void squareBlock::setUpWires(bool refreshCanvas)
 			const gui::Point& inputPoint = (getInputCnt() > 0) ? getInput(0) : _r.center();
 			const gui::Point& input = par.first->getInput(par.second);
 
-			constexpr int seperatorDistance = 5;
+			constexpr int seperatorDistance = 28;
+
+			int direction = (par.first->getInputSwitched()) ? -1 : 1;
+			int logicalIndex = (outputPoint.y > input.y) ? (par.first->getInputCnt() - par.second - 1) : par.second;
+			logicalIndex *= direction;
+			
 
 			if (outputPoint.x < input.x) { // linija ide prema desno
 				if (outputPoint.x > inputPoint.x) {
-					gui::Point tacke[] = { outputPoint,  { input.x - par.second * seperatorDistance, outputPoint.y }, {input.x - par.second * seperatorDistance, input.y}, input };
+					gui::Point tacke[] = { outputPoint,  { input.x - logicalIndex * seperatorDistance, outputPoint.y }, {input.x - logicalIndex * seperatorDistance, input.y}, input };
 					connectionLines[j].createPolyLine(tacke, 4, 2);
 				}
-				else if (par.first->getOutput(par.second).x > input.x) {
-					gui::Point tacke[] = { outputPoint, {outputPoint.x + i * seperatorDistance, outputPoint.y}, {outputPoint.x, input.y}, input };
+				else if (direction==1){
+					gui::Point tacke[] = { outputPoint, {outputPoint.x , input.y}, {outputPoint.x, input.y}, input };
 					connectionLines[j].createPolyLine(tacke, 4, 2);
 				}
 				else {
-					gui::CoordType middleY = (outputPoint.y + input.y) / 2;
-					gui::Point tacke[] = { outputPoint, {outputPoint.x + i * seperatorDistance, outputPoint.y}, { outputPoint.x, middleY},  { input.x, middleY }, input };
+					
+					gui::CoordType middleY = (outputPoint.y > input.y) ? (_r.top - 0.2 * (-par.first->getInput(0).y + _r.top)) : (_r.bottom - 0.2 * (-par.first->getInput(par.first->getInputCnt() - 1).y + _r.bottom));
+					gui::Point tacke[] = { outputPoint, { outputPoint.x, middleY},  { input.x - logicalIndex * seperatorDistance, middleY },  { input.x - logicalIndex * seperatorDistance, input.y }, input };
 					connectionLines[j].createPolyLine(tacke, 5, 2);
 				}
 
-
-				/*
-				*
-				* moze se i ovo koristiti. Kada se spaja blok prelama liniju na pola puta umjesto na kraju
-				*
-				gui::CoordType middle = (outputPoint.x + input.x) / 2;  //(input.x - outputPoint.x)/2 + outputPoint.x ;
-				gui::Point tacke[] = { outputPoint,  { middle, outputPoint.y },  { middle, input.y }, input };
-				connectionLines[i].createPolyLine(tacke, 4, 2);
-				*/
 			}
 			else { //linija ide prema lijevo
 
@@ -62,12 +71,12 @@ void squareBlock::setUpWires(bool refreshCanvas)
 					gui::Point tacke[] = { outputPoint,  { input.x + par.second * seperatorDistance, outputPoint.y},  {input.x + par.second * seperatorDistance, input.y}, input };
 					connectionLines[j].createPolyLine(tacke, 4, 2);
 				}
-				else if (par.first->getOutput(par.second).x < input.x) {
+				else if (par.first->getInputSwitched()) {
 					gui::Point tacke[] = { outputPoint, { outputPoint.x - i * seperatorDistance, outputPoint.y}, { outputPoint.x - i * seperatorDistance, input.y}, input };
 					connectionLines[j].createPolyLine(tacke, 4, 2);
 				}
 				else {
-					gui::CoordType middleY = (outputPoint.y + input.y) / 2;
+					gui::CoordType middleY = (outputPoint.y + par.first->getInput(par.first->getInputCnt() - par.second - 1).y ) / 2;
 					gui::Point tacke[] = { outputPoint, { outputPoint.x - i * seperatorDistance, outputPoint.y}, {  outputPoint.x - i * seperatorDistance, middleY},  { input.x, middleY }, input };
 					connectionLines[j].createPolyLine(tacke, 5, 2);
 				}
@@ -95,23 +104,23 @@ void squareBlock::createArrow(gui::Shape& arrow, const gui::Point& posBegin, con
 void squareBlock::setUpBlock()
 {
 	const int& cnt = (getInputCnt() > getOutputCnt()) ? getInputCnt() : getOutputCnt();
-	_r.setHeight(cnt * 100);
-	const double distanceInput = _r.height() / (getInputCnt() + 1);
-	const double distanceOutput = _r.height() / (getOutputCnt() + 1);
+	_r.setHeight(100 + (cnt-1) * 50);
+	double distanceInput = _r.height() / (getInputCnt() + 1);
+	double distanceOutput = _r.height() / (getOutputCnt() + 1);
 
 
-	const gui::CoordType armLenght = _r.height() / 1.5;
+
+	const gui::CoordType armLenght = _r.height() * 0.1 + 60;
 
 	gui::Point inputPoint, outputPoint;
 
-	inputPoint.x = _r.left;
+	inputPoint.x = switchOutput ? _r.right : _r.left;
 	inputPoint.y = _r.top + distanceInput;
 
-	outputPoint.x = _r.right;
-	outputPoint.y = _r.top + distanceInput;
+	outputPoint.x = switchOutput ? _r.left : _r.right;
+	outputPoint.y = _r.top + distanceOutput;
 
-	if (switchOutput)
-		std::swap(inputPoint, outputPoint);
+
 	const char direction = (switchOutput) ? -1 : 1;
 
 	arrows.clear();
@@ -146,6 +155,18 @@ void squareBlock::drawBlock(td::ColorID color)
 }
 
 
+
+
+
+
+
+
+
+
+
+
+
+
 void squareBlockSI::setInputName(const td::String& name)
 {
 	if (name.trim().isNull())
@@ -164,6 +185,18 @@ void squareBlockSI::updateSettingsView(BlockBase::settingsView* view)
 
 	viewSI->inputProp.Action = [this](const td::Variant& v) {this->setInputName(v.strVal()); };
 	viewSI->inputProp.setValue(ulazName);
+}
+
+void squareBlockSI::drawBlock(td::ColorID color)
+{
+	if (drawUlaz.isInitialized() && !getIsConnectedFrom())
+		drawUlaz.draw(inputRect, &blockFont, color, td::TextAlignment::Center);
+}
+
+void squareBlockSI::setUpBlock()
+{
+	drawUlaz = ulazName;
+	setUpTextRect(drawUlaz, inputRect, !switchOutput, getInput(0), _r);
 }
 
 
@@ -194,4 +227,101 @@ void squareBlockSO::updateSettingsView(BlockBase::settingsView* view)
 	viewSO->outputProp.setValue(izlazName);
 }
 
+void squareBlockSO::drawBlock(td::ColorID color)
+{
+
+	if (drawIzlaz.isInitialized() && !getIsConnectedTo())
+		drawIzlaz.draw(outputRect, &blockFont, color, td::TextAlignment::Center);
+
+}
+
+void squareBlockSO::setUpBlock()
+{
+	drawIzlaz = izlazName;
+	setUpTextRect(drawIzlaz, outputRect, switchOutput, getOutput(0), _r);
+}
+
+
+
+
+
+
+
+
+
+
+squareBlockMInameless::squareBlockMInameless(int input_cnt): 
+	inputCnt(input_cnt)
+{
+	connectedFrom.resize(inputCnt);
+}
+
+const td::String& squareBlockMInameless::getInputName(int pos) const
+{
+	static_assert("Cant access nameless input name");
+	return "";
+}
+
+void squareBlockMInameless::changeInputCnt(int cnt)
+{
+	if (inputCnt > cnt)
+		for (int i = cnt; i < inputCnt; ++i)
+			disconnectInput(i);
+	
+	inputCnt = cnt;
+	connectedFrom.resize(cnt);
+	setUpAll();
+}
+
+void squareBlockMInameless::updateSettingsView(BlockBase::settingsView* view)
+{
+	auto pogled = dynamic_cast<settingsView*>(view);
+	pogled->currentBlockc = this;
+	pogled->cntEdit.setValue(inputCnt, false);
+}
+
+
+
+
+
+
+
+squareBlockMI::squareBlockMI(int inputs_cnt): inputCnt(inputs_cnt), names(inputs_cnt)
+{
+}
+
+const td::String& squareBlockMI::getInputName(int pos) const
+{
+	return names.at(pos);
+}
+
+void squareBlockMI::changeInputCnt(int cnt)
+{
+	names.resize(cnt);
+}
+
+void squareBlockMI::updateSettingsView(BlockBase::settingsView* view)
+{
+	auto pogled = (settingsView*)view;
+
+	delete(pogled->dynamicVL);
+	pogled->dynamicVL = new gui::VerticalLayout(inputCnt);
+	pogled->inputs.clear();
+
+	td::String label;
+	for (int i = 0; i < names.size(); ++i) {
+		label.format("input name %d:", i);
+		pogled->inputs.emplace_back(label, td::string8, "variable name of this block's input", names[i]);
+		pogled->inputs.back().Action = [this, i](const td::Variant& v) {setInputName(v.strVal(), i); };
+
+		pogled->dynamicVL->append(pogled->inputs.back());
+	}
+
+}
+
+
+void squareBlockMI::setInputName(const td::String& name, int pos)
+{
+	names.at(pos) = name;
+}
 

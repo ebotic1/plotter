@@ -13,7 +13,8 @@ properties::properties() :
 
 
 	addView(&modSettings, true);
-	addView(pogledi[0]);
+	for(const auto&pok : pogledi)
+		addView(pok);
 
 }
 

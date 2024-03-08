@@ -1,8 +1,10 @@
 #pragma once
 #include "blockBase.h"
 #include <vector>
+#include <deque>
 #include "gui/Shape.h"
 #include "td/String.h"
+#include "gui/DrawableString.h"
 
 class squareBlock : virtual public BlockBase {
 
@@ -12,16 +14,17 @@ class squareBlock : virtual public BlockBase {
 	std::vector<gui::Shape> arrows;
 
 	std::vector<gui::Point> inputPoints, outputPoints;
+	gui::Shape recShape;
 
 protected:
 	std::vector<gui::Shape> connectionLines;
-	gui::Shape recShape;
+	
 
 public:
 	squareBlock();
 	void setUpWires(bool refreshCanvas);
 	void drawBlock(td::ColorID color) override;
-	void setUpBlock();
+	void setUpBlock() override;
 
 	const gui::Point& getInput(int poz) const {
 		return inputPoints.at(poz);
@@ -48,6 +51,11 @@ public:
 		}
 		friend class squareBlockSI;
 	};
+
+private:
+	gui::DrawableString drawUlaz;
+	gui::Rect inputRect;
+
 protected:
 	td::String ulazName;
 	squareBlockSI(){
@@ -63,6 +71,10 @@ public:
 	void setInputName(const td::String& name);
 	const td::String& getInputName(int pos) const override{ return ulazName; }
 	void updateSettingsView(BlockBase::settingsView* view);
+
+	void drawBlock(td::ColorID color) override;
+	void setUpBlock() override;
+
 };
 
 
@@ -85,6 +97,10 @@ protected:
 	td::String izlazName;
 	squareBlockSO() { connectedTo.resize(1); }
 
+private:
+	gui::DrawableString drawIzlaz;
+	gui::Rect outputRect;
+
 public:
 	squareBlockSO(const td::String& outputName);
 	int getOutputCnt() const { return 1; }
@@ -92,4 +108,69 @@ public:
 	void setOutputName(const td::String& name);
 	void updateSettingsView(BlockBase::settingsView* view);
 
+	void drawBlock(td::ColorID color) override;
+	void setUpBlock() override;
+
+};
+
+
+class squareBlockMInameless : virtual public BlockBase {
+	int inputCnt;
+public:
+	class settingsView {
+		elementProperty cntEdit;
+		squareBlockMInameless* currentBlockc = nullptr;
+	protected:
+		gui::VerticalLayout vL;
+	public:
+		settingsView() :
+			vL(1),
+			cntEdit("Number of inputs:", td::DataType::int4, "Number of inputs for this block")
+		{
+			vL << cntEdit;
+			auto& junk = currentBlockc;
+			cntEdit.Action = [this](const td::Variant& v) {currentBlockc->changeInputCnt(v.i4Val()); };
+		}
+		friend class squareBlockMInameless;
+	};
+	friend class settingsView;
+protected:
+	
+public:
+	squareBlockMInameless(int inputs_cnt);
+	int getInputCnt() const override { return inputCnt; }
+	virtual const td::String& getInputName(int pos) const override;
+	void changeInputCnt(int cnt);
+	void updateSettingsView(BlockBase::settingsView* view);
+
+};
+
+
+class squareBlockMI : virtual public BlockBase {
+public:
+	class settingsView {
+		gui::VerticalLayout* dynamicVL = nullptr;
+		std::deque<elementProperty> inputs;
+	protected:
+		gui::VerticalLayout vL;
+		
+	public:
+		settingsView() :
+			vL(1)
+		{
+			vL << *dynamicVL;
+		}
+		friend class squareBlockMI;
+	};
+
+private:
+	std::vector<td::String> names;
+	int inputCnt;
+public:
+	squareBlockMI(int inputs_cnt);
+	int getInputCnt() const override { return inputCnt;}
+	const td::String& getInputName(int pos) const override;
+	void setInputName(const td::String &name, int pos);
+	void changeInputCnt(int cnt);
+	void updateSettingsView(BlockBase::settingsView* view);
 };

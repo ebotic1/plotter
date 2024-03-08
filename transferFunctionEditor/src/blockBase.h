@@ -10,6 +10,7 @@
 #include "gui/VerticalLayout.h"
 #include "arch/ArchiveIn.h"
 #include "arch/ArchiveOut.h"
+#include "gui/Font.h"
 
 #define FONT_ID gui::Font::ID::SystemRegular
 
@@ -56,6 +57,8 @@ protected:
 	bool disableSetUp = false;
 	static void populateNodes(const Nodes::name *id, int array_size, modelNode& model, Nodes &nodes);
 
+	static gui::Font blockFont;
+	static bool fontInit;
 
 public:
 	BlockBase(const gui::Point& position);
@@ -74,7 +77,7 @@ public:
 	bool getIsConnectedTo() const;
 
 
-	virtual void setUpAll(bool ignoreRelatedBlocks = false) = 0;
+	virtual void setUpAll(bool ignoreRelatedBlocks = false);
 	virtual void setUpBlock() = 0;
 	virtual void setUpWires(bool refreshCanvas) = 0;
 	void switchInput();

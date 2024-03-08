@@ -42,6 +42,22 @@ bool BlockBase::getIsConnectedTo() const
 	return false;
 }
 
+void BlockBase::setUpAll(bool ignoreRelatedBlocks)
+{
+	if (disableSetUp)
+		return;
+
+	setUpBlock();
+
+	if (!ignoreRelatedBlocks)
+		for (const auto& var : connectedFrom)
+			if (var.first != nullptr)
+				var.first->setUpWires(false);
+
+
+	setUpWires(true); // will refresh canvas
+}
+
 
 
 
@@ -165,9 +181,16 @@ void BlockBase::setPosition(const gui::Point& position){
 	}
 }
 
+ gui::Font BlockBase::blockFont;
+ bool BlockBase::fontInit = false;
+
 BlockBase::BlockBase(const gui::Point& position)
 {
 	_r.setOrigin(position);
+	if (!fontInit) {
+		blockFont.create("Arial", 13, gui::Font::Style::Normal, gui::Font::Unit::LogicalPixel);
+		fontInit = true;
+	}
 }
 
 

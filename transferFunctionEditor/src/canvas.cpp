@@ -50,10 +50,6 @@ void kanvas::onDraw(const gui::Rect& rect) {
 
 }
 
-void kanvas::createBlock(const gui::Point& p)
-{
-	blocks.push_back(new TFBlock(p));
-}
 
 inline void kanvas::onPrimaryButtonPressed(const gui::InputDevice& inputDevice) {
 	this->setFocus(false);
@@ -106,7 +102,7 @@ inline void kanvas::onPrimaryButtonReleased(const gui::InputDevice& inputDevice)
 		for (int i = 0; i < blocks.size(); ++i)
 			if (blocks[i]->intersectsInput(inputDevice.getModelPoint()) != -1) {
 				const int& poz = blocks[i]->intersectsInput(inputDevice.getModelPoint());
-				tempCurrentBlock.TFBlock->connectTo(blocks[i], poz, tempCurrentBlock.outputPoz);
+				tempCurrentBlock.TFBlock->connectTo(blocks[i], tempCurrentBlock.outputPoz, poz);
 				break;
 			}
 		lastAction = Actions::none;
@@ -179,7 +175,7 @@ inline bool kanvas::restoreState(const td::String& file){
 
 	arch::ArchiveIn in(temp);
 	in.setSupportedMajorVersion("TFv2");
-	std::vector<TFBlock*> kopija;
+	std::vector<BlockBase*> kopija;
 	td::Variant titl_v, param_v;
 
 
@@ -193,8 +189,13 @@ inline bool kanvas::restoreState(const td::String& file){
 			in >> ID;
 			if (ID == TFBlock::getID())
 				kopija[i] = TFBlock::restoreFromFile(in);
+			else if (ID == sumBlock::getID())
+				kopija[i] = sumBlock::restoreFromFile(in);
 			else
 				throw std::exception("unknown block");
+
+			kopija[i]->disableLogic(false);
+			kopija[i]->setUpBlock();
 		}
 		for (int i = 0; i < size; ++i) {
 			int setCnt, connectionsCnt;
@@ -210,10 +211,6 @@ inline bool kanvas::restoreState(const td::String& file){
 
 		}
 
-		for (auto& block : kopija) {
-			block->disableLogic(false);
-			block->setUpBlock();
-		}
 
 		for (auto& block : kopija)
 			block->setUpWires(true);
@@ -320,10 +317,12 @@ inline bool kanvas::onActionItem(gui::ActionItemDescriptor& aiDesc) {
 
 	if (aiDesc._menuID == 100) {
 		if (aiDesc._actionItemID == 10) {
-
-			createBlock(lastMousePos);
+			blocks.push_back(new TFBlock(lastMousePos));
 			return true;
-
+		}
+		if (aiDesc._actionItemID == 11) {
+			blocks.push_back(new sumBlock(lastMousePos, true));
+			return true;
 		}
 	}
 
@@ -410,7 +409,7 @@ bool kanvas::exportToXML(const td::String &path){
 
 	modelNode mod;
 
-	mod.processCommands("Params:");
+	mod.processCommands("Params:" "Vars:");
 	BlockBase::Nodes nodes;
 
 	baseNode& params = *mod.nodes[0];

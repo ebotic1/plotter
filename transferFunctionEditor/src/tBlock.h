@@ -11,9 +11,9 @@ class TFBlock: public squareBlockSI, public squareBlockSO, public squareBlock{
 
 public:
 	class settingsView :
-		public squareBlockSI::settingsView,
 		public squareBlockSO::settingsView,
-		public BlockBase::settingsView
+		public BlockBase::settingsView,
+		public squareBlockSI::settingsView
 	{
 
 		elementProperty num, dem;
@@ -42,9 +42,6 @@ private:
 	td::String nom, dem;
 
 
-	gui::DrawableString drawUlaz, drawIzlaz;
-	gui::Rect inputRect, outputRect;
-
 	bool hasLaplaceOperator(const td::String& s);
 	static int cnt; //za brojanje koliko blokova je kreirano
 
@@ -55,7 +52,6 @@ public:
 	TFBlock(const gui::Point& position);
 
 	void setUpBlock();
-	void setUpAll(bool ignoreRelatedBlocks = false) override;
 
 	void setNumerator(const td::String& nominator);
 	void setDenominator(const td::String& denominator);

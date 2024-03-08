@@ -14,7 +14,7 @@
 
 
 class kanvas : public gui::Canvas {
-	std::vector<TFBlock *> blocks;
+	std::vector<BlockBase *> blocks;
 	gui::Point lastMousePos = { 0,0 };
 	double scale = 1;
 
@@ -31,7 +31,6 @@ class kanvas : public gui::Canvas {
 public:
 	kanvas();
 	void onDraw(const gui::Rect& rect) override;
-	void createBlock(const gui::Point& p);
 	void onPrimaryButtonPressed(const gui::InputDevice& inputDevice);
 	void onCursorDragged(const gui::InputDevice& inputDevice);
 	void onSecondaryButtonPressed(const gui::InputDevice& inputDevice);

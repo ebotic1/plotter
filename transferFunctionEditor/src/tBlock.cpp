@@ -57,42 +57,13 @@ void TFBlock::setUpBlock()
 	}
 
 
+
+	squareBlockSO::setUpBlock();
+	squareBlockSI::setUpBlock();
+
+
+
 	
-
-
-	{
-		drawUlaz = ulazName;
-		drawIzlaz = izlazName;
-
-		gui::Size sz;
-		constexpr int offset = 15;
-		drawUlaz.measure(FONT_ID, sz);
-
-		const char direction = (switchOutput) ? -1 : 1;
-		const double width = ((direction == 1) ? getOutput(0).x : getInput(0).x) - _r.right;
-
-
-		inputRect.setOrigin({ getInput(0).x - width / 2, getInput(0).y - offset - sz.height });
-		inputRect.setWidth(width);
-
-		drawIzlaz.measure(FONT_ID, sz);
-
-		outputRect.setOrigin({ getOutput(0).x - width / 2, getOutput(0).y - offset - sz.height });
-		outputRect.setWidth(width);
-	}
-}
-
-void TFBlock::setUpAll(bool ignoreRelatedBlocks)
-{
-	setUpBlock();
-	
-	if(!ignoreRelatedBlocks)
-		for (const auto& var : connectedFrom)
-			if(var.first != nullptr)
-				var.first->setUpWires(false);
-
-
-	setUpWires(true); // will refresh canvas
 }
 
 
@@ -100,8 +71,8 @@ void TFBlock::setUpAll(bool ignoreRelatedBlocks)
 void TFBlock::drawBlock(td::ColorID color) {
 	
 	if (drawNom.isInitialized() && drawDem.isInitialized()) {
-		drawNom.draw(rectangleNominator, FONT_ID, color, td::TextAlignment::Center);
-		drawDem.draw(rectangleDenominator, FONT_ID, color, td::TextAlignment::Center);
+		drawNom.draw(rectangleNominator, &blockFont, color, td::TextAlignment::Center);
+		drawDem.draw(rectangleDenominator, &blockFont, color, td::TextAlignment::Center);
 		fracLine.drawWire(color, 2);
 	}
 
@@ -113,13 +84,10 @@ void TFBlock::drawBlock(td::ColorID color) {
 		dot.createCircle(gui::Circle(getInput(0), 4), 1);
 		dot.drawFill(color);
 	}
-	else {
-		drawUlaz.draw(inputRect, FONT_ID, color, td::TextAlignment::Center);
-	}
-	if(connectedTo[0].empty())
-		drawIzlaz.draw(outputRect, FONT_ID, color, td::TextAlignment::Center);
-	
+
 	squareBlock::drawBlock(color);
+	squareBlockSO::drawBlock(color);
+	squareBlockSI::drawBlock(color);
 }
 
 
