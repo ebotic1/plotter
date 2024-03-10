@@ -1,7 +1,8 @@
 #include "tBlock.h"
 #include "globals.h"
 
-int TFBlock::cnt = 0;
+int TFBlock::blockCnt = 0;
+
 
 void TFBlock::setNumerator(const td::String& nominator){
 	nom = nominator.isNull() ? "1" : nominator;
@@ -76,14 +77,7 @@ void TFBlock::drawBlock(td::ColorID color) {
 		fracLine.drawWire(color, 2);
 	}
 
-	for (int i = 0; i < connectionLines.size(); ++i)
-		connectionLines[i].drawWire(color);
 
-	if (connectedFrom[0].first != nullptr) {
-		gui::Shape dot;
-		dot.createCircle(gui::Circle(getInput(0), 4), 1);
-		dot.drawFill(color);
-	}
 
 	squareBlock::drawBlock(color);
 	squareBlockSO::drawBlock(color);
@@ -101,7 +95,7 @@ bool TFBlock::hasLaplaceOperator(const td::String& s)
 			break;
 
 		char c = (s.length() > poz + 1) ? s.getAt(poz + 1) : '*';
-		if (std::isdigit(c) || c == '*' || c == '/' || c == '+' || c == '-' || c == ' ') {
+		if (std::isdigit(c) || c == '*' || c == '/' || c == '+' || c == '-' || c == ' ' || c == '^') {
 			c = (poz > 0) ? s.getAt(poz - 1) : c = '*';
 			if (c == '*' || c == '/' || c == '+' || c == '-' || c == ' ')
 				return true;
@@ -113,7 +107,7 @@ bool TFBlock::hasLaplaceOperator(const td::String& s)
 
 TFBlock::TFBlock(): BlockBase({0,0}) {
 	disableSetUp = true;
-	++cnt;
+	blockCnt;
 }
 
 TFBlock::TFBlock(const gui::Point& position, const td::String& inputName, const td::String& outputName):
@@ -135,13 +129,13 @@ TFBlock::TFBlock(const gui::Point& position):
 	BlockBase::BlockBase(position)
 {
 	td::String ul, izl;
-	ul.format("tf%d_in", cnt);
-	izl.format("tf%d_out", cnt);
+	ul.format("tf%d_in", blockCnt);
+	izl.format("tf%d_out", blockCnt);
 	disableSetUp = true;
 	setInputName(ul);
 	disableSetUp = false;
 	setOutputName(izl);
-	++cnt;
+	++blockCnt;
 
 
 	setNumerator("1");
@@ -210,7 +204,7 @@ void TFBlock::writeToModel(modelNode& model, Nodes& nodes)
 	}
 
 	var.processCommands(outputName);
-	if (getIsConnectedTo())
+	if (!getIsConnectedTo())
 		var.nodes.back()->attribs["out"] = "true";
 
 	inputName = inputName.subStr(0, inputName.find("=") - 1);

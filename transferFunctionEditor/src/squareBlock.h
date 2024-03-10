@@ -128,8 +128,7 @@ public:
 			cntEdit("Number of inputs:", td::DataType::int4, "Number of inputs for this block")
 		{
 			vL << cntEdit;
-			auto& junk = currentBlockc;
-			cntEdit.Action = [this](const td::Variant& v) {currentBlockc->changeInputCnt(v.i4Val()); };
+			cntEdit.Action = [this](const td::Variant& v) {currentBlockc->changeInputCnt(v.i4Val());};
 		}
 		friend class squareBlockMInameless;
 	};
@@ -139,38 +138,47 @@ protected:
 public:
 	squareBlockMInameless(int inputs_cnt);
 	int getInputCnt() const override { return inputCnt; }
-	virtual const td::String& getInputName(int pos) const override;
-	void changeInputCnt(int cnt);
+	const td::String& getInputName(int pos) const override;
+	virtual void changeInputCnt(int cnt);
 	void updateSettingsView(BlockBase::settingsView* view);
 
 };
 
 
-class squareBlockMI : virtual public BlockBase {
+class squareBlockMI : virtual public BlockBase, public squareBlockMInameless
+{
 public:
-	class settingsView {
+	class settingsView
+	{
+		elementProperty cntEdit;
 		gui::VerticalLayout* dynamicVL = nullptr;
 		std::deque<elementProperty> inputs;
+		squareBlockMI *currentBlock = nullptr;
 	protected:
-		gui::VerticalLayout vL;
+		gui::View vL;
 		
 	public:
-		settingsView() :
-			vL(1)
+		settingsView():
+			cntEdit("Number of inputs:", td::DataType::int4, "Number of inputs for this block")
 		{
-			vL << *dynamicVL;
+			
 		}
 		friend class squareBlockMI;
 	};
 
 private:
 	std::vector<td::String> names;
-	int inputCnt;
+	int thisBlockCnt;
 public:
 	squareBlockMI(int inputs_cnt);
-	int getInputCnt() const override { return inputCnt;}
+	void setUp();
+
 	const td::String& getInputName(int pos) const override;
 	void setInputName(const td::String &name, int pos);
 	void changeInputCnt(int cnt);
 	void updateSettingsView(BlockBase::settingsView* view);
+	void drawBlock(td::ColorID color) override;
+	void setUpBlock() override;
+	void saveToFile(arch::ArchiveOut& f) override;
+	void restoreFromFile(arch::ArchiveIn& f);
 };

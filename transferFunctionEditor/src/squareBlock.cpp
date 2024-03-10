@@ -68,16 +68,16 @@ void squareBlock::setUpWires(bool refreshCanvas)
 			else { //linija ide prema lijevo
 
 				if (outputPoint.x < inputPoint.x) {
-					gui::Point tacke[] = { outputPoint,  { input.x + par.second * seperatorDistance, outputPoint.y},  {input.x + par.second * seperatorDistance, input.y}, input };
+					gui::Point tacke[] = { outputPoint,  { input.x - logicalIndex * seperatorDistance, outputPoint.y},  {input.x - logicalIndex * seperatorDistance, input.y}, input };
 					connectionLines[j].createPolyLine(tacke, 4, 2);
 				}
 				else if (par.first->getInputSwitched()) {
-					gui::Point tacke[] = { outputPoint, { outputPoint.x - i * seperatorDistance, outputPoint.y}, { outputPoint.x - i * seperatorDistance, input.y}, input };
+					gui::Point tacke[] = { outputPoint, {outputPoint.x, outputPoint.y}, {outputPoint.x, input.y}, input };
 					connectionLines[j].createPolyLine(tacke, 4, 2);
 				}
 				else {
-					gui::CoordType middleY = (outputPoint.y + par.first->getInput(par.first->getInputCnt() - par.second - 1).y ) / 2;
-					gui::Point tacke[] = { outputPoint, { outputPoint.x - i * seperatorDistance, outputPoint.y}, {  outputPoint.x - i * seperatorDistance, middleY},  { input.x, middleY }, input };
+					gui::CoordType middleY = (outputPoint.y > input.y) ? (_r.top - 0.2 * (-par.first->getInput(0).y + _r.top)) : (_r.bottom - 0.2 * (-par.first->getInput(par.first->getInputCnt() - 1).y + _r.bottom));
+					gui::Point tacke[] = { outputPoint, {  outputPoint.x, middleY},  { input.x - logicalIndex * seperatorDistance, middleY }, {input.x - logicalIndex * seperatorDistance, input.y}, input };
 					connectionLines[j].createPolyLine(tacke, 5, 2);
 				}
 
@@ -152,6 +152,9 @@ void squareBlock::drawBlock(td::ColorID color)
 	for (const auto& arrow : arrows)
 		arrow.drawWire(color);
 
+	for (const auto& line : connectionLines)
+		line.drawWire(color);
+
 }
 
 
@@ -191,6 +194,13 @@ void squareBlockSI::drawBlock(td::ColorID color)
 {
 	if (drawUlaz.isInitialized() && !getIsConnectedFrom())
 		drawUlaz.draw(inputRect, &blockFont, color, td::TextAlignment::Center);
+
+
+	if (connectedFrom[0].first != nullptr) {
+		gui::Shape dot;
+		dot.createCircle(gui::Circle(getInput(0), 4), 1);
+		dot.drawFill(color);
+	}
 }
 
 void squareBlockSI::setUpBlock()
@@ -286,8 +296,16 @@ void squareBlockMInameless::updateSettingsView(BlockBase::settingsView* view)
 
 
 
-squareBlockMI::squareBlockMI(int inputs_cnt): inputCnt(inputs_cnt), names(inputs_cnt)
+
+squareBlockMI::squareBlockMI(int inputs_cnt):
+	squareBlockMInameless(inputs_cnt)
 {
+}
+
+void squareBlockMI::setUp()
+{
+	thisBlockCnt = getCnt();
+	changeInputCnt(getInputCnt());
 }
 
 const td::String& squareBlockMI::getInputName(int pos) const
@@ -297,26 +315,83 @@ const td::String& squareBlockMI::getInputName(int pos) const
 
 void squareBlockMI::changeInputCnt(int cnt)
 {
+	if (names.size() < cnt) {
+		names.reserve(cnt);
+		td::String name;
+		for (int i = names.size(); i < cnt; ++i) {
+			name.format("nl%d_%d", thisBlockCnt, i);
+			names.emplace_back(name);
+		}
+	}
 	names.resize(cnt);
+	squareBlockMInameless::changeInputCnt(cnt);
 }
 
 void squareBlockMI::updateSettingsView(BlockBase::settingsView* view)
 {
-	auto pogled = (settingsView*)view;
+	auto pogled = dynamic_cast<settingsView*>(view);
 
+	gui::VerticalLayout tempLayout(1);
+	gui::Label l("loading");
+	tempLayout << l;
+	
+	pogled->vL.setLayout(&tempLayout);
 	delete(pogled->dynamicVL);
-	pogled->dynamicVL = new gui::VerticalLayout(inputCnt);
-	pogled->inputs.clear();
+	pogled->dynamicVL = new gui::VerticalLayout(getInputCnt()+1);
+	pogled->cntEdit.Action = [view, this](const td::Variant& v) {changeInputCnt(v.i4Val()); updateSettingsView(view); };
+	pogled->dynamicVL->append(pogled->cntEdit);
+	pogled->currentBlock = this;
+	auto& poveznik = pogled->currentBlock;
 
 	td::String label;
-	for (int i = 0; i < names.size(); ++i) {
-		label.format("input name %d:", i);
+	for (int i = pogled->inputs.size(); i < names.size(); ++i) {
+		label.format("input %d name:", i);
 		pogled->inputs.emplace_back(label, td::string8, "variable name of this block's input", names[i]);
-		pogled->inputs.back().Action = [this, i](const td::Variant& v) {setInputName(v.strVal(), i); };
-
-		pogled->dynamicVL->append(pogled->inputs.back());
+		pogled->inputs.back().Action = [&poveznik, i](const td::Variant& v) {poveznik->setInputName(v.strVal(), i); };
 	}
 
+	for (int i = 0; i < names.size(); ++i) {
+		pogled->inputs[i].setValue(names[i]);
+		pogled->inputs[i].hide(false, false);
+		pogled->dynamicVL->append(pogled->inputs[i]);
+	}
+
+	for (int i = names.size(); i < pogled->inputs.size(); ++i) {
+		pogled->inputs[i].hide(true, true);
+	}
+
+	pogled->vL.setLayout(pogled->dynamicVL);
+	pogled->cntEdit.setValue(getInputCnt());
+
+	
+	
+}
+
+void squareBlockMI::drawBlock(td::ColorID color)
+{
+
+}
+
+void squareBlockMI::setUpBlock()
+{
+}
+
+void squareBlockMI::saveToFile(arch::ArchiveOut& f)
+{
+	f << getInputCnt();
+	for (int i = 0; i < getInputCnt(); ++i)
+		f << names[i];
+}
+
+void squareBlockMI::restoreFromFile(arch::ArchiveIn& f)
+{
+	int cnt;
+	f >> cnt;
+	names.resize(cnt);
+	for (int i = 0; i < cnt; ++i)
+		f >> names[i];
+
+	squareBlockMInameless::changeInputCnt(cnt);
 }
 
 

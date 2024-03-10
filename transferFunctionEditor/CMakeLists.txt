@@ -42,6 +42,5 @@ setIDEPropertiesForExecutable(${SOLUTION_NAME})
 setPlatformDLLPath(${SOLUTION_NAME})
 
 
-
 #MU_DEBUG, MU_RELEASE, MU_64BIT, MU_32BIT
 addMUCompileDefinitions(${SOLUTION_NAME})

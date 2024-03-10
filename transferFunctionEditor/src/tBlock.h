@@ -4,6 +4,7 @@
 #include <vector>
 #include "./../src/blockBase.h"
 #include "squareBlock.h"
+#include "blockInterface.h"
 
 #define FONT_ID gui::Font::ID::SystemNormal
 
@@ -41,15 +42,14 @@ private:
 
 	td::String nom, dem;
 
-
 	bool hasLaplaceOperator(const td::String& s);
-	static int cnt; //za brojanje koliko blokova je kreirano
+	static int blockCnt;
 
 	TFBlock();
 public:
-	static void resetCnt() { cnt = 0; }
 	TFBlock(const gui::Point &position, const td::String &inputName, const td::String& outputName);
 	TFBlock(const gui::Point& position);
+	virtual int& getCnt() override { return blockCnt; }
 
 	void setUpBlock();
 
@@ -66,10 +66,11 @@ public:
 	~TFBlock();
 
 	static td::String getID();
-
+	static void resetCnt() { blockCnt = 0; }
 
 	void saveToFile(arch::ArchiveOut& f) override;
 	static TFBlock *restoreFromFile(arch::ArchiveIn& f);
 
+	friend class blockInterface;
 };
 

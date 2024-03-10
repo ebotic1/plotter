@@ -1,18 +1,13 @@
 #pragma once
 #include "squareBlock.h"
 #include "blockBase.h"
+#include "blockInterface.h"
 #include "gui/ComboBox.h"
 #include "gui/DrawableString.h"
 
 
 class sumBlock : public squareBlockMInameless, public squareBlockSO, public squareBlock 
 {
-	bool sumOperator;
-	gui::DrawableString znak;
-
-	static int cnt; //za brojanje koliko blokova je kreirano
-
-
 public:
 	class settingsView: 
 		public squareBlockMInameless::settingsView,
@@ -38,8 +33,17 @@ public:
 	};
 	friend class settingsView;
 
+private:
+
+	bool sumOperator;
+	gui::DrawableString znak;
+
+	static int blockCnt;
+	
+
 public:
 	sumBlock(gui::Point position, bool addition_operator, int cnt = 2);
+	virtual int& getCnt() override { return blockCnt; }
 
 	void setUpBlock() override;
 	void drawBlock(td::ColorID color) override;
@@ -49,7 +53,9 @@ public:
 	void updateSettingsView(BlockBase::settingsView* view);
 
 	void changeSign(bool addition);
+	static void resetCnt() { blockCnt = 0; }
 
 	static td::String getID() { return "sumBlock"; }
 	~sumBlock();
+	friend class blockInterface;
 };

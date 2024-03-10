@@ -12,8 +12,7 @@
 #include "arch/ArchiveOut.h"
 #include "gui/Font.h"
 
-#define FONT_ID gui::Font::ID::SystemRegular
-
+#define FONT_ID gui::Font::ID::SystemNormal
 
 
 class BlockBase {
@@ -60,8 +59,11 @@ protected:
 	static gui::Font blockFont;
 	static bool fontInit;
 
+
 public:
 	BlockBase(const gui::Point& position);
+	virtual int& getCnt() = 0;
+
 	const gui::Rect& getRect() const;
 	const bool getInputSwitched() const;
 	virtual const gui::Point& getOutput(int poz) const = 0;

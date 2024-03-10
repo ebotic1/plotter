@@ -1,5 +1,4 @@
 #pragma once
-#include "tBlock.h"
 #include "gui/Canvas.h"
 #include <vector>
 #include "globals.h"
@@ -51,7 +50,7 @@ public:
 	bool onKeyPressed(const gui::Key& key);
 
 	bool exportToXML(const td::String& path);
-	void resetModel();
+	void resetModel(bool resetCnt = true);
 
 	~kanvas();
 

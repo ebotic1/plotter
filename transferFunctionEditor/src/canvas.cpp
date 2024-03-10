@@ -1,4 +1,8 @@
 #include "canvas.h"
+#include "tBlock.h"
+#include "sumBlock.h"
+#include "NLblock.h"
+#include "blockInterface.h"
 
 
 #define BLOCK_COLOR td::ColorID::Black
@@ -157,6 +161,7 @@ inline bool kanvas::saveState(const td::String& file){
 
 		out << v.strVal();
 
+		blockInterface::writeState(out);
 
 	}
 	catch (...){
@@ -177,7 +182,7 @@ inline bool kanvas::restoreState(const td::String& file){
 	in.setSupportedMajorVersion("TFv2");
 	std::vector<BlockBase*> kopija;
 	td::Variant titl_v, param_v;
-
+	blockInterface::saveState();
 
 	try {
 		int size = 0;
@@ -191,6 +196,8 @@ inline bool kanvas::restoreState(const td::String& file){
 				kopija[i] = TFBlock::restoreFromFile(in);
 			else if (ID == sumBlock::getID())
 				kopija[i] = sumBlock::restoreFromFile(in);
+			else if (ID == NLBlock::getID())
+				kopija[i] = NLBlock::restoreFromFile(in);
 			else
 				throw std::exception("unknown block");
 
@@ -224,16 +231,18 @@ inline bool kanvas::restoreState(const td::String& file){
 		in >> params;
 		param_v = std::move(params);
 		
+		blockInterface::reloadState(in);
 
 	}
 	catch (...) {
+		blockInterface::restoreState();
 		for (int i = 0; i < kopija.size(); ++i)
 			delete kopija[i];
 		return false;
 	}
 
 
-	resetModel();
+	resetModel(false);
 
 
 	blocks = std::move(kopija);
@@ -297,13 +306,17 @@ void kanvas::onCursorMoved(const gui::InputDevice& inputDevice)
 	*/
 }
 
-void kanvas::resetModel()
+void kanvas::resetModel(bool resetCnt)
 {
 	for (int i = 0; i < blocks.size(); ++i)
 		delete blocks[i];
 	blocks.clear();
 	globals::switcher->showView(0);
-	TFBlock::resetCnt();
+	if (resetCnt) {
+		TFBlock::resetCnt();
+		sumBlock::resetCnt();
+		NLBlock::resetCnt();
+	}
 	globals::model_settings->edit.clean();
 }
 
@@ -322,6 +335,10 @@ inline bool kanvas::onActionItem(gui::ActionItemDescriptor& aiDesc) {
 		}
 		if (aiDesc._actionItemID == 11) {
 			blocks.push_back(new sumBlock(lastMousePos, true));
+			return true;
+		}
+		if (aiDesc._actionItemID == 12) {
+			blocks.push_back(new NLBlock(lastMousePos));
 			return true;
 		}
 	}
@@ -409,7 +426,7 @@ bool kanvas::exportToXML(const td::String &path){
 
 	modelNode mod;
 
-	mod.processCommands("Params:" "Vars:");
+	mod.processCommands("Params:\nVars:");
 	BlockBase::Nodes nodes;
 
 	baseNode& params = *mod.nodes[0];

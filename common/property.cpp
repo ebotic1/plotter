@@ -59,6 +59,8 @@ void elementProperty::setValue(const td::Variant &value, bool doAction){
 
 bool elementProperty::onFinishEdit(gui::LineEdit* pCtrl){
 	
+	if (this->isHidden())
+		return true;
 
 	if (Action != nullptr) {
 		td::Variant v;

@@ -1,7 +1,7 @@
 #include "sumBlock.h"
 #include "globals.h"
 
-int	sumBlock::cnt = 0;
+int	sumBlock::blockCnt = 0;
 
 sumBlock::sumBlock(gui::Point position, bool addition_operator, int cnt):
 	squareBlockMInameless(cnt),
@@ -9,12 +9,11 @@ sumBlock::sumBlock(gui::Point position, bool addition_operator, int cnt):
 {
 	changeSign(addition_operator);
 	td::String name;
-	name.format("sum%d", this->cnt);
+	name.format("sum%d", blockCnt++);
 	setOutputName(name);
 
 	setUpAll();
 
-	++this->cnt;
 }
 
 void sumBlock::setUpBlock()
@@ -38,8 +37,7 @@ void sumBlock::drawBlock(td::ColorID color)
 {
 	squareBlock::drawBlock(color);
 	znak.draw(_r, &blockFont, color, td::TextAlignment::Center, td::VAlignment::Center);
-	for (const auto& line : connectionLines)
-		line.drawWire(color);
+
 
 	squareBlockSO::drawBlock(color);
 	
@@ -56,7 +54,7 @@ void sumBlock::writeToModel(modelNode& model, Nodes& nodes)
 	td::String outputName = getOutputName(0);
 
 	var.processCommands(outputName);
-	if (getIsConnectedTo())
+	if (!getIsConnectedTo())
 		var.nodes.back()->attribs["out"] = "true";
 
 	outputName = outputName.subStr(0, outputName.find("=") - 1);
@@ -87,7 +85,7 @@ void sumBlock::writeToModel(modelNode& model, Nodes& nodes)
 
 void sumBlock::saveToFile(arch::ArchiveOut& f)
 {
-	f << sumBlock::getID() << getLocation().x << getLocation().y << sumOperator << getInputCnt() << switchOutput;
+	f << sumBlock::getID() << getLocation().x << getLocation().y << sumOperator << getInputCnt() << switchOutput << izlazName;
 }
 
 sumBlock* sumBlock::restoreFromFile(arch::ArchiveIn& f)
@@ -100,6 +98,9 @@ sumBlock* sumBlock::restoreFromFile(arch::ArchiveIn& f)
 	f >> opr;
 	if(opr)
 		pok->switchInput();
+
+	f >> pok->izlazName;
+
 	return pok;
 }
 
