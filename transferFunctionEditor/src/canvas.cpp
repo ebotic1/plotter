@@ -1,11 +1,11 @@
 #include "canvas.h"
 #include "tBlock.h"
 #include "sumBlock.h"
-#include "NLblock.h"
+#include "nlBlock.h"
 #include "blockInterface.h"
 
 
-#define BLOCK_COLOR td::ColorID::Black
+#define BLOCK_COLOR td::ColorID::SysText
 #define BLOCK_COLOR_SELECTED td::ColorID::DeepSkyBlue
 
 
@@ -199,7 +199,7 @@ inline bool kanvas::restoreState(const td::String& file){
 			else if (ID == NLBlock::getID())
 				kopija[i] = NLBlock::restoreFromFile(in);
 			else
-				throw std::exception("unknown block");
+				throw std::logic_error("unknown block");
 
 			kopija[i]->disableLogic(false);
 			kopija[i]->setUpBlock();
@@ -384,7 +384,7 @@ inline bool kanvas::onActionItem(gui::ActionItemDescriptor& aiDesc) {
 		p->openModalWithID(5, this);
 		return true;
 	}
-
+	return false;
 }
 
 

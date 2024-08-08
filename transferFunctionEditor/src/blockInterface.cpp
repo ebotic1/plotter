@@ -1,7 +1,7 @@
 #include "blockInterface.h"
 #include "tBlock.h"
 #include "sumBlock.h"
-#include "NLblock.h"
+#include "nlBlock.h"
 
 std::vector<int> blockInterface::cnts;
 

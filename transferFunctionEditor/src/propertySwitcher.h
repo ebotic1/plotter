@@ -3,7 +3,7 @@
 #include "tBlock.h"
 #include "gui/ViewSwitcher.h"
 #include "sumBlock.h"
-#include "NLblock.h"
+#include "nlBlock.h"
 #pragma once
 
 class properties : public gui::ViewSwitcher {

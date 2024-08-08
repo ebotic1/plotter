@@ -1,4 +1,4 @@
-#include "NLblock.h"
+#include "nlBlock.h"
 #include "gui/Font.h"
 
 int NLBlock::blockCnt = 0;
