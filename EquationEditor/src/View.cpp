@@ -11,7 +11,6 @@
 #include <fstream>
 
 #include <cstdlib>
-#include <Windows.h>
 #include <limits>
 
 
@@ -149,6 +148,7 @@ void View::pokreniSolver(){
 
 	xml::FileParser p;
 	p.parseFile(currentPathXML);
+	const char *debug = currentPathXML.c_str();
 	auto root = p.getRootNode();
 
 	td::String s; //treba string builder ali ovo je samo privremeno svakako

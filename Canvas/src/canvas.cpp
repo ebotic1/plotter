@@ -361,7 +361,7 @@ void graph::readTXT(const td::String& path){
             header.clear();
         }
 
-        headerCount = headerCount / 2;
+        headerCount = headerCount;
 
         if (headerCount == 0)
             return;
@@ -378,7 +378,7 @@ void graph::readTXT(const td::String& path){
         file.clear();
         file.seekg(0, std::ios::beg);
         skipWhiteLine();
-        skipWhiteLine();
+        //skipWhiteLine();
         std::vector<std::vector<gui::Point>> tacke;
    
         try
@@ -399,7 +399,7 @@ void graph::readTXT(const td::String& path){
             }
 
             for (size_t i = 0; i < headerCount; ++i) {
-                addFunction(Function(tacke[i].data(), tacke[i].size(), nextColor(), names[i*2+1], 2));
+                addFunction(Function(tacke[i].data(), tacke[i].size(), nextColor(), names[i], 2));
             }
         }
     
