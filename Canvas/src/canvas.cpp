@@ -571,6 +571,7 @@ bool graph::save(const td::String& path){
         exportToEPS(path, true);
         return true;
     }
+    return false;
 }
 
 graph::graph(bool startWithMargins, bool takeUserInput, td::ColorID backgroundColor) :gui::Canvas(takeUserInput ? inputs : noInputs), backgroundColor(backgroundColor), drawMargins(startWithMargins)
@@ -1213,12 +1214,13 @@ void graph::onCursorDragged(const gui::InputDevice& inputDevice){
 }
 
 bool graph::onZoom(const gui::InputDevice& inputDevice){
-    Zoom((inputDevice.getScale() > 1) ? 1.5 : 0.6666);
+    auto x = (inputDevice.getScale());
+    Zoom((x));
     return true;
 }
 
 void graph::Zoom(const gui::CoordType &scale){
-    if (scale < 0.01)
+    if (scale < 0.0001)
         return;
 
   
