@@ -7,8 +7,8 @@
 
 #include <deque>
 
-class IMPEXP Function {
-
+class IMPEXP Function
+{
 	td::ColorID color = td::ColorID::Black;
 	gui::Point *tacke = nullptr;
 	size_t length = 0;
