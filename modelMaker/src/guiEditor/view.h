@@ -4,9 +4,9 @@
 #include "canvas.h"
 #include "gui/ViewScroller.h"
 #include "propertySwitcher.h"
+#include "../baseView.h"
 
-
-class GraphicalEditorView: public gui::View {
+class GraphicalEditorView: public BaseViewForTab {
 	gui::SplitterLayout spliter;
 	properties props;
 

@@ -1,5 +1,6 @@
 #include "view.h"
 #include "globals.h"
+#include "View.h"
 
 
 kanvas* ptr;
@@ -15,3 +16,4 @@ GraphicalEditorView::GraphicalEditorView() : spliter(gui::SplitterLayout::Orient
 void globals::refreshCanvas() {
 	ptr->reDraw();
 }
+

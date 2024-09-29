@@ -3,6 +3,7 @@
 #include "sumBlock.h"
 #include "nlBlock.h"
 #include "blockInterface.h"
+#include <gui/Application.h>
 
 
 #define BLOCK_COLOR td::ColorID::SysText
@@ -274,14 +275,10 @@ inline bool kanvas::onKeyPressed(const gui::Key& key)
 
 
 void kanvas::onSecondaryButtonPressed(const gui::InputDevice& inputDevice) {
-
-
-	td::String s("lmao");
-
-
 	lastAction = Actions::secondary;
 	lastMousePos = inputDevice.getModelPoint();	
 }
+
 
 void kanvas::onSecondaryButtonReleased(const gui::InputDevice& inputDevice)
 {
