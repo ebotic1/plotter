@@ -1,6 +1,5 @@
 #include "view.h"
 #include "globals.h"
-#include "View.h"
 
 
 kanvas* ptr;
