@@ -1,0 +1,27 @@
+<?xml version='1.0' encoding='utf-8'?>
+<DevRes>
+	<Translations>
+		<Res id="start" tr="Pokreni" />
+		<Res id="startToolTip" tr="pokreni simulaciju" />
+		<Res id="startTime" tr=" Početno vrijeme: " />
+		<Res id="endTime" tr=" Krajnje vrijeme: " />
+		<Res id="&lt;Ctrl&gt;," tr="&lt;Ctrl&gt;p" />
+		<Res id="Cancel" tr="Poništi" />
+		<Res id="settings" tr="Postavke aplikacije" />
+		<Res id="RestartRequired" tr="Restartovanje aplikacije" />
+		<Res id="RestartRequiredInfo" tr="Da bi ste promijenili jezik aplikacije potrebno je ugasiti program" />
+		<Res id="DoNoRestart" tr="Kasnije" />
+		<Res id="Restart" tr="Ponovno pokretanje" />
+		<Res id="settingsShort" tr="Postavke" />
+		<Res id="startingExplanation" tr="Da bi ste započeli sa radom pritisnute na meni tipku u gornjem lijevom ćošku i pritisnute na &quot;novo&quot; ili izaberite neku od sljedećih opcija:" />
+		<Res id="graphicalEditorLabel" tr="Grafički uređivač modela" />
+		<Res id="textEditorLabel" tr="Tekstualni unos jednačina" />
+		<Res id="NewTab" tr="Novi prozor" />
+		<Res id="Save" tr="Snimi" />
+		<Res id="SaveAs" tr="Snimi kao" />
+		<Res id="ExporttoXML" tr="Izvezi kao XML" />
+		<Res id="TextualEditor" tr="Tekstualni editor" />
+		<Res id="GraphicalEditor" tr="Grafički editor" />
+		<Res id="emptyModel" tr="Prazan model" />
+	</Translations>
+</DevRes>

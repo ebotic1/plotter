@@ -1,5 +1,5 @@
 set(EqToXML_lib EquationToXML_library)
-set(EqToXML_standalone modelMaker)
+set(EqToXML_standalone XMLmodelMaker)
 
 file(GLOB SOURCES  ${CMAKE_CURRENT_LIST_DIR}/src/lib/*.cpp)
 file(GLOB INCLUDE  ${CMAKE_CURRENT_LIST_DIR}/inc/*.h)

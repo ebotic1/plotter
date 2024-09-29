@@ -48,6 +48,24 @@ public:
 
 int main(int argcnt, const char** argv) {
 
+	td::String s("swawd");
+	td::String &s3 = s;
+
+	td::Date datum;
+	td::Time vrijeme(4,1,0,0);
+
+	td::DateTime dt(datum, vrijeme);
+
+	td::Decimal3 dekan(4.345234);
+
+    td::Variant v("dwadshittingme",td::DataType::ch, 4);
+	td::Variant v2("dwadshittingme");
+	td::Variant v3(4.423);
+	td::Variant v4(dekan);
+	td::Variant v5(dt);
+
+    int x = 3;
+
 	application app(argcnt, argv);
 	app.init("BA");
 

@@ -23,7 +23,6 @@ set(APPWNDMENUANDTB_PLIST  ${CMAKE_CURRENT_LIST_DIR}/src/Info.plist)
 setTargetPropertiesForGUIApp(${EXECUTABLE_NAME} $(APPWNDMENUANDTB_PLIST)) 
 
 
-setIDEPropertiesForExecutable(${EXECUTABLE_NAME})
 setIDEPropertiesForGUIExecutable(${EXECUTABLE_NAME} ${CMAKE_CURRENT_LIST_DIR})
 
 setPlatformDLLPath(${EXECUTABLE_NAME})

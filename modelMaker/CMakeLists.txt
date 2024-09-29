@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.18)
 
-set(SOLUTION_NAME EquationEditor) #Unijeti naziv solution-a
+set(SOLUTION_NAME modelMaker) #Unijeti naziv solution-a
+
 
 
 #BEGIN dio koji ide u sve solutions
@@ -17,14 +18,21 @@ include(${WORK_ROOT}/DevEnv/Common.cmake)
 include(${WORK_ROOT}/DevEnv/natGUI.cmake)
 
 file(GLOB SOURCES  ${CMAKE_CURRENT_LIST_DIR}/src/*.cpp)
-file(GLOB INCS  ${CMAKE_CURRENT_LIST_DIR}/src/*.h)
+file(GLOB HEADERS  ${CMAKE_CURRENT_LIST_DIR}/src/*.h)
 
-source_group("inc"            FILES ${INCS})
-source_group("src"            FILES ${SOURCES})
+file(GLOB SOURCES_GUI  ${CMAKE_CURRENT_LIST_DIR}/src/guiEditor/*.cpp)
+file(GLOB HEADERS_GUI  ${CMAKE_CURRENT_LIST_DIR}/src/guiEditor/*.h)
+
+file(GLOB SOURCES_TEXT  ${CMAKE_CURRENT_LIST_DIR}/src/equationEditor/*.cpp)
+file(GLOB HEADERS_TEXT  ${CMAKE_CURRENT_LIST_DIR}/src/equationEditor/*.h)
+
+
+source_group("inc"            FILES ${HEADERS} ${HEADERS_GUI})
+source_group("src"            FILES ${SOURCES} ${SOURCES_GUI})
 
 
 # add executable
-add_executable(${SOLUTION_NAME} ${INCS} ${SOURCES})
+add_executable(${SOLUTION_NAME} ${HEADERS} ${SOURCES} ${HEADERS_GUI} ${SOURCES_GUI} ${HEADERS_TEXT} ${SOURCES_TEXT})
 
 include("${SOURCE_ROOT}/../EquationToXML/EqToXML.cmake")
 include("${SOURCE_ROOT}/../Canvas/plotlib.cmake")

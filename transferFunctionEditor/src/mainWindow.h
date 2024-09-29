@@ -1,4 +1,4 @@
-#include "gui/Window.h"
+#include <gui/Window.h>
 #include "view.h"
 #include "gui/FileDialog.h"
 
@@ -29,7 +29,6 @@ protected:
 
 public:
 	mainWindow() : gui::Window(gui::Size(1000, 1000)) {
-		setTitle("ovo ne radi nista??");
 		menu.setAsMain(this);
 		menu.forwardMessagesTo(view.getCanvas());
 		setCentralView(&view);

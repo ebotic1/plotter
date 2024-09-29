@@ -26,6 +26,11 @@ public:
 
 int main(int argc, const char** argv) {
 
+
+    td::String s("lmačo");
+
+
+
     Application app(argc, argv);
     app.init("BA");
     return app.run();

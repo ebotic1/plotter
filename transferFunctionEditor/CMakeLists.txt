@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.18)
 
+
 set(SOLUTION_NAME tanfser_editor)
 
 #BEGIN dio koji ide u sve solutions
@@ -40,6 +41,8 @@ setIDEPropertiesForGUIExecutable(${SOLUTION_NAME} ${CMAKE_CURRENT_LIST_DIR})
 setIDEPropertiesForExecutable(${SOLUTION_NAME})
 
 setPlatformDLLPath(${SOLUTION_NAME})
+
+#executePostConfigProgram("${HOME_ROOT}/other_bin/postProcc.exe"  "${WORK_ROOT}/other_bin/postProc.exe")
 
 
 #MU_DEBUG, MU_RELEASE, MU_64BIT, MU_32BIT

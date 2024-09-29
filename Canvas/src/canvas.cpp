@@ -13,8 +13,9 @@
 #define SELECT_COLOR td::ColorID::Green
 #define FONT gui::Font::ID::SystemNormal
 
-const std::initializer_list<gui::InputDevice::Event> graph::inputs = { gui::InputDevice::Event::PrimaryClicks, gui::InputDevice::Event::SecondaryClicks, gui::InputDevice::Event::Zoom, gui::InputDevice::Event::CursorDrag,
-gui::InputDevice::Event::CursorMove, gui::InputDevice::Event::Keyboard, gui::InputDevice::Event::CursorEnterLeave, gui::InputDevice::Event::PrimaryDblClick};
+const std::initializer_list<gui::InputDevice::Event> graph::inputs = { gui::InputDevice::Event::PrimaryClicks, gui::InputDevice::Event::SecondaryClicks, 
+gui::InputDevice::Event::Zoom, gui::InputDevice::Event::CursorDrag, gui::InputDevice::Event::CursorMove, gui::InputDevice::Event::Keyboard, 
+gui::InputDevice::Event::CursorEnterLeave, gui::InputDevice::Event::PrimaryDblClick};
 
 const std::initializer_list<gui::InputDevice::Event> graph::noInputs = {};
 
@@ -164,7 +165,6 @@ void graph::saveTXT(const td::String& path){
 
 bool graph::saveTXT(const td::String& path, bool horizontal){
     std::ofstream out;
-
     out.open(path.c_str());
 
     if (!out.is_open()) {
@@ -384,6 +384,7 @@ void graph::readTXT(const td::String& path){
         try
         {
             tacke.resize(headerCount);
+            
 
             while (getline(file, line)) {
                 if (isWhitespace(line))
@@ -597,6 +598,8 @@ graph::graph(bool startWithMargins, bool takeUserInput, td::ColorID backgroundCo
 
     if (startWithMargins)
         setUpDrawingWindow();
+
+
 
 }
 

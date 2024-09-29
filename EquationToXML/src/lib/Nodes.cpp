@@ -287,7 +287,7 @@ bool modelNode::nodeAction(const td::String& command, baseNode*& newChild){
 		return true;
 	}
 
-	
+	return false;
 }
 
 
