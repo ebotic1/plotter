@@ -1,8 +1,7 @@
 cmake_minimum_required(VERSION 3.18)
 
+
 set(SOLUTION_NAME modelMaker) #Unijeti naziv solution-a
-
-
 
 #BEGIN dio koji ide u sve solutions
 project(${SOLUTION_NAME})
@@ -29,7 +28,6 @@ file(GLOB HEADERS_TEXT  ${CMAKE_CURRENT_LIST_DIR}/src/equationEditor/*.h)
 
 source_group("inc"            FILES ${HEADERS} ${HEADERS_GUI})
 source_group("src"            FILES ${SOURCES} ${SOURCES_GUI})
-
 
 # add executable
 add_executable(${SOLUTION_NAME} ${HEADERS} ${SOURCES} ${HEADERS_GUI} ${SOURCES_GUI} ${HEADERS_TEXT} ${SOURCES_TEXT})

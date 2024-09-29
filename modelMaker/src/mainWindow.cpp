@@ -1,18 +1,23 @@
 #include "mainWindow.h"
 #include "settingsDialog.h"
 #include <gui/FileDialog.h>
-
 #include "guiEditor/view.h"
+#include "textEditor/View.h"
+
+
+ 
 
 
 MainWindow::MainWindow()
     : gui::Window(gui::Geometry(100, 10, 1100, 800)),
-    _tabView(gui::TabHeader::Type::Dynamic, 1,10)
+    _tabView(gui::TabHeader::Type::Dynamic, 1,10),
+    textEditorIcon(":txtIcon"),
+    guiEditorIcon(":guiIcon")
 {
     setTitle("Model Maker");
     _mainMenuBar.setAsMain(this);
     setToolBar(_toolBar);
-
+    setContextMenus(&_contextMenu);
     setCentralView(&_tabView);
     //showStartScreen(true);
     
@@ -57,7 +62,13 @@ bool MainWindow::onActionItem(gui::ActionItemDescriptor& aiDesc)
 
     if(action == menuBarActionIDs::EmptyModel && menuID == subMenuIDs::subMenuNewGraphical){
         showStartScreen(false);
-        _tabView.addView(new GraphicalEditorView, "New View", new gui::Image(":start"));
+        _tabView.addView(new GraphicalEditorView, "New View", &guiEditorIcon);
+    }
+
+
+    if(action == menuBarActionIDs::EmptyModel && menuID == subMenuIDs::subMenuNewText){
+        showStartScreen(false);
+        _tabView.addView(new TextEditorView, "New View", &textEditorIcon);
     }
 
     /*

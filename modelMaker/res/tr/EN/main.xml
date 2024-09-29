@@ -23,5 +23,7 @@
 		<Res id="TextualEditor" tr="Text editor" />
 		<Res id="GraphicalEditor" tr="Graphical editor" />
 		<Res id="emptyModel" tr="Empty model" />
+		<Res id="NumberOfInputs" tr="Number of inputs:" />
+		<Res id="NumberOFInputTooltip" tr="Number of inputs for this block" />
 	</Translations>
 </DevRes>

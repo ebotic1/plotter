@@ -1,7 +1,9 @@
 <?xml version='1.0'?>
 <DevRes>
 	<Images>
-		<Res id="start" path=":images/start.svg"/>
+		<Res id="start" path=":images/start.png"/>
+		<Res id="txtIcon" path=":images/start.png"/>
+		<Res id="guiIcon" path=":images/start.png"/>
 	</Images>
 	<Symbols>
 

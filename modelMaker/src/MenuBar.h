@@ -32,7 +32,7 @@ public:
 
 		{
 			auto &items = modelGraphical.getItems();
-			items[0].initAsActionItem(tr("emptyModel"), EmptyModel);
+			items[0].initAsActionItem(tr("emptyModel"), EmptyModel, "<Ctrl><Alt>n");
 		}
 
 

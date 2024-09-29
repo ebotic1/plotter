@@ -23,5 +23,7 @@
 		<Res id="TextualEditor" tr="Tekstualni editor" />
 		<Res id="GraphicalEditor" tr="Grafički editor" />
 		<Res id="emptyModel" tr="Prazan model" />
+		<Res id="NumberOfInputs" tr="Broj ulaza:" />
+		<Res id="NumberOFInputTooltip" tr="Broj ulaza za ovaj blok" />
 	</Translations>
 </DevRes>

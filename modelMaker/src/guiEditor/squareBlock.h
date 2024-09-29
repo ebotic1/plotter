@@ -159,7 +159,7 @@ public:
 		
 	public:
 		settingsView():
-			cntEdit("Number of inputs:", td::DataType::int4, "Number of inputs for this block")
+			cntEdit(gui::tr("NumberOfInputs"), td::DataType::int4, gui::tr("NumberOFInputTooltip"))
 		{
 			
 		}

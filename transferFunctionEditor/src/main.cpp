@@ -58,8 +58,8 @@ int main(int argcnt, const char** argv) {
 
 	td::Decimal3 dekan(4.345234);
 
-    td::Variant v("dwadshittingme",td::DataType::ch, 4);
-	td::Variant v2("dwadshittingme");
+    td::Variant v("dwdwadwa",td::DataType::ch, 4);
+	td::Variant v2("awdwadwd");
 	td::Variant v3(4.423);
 	td::Variant v4(dekan);
 	td::Variant v5(dt);

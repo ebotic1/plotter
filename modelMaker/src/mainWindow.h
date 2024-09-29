@@ -2,6 +2,7 @@
 #include <gui/TabView.h>
 #include <td/String.h>
 
+#include "guiEditor/contextMenu.h"
 #include "MenuBar.h"
 #include "startingView.h"
 #include "ToolBar.h"
@@ -17,6 +18,9 @@ protected:
     ToolBar _toolBar;
     gui::TabView _tabView;
     StartingView startingView;
+    ContextMenus _contextMenu;
+
+    gui::Image textEditorIcon, guiEditorIcon;
 public:
     MainWindow();
 

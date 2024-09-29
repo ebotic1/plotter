@@ -269,7 +269,7 @@ squareBlockMInameless::squareBlockMInameless(int input_cnt):
 const td::String& squareBlockMInameless::getInputName(int pos) const
 {
 	static_assert("Cant access nameless input name");
-	return "";
+	return *(new td::String()); //Wont be called
 }
 
 void squareBlockMInameless::changeInputCnt(int cnt)
@@ -335,7 +335,7 @@ void squareBlockMI::updateSettingsView(BlockBase::settingsView* view)
 	gui::Label l("loading");
 	tempLayout << l;
 	
-	pogled->vL.setLayout(&tempLayout);
+	//pogled->vL.setLayout(&tempLayout);
 	delete(pogled->dynamicVL);
 	pogled->dynamicVL = new gui::VerticalLayout(getInputCnt()+1);
 	pogled->cntEdit.Action = [view, this](const td::Variant& v) {changeInputCnt(v.i4Val()); updateSettingsView(view); };
