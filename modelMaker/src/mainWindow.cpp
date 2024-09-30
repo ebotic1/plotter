@@ -12,34 +12,40 @@ MainWindow::MainWindow()
     : gui::Window(gui::Geometry(100, 10, 1100, 800)),
     _tabView(gui::TabHeader::Type::Dynamic, 1,10),
     textEditorIcon(":txtIcon"),
-    guiEditorIcon(":guiIcon")
+    guiEditorIcon(":guiIcon"),
+    _switcherView(2)
 {
     setTitle("Model Maker");
     _mainMenuBar.setAsMain(this);
     setToolBar(_toolBar);
     setContextMenus(&_contextMenu);
-    setCentralView(&_tabView);
-    //showStartScreen(true);
-    
-}
 
-void MainWindow::onInitialAppearance(){
-    //_mainMenuBar.enableModelMenu(false); // krah!?!?!?
+    _switcherView.addView(&startingView, true);
+    setCentralView(&_switcherView);
+
+
+    _tabView.onClosedView([this](int) {
+        if (_tabView.getNumberOfViews() == 1)
+            showStartScreen(true);
+    });
+
+    _switcherView.addView(&_tabView);
+    
 }
 
 void MainWindow::showStartScreen(bool show)
 {
-    return;
     if(show){
-        if(getCentralView() == &startingView)
+        if(_switcherView.getCurrentViewPos() == 0)
             return;
         //_mainMenuBar.enableModelMenu(false);
-        setCentralView(&startingView);
+        _switcherView.showView(0);
+
     }else{
-        if(getCentralView() == &_tabView)
+        if (_switcherView.getCurrentViewPos() == 1)
             return;
         //_mainMenuBar.enableModelMenu(true);
-        setCentralView(&_tabView);
+        _switcherView.showView(1);
     }
 }
 

@@ -1,3 +1,4 @@
+#pragma once
 #include <gui/View.h>
 #include <gui/ViewScroller.h>
 #include <gui/Label.h>
@@ -10,6 +11,9 @@
 #include <gui/DrawableButton.h>
 #include <gui/DrawableString.h>
 
+#include "MenuBar.h"
+#include "globalEvents.h"
+
 
 class NiceButton : public gui::DrawableButton{
 
@@ -21,12 +25,16 @@ class NiceButton : public gui::DrawableButton{
     td::ColorID color;
     gui::Rect boundingRect;
 
+    gui::ActionItemDescriptor action;
+
 public:
 
-    NiceButton(const td::String &ButtonText, td::ColorID color = td::ColorID::SysCtrlBack):
+    NiceButton(const td::String &ButtonText, int subMenuID, int actionID, td::ColorID color = td::ColorID::SysCtrlBack):
         color(color),
-        text(ButtonText)
+        text(ButtonText),
+        action(0, subMenuID, 0, actionID, nullptr)
     {
+        
         if(!fontInit){
             fontInit = true;
             font.create("Serif", 10, gui::Font::Style::Bold, gui::Font::Unit::Point);
@@ -35,12 +43,11 @@ public:
 
         text.measure(&font, size);
         size.width *= 0.35;
-        size.width += lineWidth;
-        size.height += lineWidth;
-        setPreferedContentSize(size);
-        setSize(size);
 
-        boundingRect.setOrigin({lineWidth,lineWidth});
+
+        setSizeLimits(size.width + lineWidth, gui::Control::Limit::Fixed, size.height + lineWidth, gui::Control::Limit::Fixed);
+
+        boundingRect.setOrigin({lineWidth/2,lineWidth/2});
         boundingRect.setSize(size);
         shape.createRoundedRect(boundingRect, 20, lineWidth);
     }
@@ -50,6 +57,12 @@ public:
         shape.drawFillAndWire(color, td::ColorID::SysText);
         text.draw(boundingRect, &font, td::ColorID::SysText, td::TextAlignment::Center, td::VAlignment::Center);
 
+    }
+
+
+    bool onClick(gui::DrawableButton* pDrawableBtn) {
+        GlobalEvents::sendActionItem(action);
+        return true;
     }
 
 };
@@ -68,13 +81,10 @@ class StartingView: public gui::ViewScroller
 
     void setUpTextEdit(gui::TextEdit &t, const td::String &string){
         t.setText(string);
-        t.setFontSize(20);
+        t.setFontSize(11);
         t.setFlat();
         t.setAsReadOnly();
-        t.setPreferedContentSize({0,0}); //trebalo bi da ne rasteze textEdit element maksimalno nakon ovoga
-        t.setSize({0,0});
-        t.sizeToFit();
-
+        t.setSizeLimits(0, gui::Control::Limit::None, 50, gui::Control::Limit::Fixed);
     }
 
 public:
@@ -82,7 +92,12 @@ public:
     StartingView():
         gui::ViewScroller(gui::ViewScroller::Type::ScrollAndAutoHide, gui::ViewScroller::Type::ScrollAndAutoHide),
         layoutMain(5), layoutHorizontal(2), layoutGraph(4), layoutText(4),
-        buttons{{"Open from file"}, {tr("emptyModel")}, {"\tDAE\t"}, {tr("emptyModel")}, {"Damped sine"}}
+        buttons{
+            {tr("openFromFile"), 0, 0}, 
+            {tr("emptyModel"), subMenuNewGraphical , menuBarActionIDs::EmptyModel}, 
+            {"\tDAE\t", subMenuNewGraphical, 0},
+            {tr("emptyModel"), subMenuNewText, menuBarActionIDs::EmptyModel},
+            {"Damped sine", subMenuNewText, 0} }
     {   
         setUpTextEdit(_labelStartExplain, tr("startingExplanation"));
         setUpTextEdit(_labelGraphicalEditor, tr("graphicalEditorLabel"));

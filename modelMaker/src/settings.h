@@ -10,7 +10,6 @@
 
 class SettingsView: public gui::View{
 
-    gui::Label sizeSetterLabel;
     gui::VerticalLayout _vl;
 
     mu::IAppProperties *props;
@@ -30,8 +29,7 @@ public:
         _lblLang(tr("Laungage: ")),
         layout(1,2),
         props(getAppProperties()),
-        _vl(2),
-        sizeSetterLabel(""),
+        _vl(1),
         langs(getSupportedLanguages())
     {
         
@@ -46,15 +44,17 @@ public:
             }
         }
 
-
-        width = std::max(width, langCombo.getWidthToFitLongestItem());
+        gui::CoordType w = langCombo.getWidthToFitLongestItem();
+        langCombo.setSizeLimits(w, gui::Control::Limit::Fixed);
+        width = std::max(width, w);
 
         gui::GridComposer gc(layout);
         gc.appendRow(_lblLang) << langCombo;
 
 
-        sizeSetterLabel.setSize({width, 0});
-        _vl << sizeSetterLabel << layout;
+        _vl << layout;
+
+        setSizeLimits(500, gui::Control::Limit::Fixed); //pokvareno
         setLayout(&_vl);
     }
 

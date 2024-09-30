@@ -1,7 +1,8 @@
 cmake_minimum_required(VERSION 3.18)
 
-
 set(SOLUTION_NAME modelMaker) #Unijeti naziv solution-a
+
+
 
 #BEGIN dio koji ide u sve solutions
 project(${SOLUTION_NAME})
@@ -18,6 +19,7 @@ include(${WORK_ROOT}/DevEnv/natGUI.cmake)
 
 file(GLOB SOURCES  ${CMAKE_CURRENT_LIST_DIR}/src/*.cpp)
 file(GLOB HEADERS  ${CMAKE_CURRENT_LIST_DIR}/src/*.h)
+
 
 file(GLOB SOURCES_GUI  ${CMAKE_CURRENT_LIST_DIR}/src/guiEditor/*.cpp)
 file(GLOB HEADERS_GUI  ${CMAKE_CURRENT_LIST_DIR}/src/guiEditor/*.h)
