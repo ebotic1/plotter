@@ -4,16 +4,22 @@
 #include "guiEditor/view.h"
 #include "textEditor/View.h"
 
+void MainWindow::simulate()
+{
+    if(_tabView.getNumberOfViews() == 0)
+        return;
 
- 
-
+    double startTime, endTime, stepTime;
+    _toolBar.getStartStopTime(startTime, endTime, stepTime);
+    ((BaseViewForTab*)_tabView.getCurrentView())->simulate(startTime, endTime, stepTime);
+}
 
 MainWindow::MainWindow()
     : gui::Window(gui::Geometry(100, 10, 1100, 800)),
-    _tabView(gui::TabHeader::Type::Dynamic, 1,10),
-    textEditorIcon(":txtIcon"),
-    guiEditorIcon(":guiIcon"),
-    _switcherView(2)
+      _tabView(gui::TabHeader::Type::Dynamic, 5, 20),
+      textEditorIcon(":txtIcon"),
+      guiEditorIcon(":guiIcon"),
+      _switcherView(2)
 {
     setTitle("Model Maker");
     _mainMenuBar.setAsMain(this);
@@ -49,12 +55,30 @@ void MainWindow::showStartScreen(bool show)
     }
 }
 
+void MainWindow::changeTabName(const td::String &name)
+{
+    //promijeniti naziv trenutnog taba
+}
 
 bool MainWindow::onActionItem(gui::ActionItemDescriptor& aiDesc)
 {
+    int menuID = aiDesc._menuID;
 
+    if(menuID == toolBarID){ //ako je izvor toolbar
+
+        auto action = toolBarActionIDs(aiDesc._actionItemID);
+
+        if(action == toolBarActionIDs::Simulate){
+            simulate();
+            return true;
+        }
+
+        return false;
+    }
+
+    //izvor mora biti menu bar ili poziv preko global events
     menuBarActionIDs action = (menuBarActionIDs) aiDesc._actionItemID;
-    subMenuIDs menuID = (subMenuIDs) aiDesc._firstSubmenuID;
+    subMenuIDs subMenuID = (subMenuIDs) aiDesc._firstSubmenuID;
 
     if(action == menuBarActionIDs::Settings){
         auto settings = new settingsDialog(this);
@@ -66,16 +90,28 @@ bool MainWindow::onActionItem(gui::ActionItemDescriptor& aiDesc)
     
 
 
-    if(action == menuBarActionIDs::EmptyModel && menuID == subMenuIDs::subMenuNewGraphical){
+    if(action == menuBarActionIDs::EmptyModel && subMenuID == subMenuIDs::subMenuNewGraphical){
         showStartScreen(false);
-        _tabView.addView(new GraphicalEditorView, "New View", &guiEditorIcon);
+        _tabView.addView(new GraphicalEditorView, tr("newGraphTab"), &guiEditorIcon);
+        return true;
     }
 
 
-    if(action == menuBarActionIDs::EmptyModel && menuID == subMenuIDs::subMenuNewText){
+    if(action == menuBarActionIDs::EmptyModel && subMenuID == subMenuIDs::subMenuNewText){
         showStartScreen(false);
-        _tabView.addView(new TextEditorView, "New View", &textEditorIcon);
+        _tabView.addView(new TextEditorView, tr("newTextTab"), &textEditorIcon);
+        return true;
     }
+
+    if(action == menuBarActionIDs::Simulate){
+        simulate();
+        return true;
+    }
+
+    if(action == menuBarActionIDs::OpenFromFile && subMenuID == subMenuIDs::subMenuNewModel){
+
+    }
+
 
     /*
     if (aiDesc._menuID == 1 && aiDesc._actionItemID == 4) {//open

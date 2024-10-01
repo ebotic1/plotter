@@ -2,7 +2,7 @@
 <DevRes>
 	<Translations>
 		<Res id="start" tr="Start" />
-		<Res id="startToolTip" tr="start simulation" />
+		<Res id="startToolTip" tr="Start simulation" />
 		<Res id="startTime" tr=" Start time: " />
 		<Res id="endTime" tr=" End time: " />
 		<Res id="&lt;Ctrl&gt;," tr="&lt;Ctrl&gt;," />
@@ -25,5 +25,17 @@
 		<Res id="emptyModel" tr="Empty model" />
 		<Res id="NumberOfInputs" tr="Number of inputs:" />
 		<Res id="NumberOFInputTooltip" tr="Number of inputs for this block" />
+		<Res id="newGraphTab" tr="New Graph Editor" />
+		<Res id="newTextTab" tr="New Equation Editor" />
+		<Res id="error" tr="Error" />
+		<Res id="info" tr="Info" />
+		<Res id="warning" tr="Warning" />
+		<Res id="app" tr="Application" />
+		<Res id="openFromFile" tr="Open file" />
+		<Res id="stepTime" tr="Step: " />
+		<Res id="embedGraph" tr="Embed plot in window" />
+		<Res id="unsupportedType" tr="Unsupported model type &quot;" />
+		<Res id="noTypeFound" tr="No type attribute found, assuiming &quot;DAE&quot;" />
+		<Res id="supportedModelsInfo" tr="Inside &quot;Model:&quot; tag use attribute &quot;type =&quot; DAE/ODE/WLS" />
 	</Translations>
 </DevRes>

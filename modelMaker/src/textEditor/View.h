@@ -5,22 +5,18 @@
 #include "../baseView.h"
 #include "codeEdit.h"
 #include "logView.h"
+#include "../../../EquationToXML/inc/nodes.h"
 
 
 class EquationView : public gui::View {
 
 	gui::TextEdit textCodeNumbers;
-	CodeEdit textMain;
 	gui::HorizontalLayout _hl;
 
 public:
+	CodeEdit textMain;
 
-	EquationView() :
-		_hl(1)
-	{
-		_hl << textMain;
-		setLayout(&_hl);
-	}
+	EquationView();
 
 };
 
@@ -32,8 +28,12 @@ class TextEditorView : public BaseViewForTab {
 	EquationView equationView;
 	LogView logView;
 
+	void getModelNode(modelNode &model);
+
+
 public:
 
 	TextEditorView();
+	void simulate(double startTime, double endTime, double stepTime);
 	
 };

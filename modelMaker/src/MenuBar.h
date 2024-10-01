@@ -2,8 +2,7 @@
 #include <gui/MenuBar.h>
 #include <gui/MenuItem.h>
 
-enum menuBarActionIDs{New=1, Save, SaveAs, Open, Export, Settings, EmptyModel};
-
+enum menuBarActionIDs{New=1, Simulate, Save, SaveAs, Open, Export, Settings, EmptyModel, OpenFromFile};
 
 enum subMenuIDs{subMenuModel=1, subMenuNewModel, subMenuSettings, subMenuNewText, subMenuNewGraphical};
 
@@ -14,8 +13,8 @@ class MenuBar : public gui::MenuBar {
 public:
 	MenuBar() : gui::MenuBar(3), 
 	model(subMenuModel, tr("Model"), 3),
-	newModel(subMenuNewModel, tr("NewTab"), 2),
-	settings(subMenuSettings, tr("settingsShort"), 1),
+	newModel(subMenuNewModel, tr("NewTab"), 3),
+	settings(subMenuSettings, tr("app"), 2),
 	modelText(subMenuNewText, tr("TextualEditor"), 1),
 	modelGraphical(subMenuNewGraphical, tr("GraphicalEditor"), 1)
 	{
@@ -28,6 +27,7 @@ public:
 		{
 			auto &items = settings.getItems();
 			items[0].initAsActionItem(tr("settingsShort"), Settings, tr("<Ctrl>,").c_str());
+			items[1].initAsActionItem(tr("startToolTip"), Simulate, "<F5>");
 		}
 
 		{
@@ -43,8 +43,9 @@ public:
 
 		{
 			auto &items = newModel.getItems();
-			items[0] = modelText;
-			items[1] = modelGraphical;
+			items[0].initAsActionItem(tr("openFromFile"), OpenFromFile, "<Ctrl>o");
+			items[1] = modelText;
+			items[2] = modelGraphical;
 		}
 		
 

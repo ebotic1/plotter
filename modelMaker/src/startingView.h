@@ -93,7 +93,7 @@ public:
         gui::ViewScroller(gui::ViewScroller::Type::ScrollAndAutoHide, gui::ViewScroller::Type::ScrollAndAutoHide),
         layoutMain(5), layoutHorizontal(2), layoutGraph(4), layoutText(4),
         buttons{
-            {tr("openFromFile"), 0, 0}, 
+            {tr("openFromFile"), subMenuNewModel, menuBarActionIDs::OpenFromFile}, 
             {tr("emptyModel"), subMenuNewGraphical , menuBarActionIDs::EmptyModel}, 
             {"\tDAE\t", subMenuNewGraphical, 0},
             {tr("emptyModel"), subMenuNewText, menuBarActionIDs::EmptyModel},

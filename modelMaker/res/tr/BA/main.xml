@@ -2,7 +2,7 @@
 <DevRes>
 	<Translations>
 		<Res id="start" tr="Pokreni" />
-		<Res id="startToolTip" tr="pokreni simulaciju" />
+		<Res id="startToolTip" tr="Pokreni simulaciju" />
 		<Res id="startTime" tr=" Početno vrijeme: " />
 		<Res id="endTime" tr=" Krajnje vrijeme: " />
 		<Res id="&lt;Ctrl&gt;," tr="&lt;Ctrl&gt;p" />
@@ -25,5 +25,17 @@
 		<Res id="emptyModel" tr="Prazan model" />
 		<Res id="NumberOfInputs" tr="Broj ulaza:" />
 		<Res id="NumberOFInputTooltip" tr="Broj ulaza za ovaj blok" />
+		<Res id="newGraphTab" tr="Novi Grafički Editor" />
+		<Res id="newTextTab" tr="Novi Editor Jednačina" />
+		<Res id="error" tr="Greška" />
+		<Res id="info" tr="Informacija" />
+		<Res id="warning" tr="Upozorenje" />
+		<Res id="app" tr="Aplikacija" />
+		<Res id="openFromFile" tr="Otvori iz fajla" />
+		<Res id="stepTime" tr="Korak: " />
+		<Res id="embedGraph" tr="Prikaži graf unutar prozora" />
+		<Res id="unsupportedType" tr="Nepodržan tip modela &quot;" />
+		<Res id="noTypeFound" tr="Nije pronaden tip modela, pretpostavlja se &quot;DAE&quot;" />
+		<Res id="supportedModelsInfo" tr="Unutar tag-a &quot;Model:&quot; postaviti atribut &quot;type =&quot; DAE/ODE/WLS" />
 	</Translations>
 </DevRes>

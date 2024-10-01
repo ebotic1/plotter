@@ -1,9 +1,10 @@
 #include "codeEdit.h"
+#include "../ToolBar.h"
 #include <regex>
 
 
-CodeEdit::CodeEdit() :
-	gui::TextEdit(gui::TextEdit::HorizontalScroll::Yes, gui::TextEdit::Events::Send)
+
+CodeEdit::CodeEdit() : gui::TextEdit(gui::TextEdit::HorizontalScroll::Yes, gui::TextEdit::Events::Send)
 {
 	
 
@@ -39,5 +40,4 @@ void CodeEdit::processText(const gui::Range& r)
 	
 
 }
-
 

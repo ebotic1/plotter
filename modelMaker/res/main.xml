@@ -5,7 +5,5 @@
 		<Res id="txtIcon" path=":images/start.png"/>
 		<Res id="guiIcon" path=":images/start.png"/>
 	</Images>
-	<Symbols>
 
-	</Symbols>
 </DevRes>

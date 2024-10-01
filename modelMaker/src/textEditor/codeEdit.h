@@ -5,8 +5,6 @@
 
 class CodeEdit : public gui::TextEdit {
 
-
-
 public:
 
 	CodeEdit();

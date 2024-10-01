@@ -10,11 +10,16 @@
 
 MainWindow* mainWindow = nullptr;
 
-bool GlobalEvents::sendActionItem(gui::ActionItemDescriptor& a)
+MainWindow *GlobalEvents::getMainWindowPtr()
 {
-	if (mainWindow == nullptr)
-		return false;
-	return mainWindow->onActionItem(a);
+	if(mainWindow == nullptr)
+		throw "mainWindow was nullptr";
+    return mainWindow;
+}
+
+bool GlobalEvents::sendActionItem(gui::ActionItemDescriptor &a)
+{
+	return GlobalEvents::getMainWindowPtr()->onActionItem(a);
 }
 
 

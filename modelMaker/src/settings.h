@@ -7,6 +7,7 @@
 #include <mu/IAppProperties.h>
 #include <gui/Application.h>
 #include <gui/VerticalLayout.h>
+#include <gui/CheckBox.h>
 
 class SettingsView: public gui::View{
 
@@ -20,6 +21,9 @@ class SettingsView: public gui::View{
     int currentLangIndex = -1;
     gui::Frame *mainWindow;
 
+    gui::CheckBox _chBoxEmbed;
+    bool embededCurrent;
+
     double width = 270;
 
 public:
@@ -29,7 +33,9 @@ public:
         _lblLang(tr("Laungage: ")),
         layout(1,2),
         props(getAppProperties()),
-        _vl(1),
+        _vl(2),
+        _chBoxEmbed(tr("embedGraph")),
+        embededCurrent(props->getKeyValue("EmbedGraph", "False").strVal().cCompare("False") != 0),
         langs(getSupportedLanguages())
     {
         
@@ -46,29 +52,47 @@ public:
 
         gui::CoordType w = langCombo.getWidthToFitLongestItem();
         langCombo.setSizeLimits(w, gui::Control::Limit::Fixed);
+
+        _chBoxEmbed.setChecked(embededCurrent, false);
+        _chBoxEmbed.onClick([this](){props->setKeyValue("EmbedGraph", _chBoxEmbed.isChecked());});
+
+        props->setKeyValue("EmbedGraph", 5);
+
+        auto a = props->getKeyValue("EmbedGraph", "False").strVal(); //dodaj checkboy za step time
+
         width = std::max(width, w);
 
         gui::GridComposer gc(layout);
         gc.appendRow(_lblLang) << langCombo;
 
 
-        _vl << layout;
+        _vl << layout << _chBoxEmbed;
 
-        setSizeLimits(500, gui::Control::Limit::Fixed); //pokvareno
+        setSizeLimits(width, gui::Control::Limit::Fixed); //pokvareno
         setLayout(&_vl);
     }
 
     ~SettingsView(){
+        bool restartRequired = false;
         int selectedLang = langCombo.getSelectedIndex();
         if(selectedLang != currentLangIndex){
             props->setKeyValue("Laungage", langs[selectedLang].getExtension());
-            mainWindow->showYesNoQuestionAsync(tr("RestartRequired"), tr("RestartRequiredInfo"), tr("Restart"), tr("DoNoRestart"), [this] (gui::Alert::Answer answer) {
-                if (answer == gui::Alert::Answer::Yes)
-                {
-                    getApplication()->restart();
-                }
-            });
+            restartRequired = true;
         }
+
+        if(_chBoxEmbed.getValue() != embededCurrent){
+
+            restartRequired = true;
+        }
+
+        if(restartRequired)
+            mainWindow->showYesNoQuestionAsync(tr("RestartRequired"), tr("RestartRequiredInfo"), tr("Restart"), tr("DoNoRestart"), [this] (gui::Alert::Answer answer) {
+            if (answer == gui::Alert::Answer::Yes)
+            {
+                getApplication()->restart();
+            }
+            });
+
     }
 
 };

@@ -1,3 +1,4 @@
+#pragma once
 #include "settings.h"
 #include <gui/Dialog.h>
 #include <gui/Application.h>
