@@ -9,14 +9,12 @@ void MainWindow::simulate()
     if(_tabView.getNumberOfViews() == 0)
         return;
 
-    double startTime, endTime, stepTime;
-    _toolBar.getStartStopTime(startTime, endTime, stepTime);
-    ((BaseViewForTab*)_tabView.getCurrentView())->simulate(startTime, endTime, stepTime);
+    simulate((ViewForTab*)_tabView.getCurrentView());
 }
 
 MainWindow::MainWindow()
     : gui::Window(gui::Geometry(100, 10, 1100, 800)),
-      _tabView(gui::TabHeader::Type::Dynamic, 5, 20),
+      _tabView(gui::TabHeader::Type::Dynamic, 5, 25),
       textEditorIcon(":txtIcon"),
       guiEditorIcon(":guiIcon"),
       _switcherView(2)
@@ -92,14 +90,14 @@ bool MainWindow::onActionItem(gui::ActionItemDescriptor& aiDesc)
 
     if(action == menuBarActionIDs::EmptyModel && subMenuID == subMenuIDs::subMenuNewGraphical){
         showStartScreen(false);
-        _tabView.addView(new GraphicalEditorView, tr("newGraphTab"), &guiEditorIcon);
+        _tabView.addView(new ViewForTab(new GraphicalEditorView), tr("newGraphTab"), &guiEditorIcon);
         return true;
     }
 
 
     if(action == menuBarActionIDs::EmptyModel && subMenuID == subMenuIDs::subMenuNewText){
         showStartScreen(false);
-        _tabView.addView(new TextEditorView, tr("newTextTab"), &textEditorIcon);
+        _tabView.addView(new ViewForTab(new TextEditorView), tr("newTextTab"), &textEditorIcon);
         return true;
     }
 

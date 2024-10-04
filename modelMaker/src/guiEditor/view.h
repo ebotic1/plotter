@@ -6,7 +6,7 @@
 #include "propertySwitcher.h"
 #include "../baseView.h"
 
-class GraphicalEditorView: public BaseViewForTab {
+class GraphicalEditorView: public ViewForTab::BaseClass {
 	gui::SplitterLayout spliter;
 	properties props;
 

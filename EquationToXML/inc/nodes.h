@@ -21,12 +21,21 @@ protected:
 	virtual bool nodeAction(const td::String& command, baseNode*& newChild) = 0;
 	td::String comment;
 	size_t addLine(std::vector<std::pair<td::String, td::String>>& lines, size_t startLine = 0);
+	void clear();
 
 public:
 	std::vector<baseNode*> nodes;
 	std::map<td::String, td::String> attribs;
 
-	virtual void printNode(xml::Writer& w);
+	baseNode();
+	baseNode(baseNode&&) = delete;
+	baseNode(const baseNode& node);
+	virtual baseNode* createCopy() = 0;
+	baseNode &operator =(baseNode&) = delete;
+
+	void printNodeToString(td::String& string) const;
+	void printNode(const td::String &path) const;
+	virtual void printNode(xml::Writer& w) const;
 	inline td::String& operator[](td::String attrib) {
 		return attribs[attrib];
 	}
@@ -34,12 +43,11 @@ public:
 	void addComment(td::String&& comment);
 
 	void processCommands(const td::String& text);
-	virtual inline const char* getName() = 0;
+	virtual inline const char* getName() const = 0;
 
 	virtual void setAttrib(const td::String& name, const td::String& val) {
 		attribs[name] = val;
 	}
-
 
 	~baseNode() {
 		for (baseNode * var : nodes) {
@@ -56,9 +64,13 @@ class modelNode : public baseNode {
 public:
 	static const td::String attributeKeywords[];
 	modelNode() {};
+	modelNode(const modelNode& model);
 	modelNode(td::String command);
 	bool nodeAction(const td::String& command, baseNode*& newChild) override;
-	inline const char* getName() override {
+	modelNode& operator+(const modelNode& node);
+	void clear();
+	baseNode* createCopy() override;
+	inline const char* getName() const override {
 		return "Model";
 	}
 

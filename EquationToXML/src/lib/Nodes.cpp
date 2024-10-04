@@ -13,12 +13,18 @@ class nameNode : public baseNode {
 public:
 	nameNode(const td::String &name) : name(name) {}
 	nameNode(td::String &&name) : name(name) {}
-
+	nameNode(const nameNode& node) :
+		baseNode(node) {
+		name = node.name;
+	}
+	baseNode* createCopy() override {
+		return new nameNode(*this);
+	}
 	bool nodeAction(const td::String& command, baseNode*& newChild) override {
 		return false;
 	}
 
-	inline const char* getName() override{
+	inline const char* getName() const override{
 		return name.c_str();
 	}
 };
@@ -31,8 +37,15 @@ private:
 	type tip;
 public:
 	conditionNode(type);
+	conditionNode(const conditionNode& node):
+		baseNode(node){
+		tip = node.tip;
+	}
+	baseNode* createCopy() override {
+		return new conditionNode(*this);
+	}
 	virtual bool nodeAction(const td::String& command, baseNode*& newChild) override;
-	inline const char* getName() override {
+	inline const char* getName() const override {
 		return (tip == type::thenn) ? "Then" : "Else";
 	}
 };
@@ -43,6 +56,9 @@ class singleEquation : public baseNode {
 	bool added = false;
 	bool consumeEnd = false;
 public:
+	baseNode* createCopy() override {
+		return new singleEquation(*this);
+	}
 	virtual bool nodeAction(const td::String& command, baseNode*& newChild) override {
 		if (command.beginsWithCI("then"))
 			return true;
@@ -90,7 +106,7 @@ public:
 
 		return true;
 	}
-	inline const char* getName() override {
+	inline const char* getName() const override {
 		return "Eq";
 	}
 };
@@ -103,6 +119,11 @@ template<typename containerName, typename nodeType>
 class containerNode : public baseNode {
 	bool done = false;
 public:
+	containerNode(){}
+	containerNode(const containerNode<containerName, nodeType>& node) = default;
+	baseNode* createCopy() override {
+		return new containerNode<containerName, nodeType>(*this);
+	}
 	bool nodeAction(const td::String& command, baseNode*& newChild) override{
 		if (done) return false;
 
@@ -127,7 +148,7 @@ public:
 
 	}
 	
-	inline const char* getName() override {
+	inline const char* getName() const override {
 		return containerName::val;
 	}
 
@@ -137,6 +158,9 @@ template<typename variableName>
 class variableNode : public baseNode {
 	bool added = false;
 public:
+	virtual baseNode* createCopy() {
+		return new variableNode<variableName>();
+	}
 	bool nodeAction(const td::String& command, baseNode*& newChild) override {
 		if (added) return false;
 		added = true;
@@ -153,7 +177,7 @@ public:
 		return true;
 	}
 
-	inline const char* getName() override {
+	inline const char* getName() const override {
 		return variableName::val;
 	}
 };
@@ -228,6 +252,11 @@ typedef containerNode<TfName, singleEquation> TFsNode;
 
 class initNode : public baseNode {
 public:
+	initNode(){}
+	initNode(const initNode& node) = default;
+	baseNode* createCopy() override {
+		return new initNode(*this);
+	}
 	virtual bool nodeAction(const td::String& command, baseNode*& newChild) override {
 
 		if (command.cCompareNoCase("model:") == 0) {
@@ -238,11 +267,17 @@ public:
 		
 		return false;
 	}
-	inline const char* getName() override {
+	inline const char* getName() const override {
 		return "Init";
 	}
 };
 
+
+modelNode::modelNode(const modelNode& model):
+	baseNode(model)
+{
+	done = false;
+}
 
 modelNode::modelNode(td::String text){
 	processCommands(text);
@@ -290,6 +325,33 @@ bool modelNode::nodeAction(const td::String& command, baseNode*& newChild){
 	return false;
 }
 
+modelNode& modelNode::operator+(const modelNode& node)
+{
+	bool found;
+	for (const auto& n : node.nodes) {
+		found = false;
+		for (const auto& thisNode : nodes)
+			if (std::strcmp(thisNode->getName(), n->getName()) == 0) {
+				found = true;
+				for (const auto& child : n->nodes)
+					thisNode->nodes.push_back(child);
+			}
+			
+		if (!found)
+			nodes.push_back(n);
+	}
+	return *this;
+}
+
+void modelNode::clear(){
+	baseNode::clear();
+	done = false;
+}
+
+baseNode* modelNode::createCopy()
+{
+	return new modelNode(*this);
+}
 
 
 void generateXML(const td::String& equations, const td::String& output_path) {

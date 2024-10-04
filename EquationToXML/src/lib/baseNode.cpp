@@ -7,7 +7,24 @@
 
 const td::String baseNode::attributeKeywords[] = { "type", "domain", "name", "eps", "dT", "signal", "out", "desc", "method"};
 
-void baseNode::printNode(xml::Writer& w) {
+
+
+void baseNode::printNodeToString(td::String& string) const{
+	xml::Writer w;
+	w.startDocument();
+	printNode(w);
+	w.getString(string);
+}
+
+void baseNode::printNode(const td::String& path) const{
+	xml::Writer w;
+	w.open(path);
+	w.startDocument();
+	printNode(w);
+	w.close();
+}
+
+void baseNode::printNode(xml::Writer& w) const{
 	w.startNode(this->getName());
 	for (auto & at : this->attribs)
 		w.attribute(at.first.c_str(), at.second);
@@ -155,3 +172,28 @@ void baseNode::processCommands(const td::String& text) {
 
 
 
+void baseNode::clear()
+{
+	for (const auto& node : nodes)
+		delete node;
+	nodes.clear();
+	attribs.clear();
+	comment.clean();
+	lastChlid = this;
+	parent = nullptr;
+}
+
+
+baseNode::baseNode()
+{
+}
+
+baseNode::baseNode(const baseNode& node)
+{
+	comment = node.comment;
+	lastChlid = node.lastChlid;
+	parent = node.parent;
+	attribs = node.attribs;
+	for (const auto& node : nodes)
+		nodes.emplace_back(node->createCopy());
+}

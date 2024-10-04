@@ -8,9 +8,9 @@
 #include "MenuBar.h"
 #include "startingView.h"
 #include "ToolBar.h"
+#include "../../EquationToXML/inc/nodes.h"
 
-
-
+class ViewForTab;
 
 class MainWindow : public gui::Window
 {
@@ -32,6 +32,8 @@ public:
     bool onActionItem(gui::ActionItemDescriptor& aiDesc) override;
     void showStartScreen(bool show);
     void changeTabName(const td::String &name);
+    void simulate(ViewForTab* tab);
+    bool getModelFromFile(modelNode &model);
 
     ~MainWindow();
 };

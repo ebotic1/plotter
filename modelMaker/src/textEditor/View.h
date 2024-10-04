@@ -1,17 +1,17 @@
 #pragma once
-#include "gui/Label.h"
-#include "../../../Canvas/inc/canvas.h"
-#include "gui/SplitterLayout.h"
-#include "../baseView.h"
 #include "codeEdit.h"
-#include "logView.h"
 #include "../../../EquationToXML/inc/nodes.h"
+#include <gui/HorizontalLayout.h>
+#include "../baseView.h"
 
+
+class TextEditorView;
 
 class EquationView : public gui::View {
 
 	gui::TextEdit textCodeNumbers;
 	gui::HorizontalLayout _hl;
+
 
 public:
 	CodeEdit textMain;
@@ -21,19 +21,16 @@ public:
 };
 
 
-class TextEditorView : public BaseViewForTab {
-
-	gui::SplitterLayout splitter;
+class TextEditorView : public ViewForTab::BaseClass {
 
 	EquationView equationView;
-	LogView logView;
-
-	void getModelNode(modelNode &model);
-
+	gui::HorizontalLayout _hl;
 
 public:
 
-	TextEditorView();
-	void simulate(double startTime, double endTime, double stepTime);
 	
+
+	TextEditorView();
+	void getModelNode(modelNode& model);
+
 };

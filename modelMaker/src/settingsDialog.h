@@ -1,5 +1,5 @@
 #pragma once
-#include "settings.h"
+#include "AppSettings.h"
 #include <gui/Dialog.h>
 #include <gui/Application.h>
 
