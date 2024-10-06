@@ -4,7 +4,7 @@
 
 
 static void setUpLineEditSize(gui::NumericEdit& edit, const td::String &startValue) {
-	edit.setSizeLimits(50, gui::Control::Limit::UseAsMin);
+	edit.setSizeLimits(55, gui::Control::Limit::UseAsMin);
 	edit.setText(startValue);
 }
 
@@ -13,19 +13,19 @@ ModelSettings::ModelSettings() :
 	_gridLayout(4,2),
 	_lblStart(tr("startTime")), _lblEnd(tr("endTime")), _lblStep(tr("stepTime")),
 	_lblMaxIter(tr("maxIter")), _lblPreproc(tr("preproc")),
-	startTime(td::DataType::decimal2),
-	endTime(td::DataType::decimal2),
-	stepTime(td::DataType::decimal3),
-	maxIter(td::DataType::uint4),
-	preprocesCommands(gui::TextEdit::HorizontalScroll::Yes)
+	startTime(td::DataType::decimal2, gui::LineEdit::Messages::Send),
+	endTime(td::DataType::decimal2, gui::LineEdit::Messages::Send),
+	stepTime(td::DataType::decimal3, gui::LineEdit::Messages::Send),
+	maxIter(td::DataType::uint4, gui::LineEdit::Messages::Send),
+	preprocesCommands(gui::TextEdit::HorizontalScroll::Yes, gui::TextEdit::Events::Send)
 {
 
-	setUpLineEditSize(startTime, "0.00");
-	setUpLineEditSize(endTime, "10.00");
-	setUpLineEditSize(stepTime, "0.01");
+	setUpLineEditSize(startTime, "0,00");
+	setUpLineEditSize(endTime, "10,00");
+	setUpLineEditSize(stepTime, "0,01");
 	setUpLineEditSize(maxIter, "1");
 
-
+	preprocesCommands.onChangedSelection([this](){++version;});
 
 	gui::GridComposer grid(_gridLayout);
 	grid.appendRow(_lblStart) << startTime;
@@ -45,9 +45,12 @@ ModelSettings::ModelSettings() :
 	setLayout(&_vl);
 }
 
+
+
 void ModelSettings::getDependencies(std::vector<DependencyDesc>& desc)
 {
-	std::regex pattern(R"(^import\s+(\w+)(\s+as\s+(\w+))?)");
+	desc.clear();
+	std::regex pattern(R"(^import\s+(\w+)(\s+as\s+(\w))?)");
 	std::cmatch match;
 
 	const auto& cmnds = preprocesCommands.getText();
@@ -60,7 +63,8 @@ void ModelSettings::getDependencies(std::vector<DependencyDesc>& desc)
 
 void ModelSettings::getFunctions(std::vector<FunctionDesc>& desc)
 {
-	std::regex pattern(R"((function|dataset)\s+(\w+)\s+of\s+(\w+)\s+versus\s+(\w+))");
+	desc.clear();
+	std::regex pattern(R"((function|dataset)\s+(\w+)\s+of\s+(\w)\s+versus\s+(\w))");
 	std::cmatch match;
 
 	const auto& cmnds = preprocesCommands.getText();
@@ -89,4 +93,35 @@ void ModelSettings::getStartStopTime(double& startTime, double& endTime, double&
 	this->maxIter.getValue(temp);
 	//maxIterations = temp.u4Val();
 
+}
+
+unsigned int ModelSettings::getVersion()
+{
+    return version;
+}
+
+void ModelSettings::loadFromString(const td::String &settingsString)
+{
+	
+}
+
+const td::String ModelSettings::getString()
+{
+    return td::String();
+}
+
+bool ModelSettings::onChangedValue(gui::Slider *pSlider){
+	++version;
+    return true;
+}
+
+bool ModelSettings::onFinishEdit(gui::LineEdit *pCtrl){
+	++version;
+    return true;
+}
+
+bool ModelSettings::onClick(gui::CheckBox *pBtn)
+{
+	++version;
+    return true;
 }

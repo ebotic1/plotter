@@ -12,6 +12,17 @@
 
 class ViewForTab;
 
+
+struct fileModels{
+    td::String path;
+    modelNode model;
+    std::chrono::nanoseconds timeModified;
+    fileModels(const td::String &path):
+        timeModified(0),
+        path(path)
+        {}
+};
+
 class MainWindow : public gui::Window
 {
 private:
@@ -24,16 +35,20 @@ private:
 
     gui::Image textEditorIcon, guiEditorIcon;
 
+    static std::vector<fileModels> loadedModels;
+
     void simulate();
 
 public:
     MainWindow();
 
+    using exceptionCantAccessFile = td::String;
+    using exceptionCantFindTab = td::String;
     bool onActionItem(gui::ActionItemDescriptor& aiDesc) override;
     void showStartScreen(bool show);
-    void changeTabName(const td::String &name);
+    void changeTabName(const td::String &name, ViewForTab *tab);
     void simulate(ViewForTab* tab);
-    bool getModelFromFile(modelNode &model);
+    const modelNode &getModelFromTabOrFile(const td::String &modelNameOrPath);
 
     ~MainWindow();
 };

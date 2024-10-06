@@ -2,10 +2,12 @@
 #include "./../../inc/nodes.h"
 #include <vector>
 #include <cnt/PushBackVector.h>
-#include "td/String.h"
+#include <td/String.h>
 #include "xml/Writer.h"
-#include<map>
+#include <map>
 #include <utility>
+#include <xml/DOMParser.h> 
+#include <xml/SAXParser.h> 
 
 
 class nameNode : public baseNode {
@@ -159,7 +161,7 @@ class variableNode : public baseNode {
 	bool added = false;
 public:
 	virtual baseNode* createCopy() {
-		return new variableNode<variableName>();
+		return new variableNode<variableName>(*this);
 	}
 	bool nodeAction(const td::String& command, baseNode*& newChild) override {
 		if (added) return false;
@@ -276,11 +278,19 @@ public:
 modelNode::modelNode(const modelNode& model):
 	baseNode(model)
 {
-	done = false;
+	done = model.done;
 }
 
-modelNode::modelNode(td::String text){
-	processCommands(text);
+modelNode &modelNode::operator=(const modelNode &model)
+{
+    this->~modelNode();
+	new(this) modelNode(model);
+	return *this;
+}
+
+modelNode::modelNode(td::String text)
+{
+    processCommands(text);
 }
 
 bool modelNode::nodeAction(const td::String& command, baseNode*& newChild){
@@ -325,10 +335,15 @@ bool modelNode::nodeAction(const td::String& command, baseNode*& newChild){
 	return false;
 }
 
-modelNode& modelNode::operator+(const modelNode& node)
+modelNode &modelNode::addWtih(const modelNode &model, const td::String &alias)
 {
-	bool found;
-	for (const auto& n : node.nodes) {
+
+	if(!alias.isNull()){
+		
+	}
+
+    bool found;
+	for (const auto& n : model.nodes) {
 		found = false;
 		for (const auto& thisNode : nodes)
 			if (std::strcmp(thisNode->getName(), n->getName()) == 0) {
@@ -348,7 +363,83 @@ void modelNode::clear(){
 	done = false;
 }
 
-baseNode* modelNode::createCopy()
+
+
+static void addNodeFromXML(xml::FileParser::node_iterator &it, baseNode &node){
+	td::String name;
+
+	while(!it.end()){
+		name = it->getName();
+		if(name.cCompare("Model") == 0)
+			node.nodes.emplace_back(new modelNode);
+		else if(name.cCompare("Vars") == 0)
+			node.nodes.emplace_back(new varsNode);
+		else if(name.cCompare("Var") == 0)
+			node.nodes.emplace_back(new variableNode<varName>);
+		else if(name.cCompare("Params") == 0)
+			node.nodes.emplace_back(new paramsNode);
+		else if(name.cCompare("Param") == 0)
+			node.nodes.emplace_back(new variableNode<paramName>);
+		else if(name.cCompare("NLEqs") == 0)
+			node.nodes.emplace_back(new NLEquationsNode);
+		else if(name.cCompare("Eq") == 0)
+			node.nodes.emplace_back(new singleEquation);
+		else if(name.cCompare("Then") == 0)
+			node.nodes.emplace_back(new conditionNode(conditionNode::type::thenn));
+		else if(name.cCompare("Else") == 0)
+			node.nodes.emplace_back(new conditionNode(conditionNode::type::elsee));
+		else if(name.cCompare("Group") == 0)
+			node.nodes.emplace_back(new containerNode<GroupName, singleEquation>);
+		else if(name.cCompare("ODEqs") == 0)
+			node.nodes.emplace_back(new ODEquationsNode);
+		else if(name.cCompare("Init") == 0)
+			node.nodes.emplace_back(new initNode);
+		else if(name.cCompare("PostProc") == 0)
+			node.nodes.emplace_back(new postProcNode);
+		else if(name.cCompare("MeasEqs") == 0)
+			node.nodes.emplace_back(new MeasEqNode);
+		else if(name.cCompare("Limits") == 0)
+			node.nodes.emplace_back(new LimitNode);
+		else if(name.cCompare("ECs") == 0)
+			node.nodes.emplace_back(new ECsNode);
+		else if(name.cCompare("TFs") == 0)
+			node.nodes.emplace_back(new TFsNode);
+		else{
+			node.nodes.emplace_back(new nameNode(name));
+			throw (modelNode::exceptionInvalidBlockName) name;
+		}
+
+		for(const auto &at : it->attribs)
+			node.nodes.back()->attribs[at.getName()] = at.getValue();
+
+		auto childIter = it.getChildNode();
+		addNodeFromXML(childIter, *node.nodes.back());
+
+		++it;
+	}
+
+}
+
+bool modelNode::readFromFile(const td::String &path)
+{
+    clear();
+	xml::FileParser par;
+	par.parseFile(path);
+	if(!par.isOk())
+		return false;
+	auto root = par.getRootNode();
+	if(root->getName().cCompareNoCase("Model") != 0)
+		return false;
+
+	for(const auto &at : root->attribs)
+		attribs[at.getName()] = at.getValue();
+
+	auto ch = root.getChildNode();
+	addNodeFromXML(ch, *this);
+	return true;
+
+}
+baseNode *modelNode::createCopy()
 {
 	return new modelNode(*this);
 }

@@ -15,6 +15,7 @@ class ModelSettings : public gui::View {
 	gui::NumericEdit startTime, endTime, stepTime, maxIter;
 
 	gui::View paramaterView;
+	unsigned int version = 1;
 
 public:
 
@@ -27,10 +28,17 @@ public:
 	};
 
 public:
-
 	ModelSettings();
 	void getDependencies(std::vector<DependencyDesc> &);
 	void getFunctions(std::vector<FunctionDesc>&);
 	void getStartStopTime(double& startTime, double& endTime, double& stepTime, unsigned int& maxIterations);
+	unsigned int getVersion();
+
+	void loadFromString(const td::String &settingsString);
+	const td::String getString();
+
+	virtual bool onChangedValue(gui::Slider* pSlider) override;
+	virtual bool onFinishEdit(gui::LineEdit* pCtrl) override;
+	virtual bool onClick(gui::CheckBox* pBtn) override;
 
 };

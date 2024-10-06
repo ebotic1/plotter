@@ -49,7 +49,7 @@ public:
 		attribs[name] = val;
 	}
 
-	~baseNode() {
+	virtual ~baseNode() {
 		for (baseNode * var : nodes) {
 			delete var;
 		}
@@ -62,13 +62,17 @@ class modelNode : public baseNode {
 	bool done = false;
 
 public:
+
 	static const td::String attributeKeywords[];
+	using exceptionInvalidBlockName = td::String;
 	modelNode() {};
 	modelNode(const modelNode& model);
+	modelNode &operator =(const modelNode &model);
 	modelNode(td::String command);
 	bool nodeAction(const td::String& command, baseNode*& newChild) override;
-	modelNode& operator+(const modelNode& node);
+	modelNode& addWtih(const modelNode &model, const td::String &alias);
 	void clear();
+	bool readFromFile(const td::String &path);
 	baseNode* createCopy() override;
 	inline const char* getName() const override {
 		return "Model";

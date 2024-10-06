@@ -22,7 +22,7 @@ public:
 			auto &items = model.getItems();
 			items[0].initAsActionItem(tr("Save"), Save, "<Ctrl>s");
 			items[1].initAsActionItem(tr("SaveAs"), SaveAs, "<Ctrl><Alt>s");
-			items[2].initAsActionItem(tr("ExporttoXML"), Export);
+			items[2].initAsActionItem(tr("ExporttoXML"), Export, "<Ctrl>e");
 		}
 		{
 			auto &items = settings.getItems();

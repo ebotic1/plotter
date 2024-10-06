@@ -1,6 +1,8 @@
 #include "baseView.h"
 #include <td/Time.h>
 #include <cnt/StringBuilder.h>
+#include "globalEvents.h"
+#include "mainWindow.h"
 
 LogView::LogView() :
 	_vl(1)
@@ -53,21 +55,45 @@ void LogView::appendLog(const td::String text, LogType type) const
 
 ViewForTab::ViewForTab(BaseClass* tabView):
 	tabView(tabView),
-	_hLayout(2),
-	mainView(gui::SplitterLayout::Orientation::Vertical, gui::SplitterLayout::AuxiliaryCell::Second)
+	mainView(gui::SplitterLayout::Orientation::Horizontal, gui::SplitterLayout::AuxiliaryCell::First),
+	tabAndLogView(gui::SplitterLayout::Orientation::Vertical, gui::SplitterLayout::AuxiliaryCell::Second)
 {
-	mainView.setContent(logView, *tabView);
-	_hLayout << settings << mainView;
+	//tabAndLogView.setContent(logView, *tabView);
+	//mainView.setContent(settings, tabAndLogView);
 
-	setLayout(&_hLayout);
+	auto a = new gui::HorizontalLayout(3);
+	*a << settings << logView << *tabView;
+
+	setLayout(a);
 }
 
-bool ViewForTab::loadFile(const td::String& path){
-	return tabView->openFile(path);
+const LogView &ViewForTab::getLog(){
+    return logView;
+}
+
+const ViewForTab::BaseClass &ViewForTab::getMainView(){
+    return *tabView;
+}
+
+const td::String &ViewForTab::getName(){
+    return name;
+}
+
+void ViewForTab::setName(const td::String &name){
+	this->name = name;
+}
+
+bool ViewForTab::loadFile(const td::String &path)
+{
+    td::String settingsString;
+	bool retVal = tabView->openFile(path, settingsString);
+	if(retVal)
+		settings.loadFromString(settingsString);
+	return retVal;
 }
 
 bool ViewForTab::save(){
-	if (tabView->save(path)) {
+	if (tabView->save(path, settings.getString())) {
 		lastSaved = tabView->getVersion();
 		return true;
 	}
@@ -75,7 +101,7 @@ bool ViewForTab::save(){
 }
 
 bool ViewForTab::saveAs(){
-	td::String newPath = tabView->saveAs();
+	td::String newPath = tabView->saveAs(settings.getString());
 	if (!newPath.isNull()) {
 		path = newPath;
 		lastSaved = tabView->getVersion();
@@ -101,19 +127,38 @@ void ViewForTab::updateModelNode()
 		return;
 
 	lastModelExtract = tabView->getVersion();
-	model.clear();
-	tabView->getModel(model);
+	tabView->getModel(modelTab);
+}
+
+void ViewForTab::updateSettings()
+{
+	if (lastSettingsVer == settings.getVersion())
+		return;
+
+	lastSettingsVer = settings.getVersion();
+	settings.getDependencies(depenends);
+	settings.getFunctions(funcionsDesc);
+
 }
 
 const modelNode& ViewForTab::getModelNode()
 {
+	if (lastModelExtract == tabView->getVersion() && lastSettingsVer == settings.getVersion())
+		return model;
+
 	updateModelNode();
+	updateSettings();
+
+	model.clear();
+	model = modelTab;
+
+	for(const auto &dep : depenends)
+		model.addWtih(GlobalEvents::getMainWindowPtr()->getModelFromTabOrFile(dep.pathOrTabName), dep.alias);
+	
+
 	return model;
 }
 
-inline long long unsigned int ViewForTab::getVersion(){
-	tabView->getVersion();
-}
 
 
 ViewForTab::~ViewForTab()

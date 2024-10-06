@@ -3,8 +3,9 @@
 	<Translations>
 		<Res id="start" tr="Pokreni" />
 		<Res id="startToolTip" tr="Pokreni simulaciju" />
-		<Res id="startTime" tr=" Početno vrijeme: " />
-		<Res id="endTime" tr=" Krajnje vrijeme: " />
+		<Res id="startTime" tr="Početno vrijeme: " />
+		<Res id="endTime" tr="Krajnje vrijeme: " />
+		<Res id="maxIter" tr="Maksimalan broj iteracija:" />
 		<Res id="&lt;Ctrl&gt;," tr="&lt;Ctrl&gt;p" />
 		<Res id="Cancel" tr="Poništi" />
 		<Res id="settings" tr="Postavke aplikacije" />
@@ -37,5 +38,6 @@
 		<Res id="unsupportedType" tr="Nepodržan tip modela &quot;" />
 		<Res id="noTypeFound" tr="Nije pronaden tip modela, pretpostavlja se &quot;DAE&quot;" />
 		<Res id="supportedModelsInfo" tr="Unutar tag-a &quot;Model:&quot; postaviti atribut &quot;type =&quot; DAE/ODE/WLS" />
+		<Res id="preproc" tr="Pretprocesorske komande:" />
 	</Translations>
 </DevRes>

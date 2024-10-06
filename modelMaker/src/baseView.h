@@ -30,45 +30,51 @@ public:
 class ViewForTab : public gui::View {
 public:
 	class BaseClass : public gui::View {
-		long long unsigned int version = 1;
+		unsigned int version = 1;
+	protected:
+		void modelChanged() { ++version; }
+		void modelRolledBack() {--version; }
 	public:
-		virtual bool save(const td::String& path) { return false; }
-		virtual td::String saveAs() { return ""; }
+		virtual bool save(const td::String& path, const td::String& settingsString) { return false; }
+		virtual td::String saveAs(const td::String& settingsString) { return ""; }
 		virtual void getModel(modelNode& model) {}
-		virtual bool openFile(const td::String& path) { return false; }
-		bool modelChanged() { ++version; }
-		long long unsigned int getVersion() const { return version; }
+		virtual bool openFile(const td::String& path, td::String& settingsString) { return false; }
+		unsigned int getVersion() const { return version; }
 	};
 private:
 	LogView logView;
 	ModelSettings settings;
+	std::vector<ModelSettings::FunctionDesc> funcionsDesc;
+	std::vector<ModelSettings::DependencyDesc> depenends;
 
-	gui::SplitterLayout mainView;
-	gui::HorizontalLayout _hLayout;
+	gui::SplitterLayout mainView, tabAndLogView;
 
-	td::String path;
-	long long unsigned int lastSaved = 0, lastModelExtract = 0;
-	modelNode model;
+
+	td::String path, name;
+	unsigned int lastSaved = 0, lastModelExtract = 0, lastSettingsVer = 0;
+	modelNode model, modelTab;
 
 	BaseClass* tabView = nullptr;
 
 	void updateModelNode();
+	void updateSettings();
 
 public:
-
+	using exceptionCantAccessFile = td::String;
 	ViewForTab(BaseClass *);
 
-	const LogView& getLog() {
-		return logView;
-	}
+	const LogView& getLog();
+	const BaseClass &getMainView();
 
+
+	const td::String &getName();
+	void setName(const td::String &name);
 	bool loadFile(const td::String& path);
 	bool save();
 	bool saveAs();
 	void exportToXML(td::String path);
 	void getTimes(double& startTime, double& endTime, double& stepTime, unsigned int& maxIterations);
 	const modelNode &getModelNode();
-	long long unsigned int getVersion();
 
 	~ViewForTab();
 

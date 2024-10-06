@@ -3,7 +3,7 @@
 #include <cnt/PushBackVector.h>
 #include "td/String.h"
 
-#define BACK_COMMENT_CHAR "¸"
+#define BACK_COMMENT_CHAR "Ë‡"
 
 const td::String baseNode::attributeKeywords[] = { "type", "domain", "name", "eps", "dT", "signal", "out", "desc", "method"};
 
@@ -194,6 +194,6 @@ baseNode::baseNode(const baseNode& node)
 	lastChlid = node.lastChlid;
 	parent = node.parent;
 	attribs = node.attribs;
-	for (const auto& node : nodes)
-		nodes.emplace_back(node->createCopy());
+	for (const auto& n : node.nodes)
+		nodes.emplace_back(n->createCopy());
 }

@@ -20,9 +20,9 @@ using LogType = LogView::LogType;
 
 void MainWindow::simulate(ViewForTab *tab)
 {
+	
 	/*
-	modelNode model;
-	tab->getModelNode(model);
+	const modelNode &model = tab->getModelNode();
 	const auto& logView = tab->getLog();
 
 
@@ -50,6 +50,9 @@ void MainWindow::simulate(ViewForTab *tab)
 
 	}
 
+	double startTime, stepTime, endTime;
+	unsigned int maxIter;
+	tab->getTimes(startTime, endTime, stepTime, maxIter);
 
 	//model.printNode("D:/deltete/fajl.xml");
 	td::String modelStr;
@@ -57,7 +60,7 @@ void MainWindow::simulate(ViewForTab *tab)
 	smece sma;
 	if (type.cCompareNoCase("DAE") == 0) {
 		if (!isComplex) {
-			auto a = sc::createDblDAESolver(10);
+			auto a = sc::createDblDAESolver(maxIter);
 			a->init(modelStr, sc::IDblSolver::SourceType::Memory);
 			a->solve(startTime, stepTime, endTime, &sma);
 			cnt::SafeFullVector<td::INT4> v;
@@ -78,8 +81,8 @@ void MainWindow::simulate(ViewForTab *tab)
 		}
 	}
 
-	logView.appendLog(model["name"].c_str(), LogType::info);
+	logView.appendLog(model["name"].c_str(), LogType::info);	
+
 	*/
+	
 }
-
-

@@ -5,6 +5,7 @@
 		<Res id="startToolTip" tr="Start simulation" />
 		<Res id="startTime" tr=" Start time: " />
 		<Res id="endTime" tr=" End time: " />
+		<Res id="maxIter" tr="Max iterations:" />
 		<Res id="&lt;Ctrl&gt;," tr="&lt;Ctrl&gt;," />
 		<Res id="Cancel" tr="Cancel" />
 		<Res id="settings" tr="Application settings" />
@@ -37,5 +38,6 @@
 		<Res id="unsupportedType" tr="Unsupported model type &quot;" />
 		<Res id="noTypeFound" tr="No type attribute found, assuiming &quot;DAE&quot;" />
 		<Res id="supportedModelsInfo" tr="Inside &quot;Model:&quot; tag use attribute &quot;type =&quot; DAE/ODE/WLS" />
+		<Res id="preproc" tr="Preprocessing commands:" />
 	</Translations>
 </DevRes>

@@ -31,6 +31,6 @@ public:
 	
 
 	TextEditorView();
-	void getModelNode(modelNode& model);
+	void getModel(modelNode& model) override;
 
 };

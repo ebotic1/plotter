@@ -3,6 +3,9 @@
 #include <gui/FileDialog.h>
 #include "guiEditor/view.h"
 #include "textEditor/View.h"
+#include <xml/DOMParser.h>
+
+std::vector<fileModels> MainWindow::loadedModels;
 
 void MainWindow::simulate()
 {
@@ -53,9 +56,15 @@ void MainWindow::showStartScreen(bool show)
     }
 }
 
-void MainWindow::changeTabName(const td::String &name)
+void MainWindow::changeTabName(const td::String &name, ViewForTab *tab)
 {
-    //promijeniti naziv trenutnog taba
+    tab->setName(name);
+    for(int i = 0; i<_tabView.getNumberOfViews(); ++i)
+        if(_tabView.getView(i) == tab){
+            //_tabView.changeTabName(i, name);
+            return;
+        }
+
 }
 
 bool MainWindow::onActionItem(gui::ActionItemDescriptor& aiDesc)
@@ -87,10 +96,12 @@ bool MainWindow::onActionItem(gui::ActionItemDescriptor& aiDesc)
     }
     
 
-
     if(action == menuBarActionIDs::EmptyModel && subMenuID == subMenuIDs::subMenuNewGraphical){
         showStartScreen(false);
         _tabView.addView(new ViewForTab(new GraphicalEditorView), tr("newGraphTab"), &guiEditorIcon);
+        auto ptr = ((ViewForTab *)(_tabView.getView(_tabView.getNumberOfViews() - 1)));
+        ptr->setName(tr("newGraphTab"));
+        const_cast<ViewForTab::BaseClass&>(ptr->getMainView()).setFocus(true);
         return true;
     }
 
@@ -98,11 +109,18 @@ bool MainWindow::onActionItem(gui::ActionItemDescriptor& aiDesc)
     if(action == menuBarActionIDs::EmptyModel && subMenuID == subMenuIDs::subMenuNewText){
         showStartScreen(false);
         _tabView.addView(new ViewForTab(new TextEditorView), tr("newTextTab"), &textEditorIcon);
+        auto ptr = ((ViewForTab *)(_tabView.getView(_tabView.getNumberOfViews() - 1)));
+        ptr->setName(tr("newTextTab"));
+        const_cast<ViewForTab::BaseClass&>(ptr->getMainView()).setFocus(true);
         return true;
     }
 
+    ViewForTab *currentView = (ViewForTab*)this->_tabView.getCurrentView();
+    if(_tabView.getNumberOfViews() == 0)
+        return true;
+
     if(action == menuBarActionIDs::Simulate){
-        simulate();
+        simulate(currentView);
         return true;
     }
 
@@ -110,47 +128,64 @@ bool MainWindow::onActionItem(gui::ActionItemDescriptor& aiDesc)
 
     }
 
-
-    /*
-    if (aiDesc._menuID == 1 && aiDesc._actionItemID == 4) {//open
-        gui::OpenFileDialog* p = new gui::OpenFileDialog(this, "Open model", { {"Text", "*.txt"},{"XML model solver", "*.xml"} }, "Open");
-        p->openModal([this](gui::FileDialog* pDlg) {
-            if (!_mainView.loadFile(pDlg->getFileName()))
-                showAlert("Error", "Cant load file");
-            });
+    if(action == menuBarActionIDs::Export){
+        auto path = new gui::SaveFileDialog(this, tr("ExporttoXML"), ".xml", tr("Export"), currentView->getName().c_str());
+        path->openModal([currentView](gui::FileDialog* pDlg) {
+            td::String path(pDlg->getFileName());
+            if(!path.isNull()){
+                currentView->exportToXML(path);
+            }
+        });
         return true;
     }
 
-    if (aiDesc._menuID == 1 && aiDesc._actionItemID == 2) {//save
-        if (!_mainView.save())
-            showAlert("Error", "Cant save file");
-        return true;
-       
-    }
-
-    if (aiDesc._menuID == 1 && aiDesc._actionItemID == 3) { //save as
-        gui::OpenFileDialog* p = new gui::OpenFileDialog(this, "Save as", {"*.txt"}, "Save as");
-        p->openModal([this](gui::FileDialog* pDlg) {
-            if (!_mainView.saveAs(pDlg->getFileName()))
-                showAlert("Error", "Cant save file");
-            });
-        return true;
-    }
-
-    if (aiDesc._menuID == 1 && aiDesc._actionItemID == 5) { //export to xml
-        gui::OpenFileDialog* p = new gui::OpenFileDialog(this, "Exporting XML for modelSolver", { "*.xml" }, "Export");
-        p->openModal([this](gui::FileDialog* pDlg) {
-            if (!_mainView.saveAs(pDlg->getFileName()))
-                showAlert("Error", "Cant save file");
-            });
-        return true;
-    }
-
-*/
+  
     return false;
 }
 
 
+const modelNode &MainWindow::getModelFromTabOrFile(const td::String &modelNameOrPath)
+{
+    bool sucess;
+    if(modelNameOrPath.endsWith(".xml")){//file
+        if(!std::filesystem::exists(modelNameOrPath.c_str()))
+            throw (exceptionCantAccessFile) modelNameOrPath;
+        
+        auto time = std::filesystem::last_write_time(modelNameOrPath.c_str()).time_since_epoch();
+        for(auto &m: loadedModels){
+            if(m.path == modelNameOrPath)
+                if(time >= m.timeModified)
+                    return m.model;
+                else{
+                    sucess = m.model.readFromFile(modelNameOrPath);
+                    if(!sucess)
+                        throw (exceptionCantAccessFile) modelNameOrPath;
+                    m.timeModified = time;
+                    return m.model;
+                }
+        }    
+
+        loadedModels.emplace_back(modelNameOrPath);
+        sucess = loadedModels.back().model.readFromFile(modelNameOrPath);
+        if(!sucess)
+            throw (exceptionCantAccessFile) modelNameOrPath;
+        loadedModels.back().timeModified = time;
+        return loadedModels.back().model;
+        
+	
+    }else{ //tab
+
+        for(int i = 0; i<_tabView.getNumberOfViews(); ++i)
+            if(((ViewForTab *)_tabView.getView(i))->getName() == modelNameOrPath){
+                sucess = true;
+                return ((ViewForTab *)_tabView.getView(i))->getModelNode();
+            }        
+        throw (exceptionCantFindTab) modelNameOrPath;
+    }
+
+    static modelNode m; // should never run
+    return m;
+}
 
 
 

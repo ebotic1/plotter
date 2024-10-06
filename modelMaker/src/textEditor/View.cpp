@@ -10,10 +10,6 @@ EquationView::EquationView():
 	setLayout(&_hl);
 }
 
-void TextEditorView::getModelNode(modelNode &model)
-{
-	model.processCommands(equationView.textMain.getText());
-}
 
 
 TextEditorView::TextEditorView() :
@@ -23,5 +19,8 @@ TextEditorView::TextEditorView() :
 	setLayout(&_hl);
 }
 
-
-
+void TextEditorView::getModel(modelNode &model)
+{
+	model.clear();
+	model.processCommands(equationView.textMain.getText());
+}
