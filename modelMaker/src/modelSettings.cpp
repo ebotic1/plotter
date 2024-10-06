@@ -50,14 +50,15 @@ ModelSettings::ModelSettings() :
 void ModelSettings::getDependencies(std::vector<DependencyDesc>& desc)
 {
 	desc.clear();
-	std::regex pattern(R"(^import\s+(\w+)(\s+as\s+(\w))?)");
+	std::regex pattern(R"(^import\s+(.+?)\s+(as\s+(\w))?)");
 	std::cmatch match;
 
 	const auto& cmnds = preprocesCommands.getText();
-
-	while (std::regex_search(cmnds.begin(), cmnds.end(), match, pattern))
-		if(match[1].matched)
-			desc.emplace_back(match[1].first, match[2].first);
+	int start = 0;
+	while (std::regex_search(cmnds.begin() + start, cmnds.end(), match, pattern)) {
+		desc.emplace_back(match[1].first, match[3].first);
+		start += match[0].length();
+	}
 
 }
 
