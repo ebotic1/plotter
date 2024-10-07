@@ -16,12 +16,17 @@ void baseNode::printNodeToString(td::String& string) const{
 	w.getString(string);
 }
 
-void baseNode::printNode(const td::String& path) const{
+bool baseNode::printNode(const td::String& path) const{
 	xml::Writer w;
 	w.open(path);
+	if(!w.isOk())
+		return false;
 	w.startDocument();
 	printNode(w);
 	w.close();
+	if(!w.isOk())
+		return false;
+	return true;
 }
 
 void baseNode::printNode(xml::Writer& w) const{

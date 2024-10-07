@@ -32,5 +32,8 @@ public:
 
 	TextEditorView();
 	void getModel(modelNode& model) override;
+	bool save(const td::String& path, const td::String& settingsString) override;
+	void saveAs(const td::String& settingsString, td::String *newPath) override;
+	bool openFile(const td::String& path, td::String& settingsString) override;
 
 };

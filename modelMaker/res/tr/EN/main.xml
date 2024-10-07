@@ -39,5 +39,9 @@
 		<Res id="noTypeFound" tr="No type attribute found, assuiming &quot;DAE&quot;" />
 		<Res id="supportedModelsInfo" tr="Inside &quot;Model:&quot; tag use attribute &quot;type =&quot; DAE/ODE/WLS" />
 		<Res id="preproc" tr="Preprocessing commands:" />
+		<Res id="saveFile" tr="Saving model" />
+		<Res id="cantSaveFile" tr="Error occured, could not save model." />
+		<Res id="openModel" tr="Open model" />
+		<Res id="open" tr="Open" />
 	</Translations>
 </DevRes>

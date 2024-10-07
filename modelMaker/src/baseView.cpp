@@ -4,12 +4,23 @@
 #include "globalEvents.h"
 #include "mainWindow.h"
 
+using LogType = LogView::LogType;
+
+int LogView::errorLen;
+int LogView::warLen;
+int LogView::infoLen;
+
 LogView::LogView() :
 	_vl(1)
 {
 	textMain.setAsReadOnly();
 	_vl << textMain;
 	setLayout(&_vl);
+
+	errorLen = tr("error").length();
+	warLen = tr("warning").length();
+	infoLen = tr("info").length();
+
 }
 
 void LogView::appendLog(const td::String text, LogType type) const
@@ -21,31 +32,34 @@ void LogView::appendLog(const td::String text, LogType type) const
 	if (!textMain.isEmpty())
 		str << "\n";
 
-	gui::Range range(textMain.getText().glyphLength(), 0);
 
 	str << "[ " << ((t.getHour() < 10) ? "0" : "\0") << t.getHour() << ':';
 	str << ((t.getMinute() < 10) ? "0" : "\0") << t.getMinute() << ':';
 	str << ((t.getSecond() < 10) ? "0" : "\0") << t.getSecond() << " ] ";
+
+	gui::Range range(textMain.getText().glyphLength() + str.length(), 0);
 
 	switch (type)
 	{
 	case LogType::error:
 		str << tr("error");
 		color = td::ColorID::Crimson;
+		range.length = errorLen;
 		break;
 	case LogType::info:
 		str << tr("info");
+		range.length = infoLen;
 		color = td::ColorID::SysText;
 		//color = td::ColorID::RoyalBlue; moze i ova boja ali mozda bolje da ima jedan nivo bez boje
 		break;
 	case LogType::warning:
+		range.length = warLen;
 		color = td::ColorID::Gold;
 		str << tr("warning");
 	}
 
 	str << ": " << text;
 	const auto& strFromBuilder = str.toString();
-	range.length = strFromBuilder.glyphLength();
 	textMain.appendString(str.toString());
 
 
@@ -53,18 +67,19 @@ void LogView::appendLog(const td::String text, LogType type) const
 }
 
 
-ViewForTab::ViewForTab(BaseClass* tabView):
+ViewForTab::ViewForTab(BaseClass* tabView, const td::String &settingsStr):
 	tabView(tabView),
 	mainView(gui::SplitterLayout::Orientation::Horizontal, gui::SplitterLayout::AuxiliaryCell::First),
-	tabAndLogView(gui::SplitterLayout::Orientation::Vertical, gui::SplitterLayout::AuxiliaryCell::Second)
+	tabAndLogSplitter(gui::SplitterLayout::Orientation::Vertical, gui::SplitterLayout::AuxiliaryCell::Second)
 {
-	//tabAndLogView.setContent(logView, *tabView);
-	//mainView.setContent(settings, tabAndLogView);
 
-	auto a = new gui::HorizontalLayout(3);
-	*a << settings << logView << *tabView;
+	tabAndLogSplitter.setContent(*tabView, logView);
+	tabAndLogView.setLayout(&tabAndLogSplitter);
+	mainView.setContent(settings, tabAndLogView);
 
-	setLayout(a);
+	settings.loadFromString(settingsStr);
+
+	setLayout(&mainView);
 }
 
 const LogView &ViewForTab::getLog(){
@@ -92,22 +107,21 @@ bool ViewForTab::loadFile(const td::String &path)
 	return retVal;
 }
 
-bool ViewForTab::save(){
-	if (tabView->save(path, settings.getString())) {
-		lastSaved = tabView->getVersion();
-		return true;
+void ViewForTab::save(){
+	if(path.isNull()){
+		tabView->saveAs(settings.getString(), &path);
+		return;
 	}
-	return false;
+
+	if (tabView->save(path, settings.getString()))
+		lastSaved = tabView->getVersion();
+
 }
 
-bool ViewForTab::saveAs(){
-	td::String newPath = tabView->saveAs(settings.getString());
-	if (!newPath.isNull()) {
-		path = newPath;
-		lastSaved = tabView->getVersion();
-		return true;
-	}
-	return false;
+void ViewForTab::saveAs(){
+	path.clean();
+	tabView->saveAs(settings.getString(), &path);
+	lastSaved = tabView->getVersion();
 }
 
 void ViewForTab::exportToXML(td::String path)
@@ -120,6 +134,9 @@ void ViewForTab::getTimes(double& startTime, double& endTime, double& stepTime, 
 	settings.getStartStopTime(startTime, endTime, stepTime, maxIterations);
 }
 
+void ViewForTab::setPath(const td::String &path){
+	this->path = path;
+}
 
 void ViewForTab::updateModelNode()
 {
@@ -143,17 +160,20 @@ void ViewForTab::updateSettings()
 
 const modelNode& ViewForTab::getModelNode()
 {
-	if (lastModelExtract == tabView->getVersion() && lastSettingsVer == settings.getVersion())
-		return model;
-
 	updateModelNode();
 	updateSettings();
 
 	model.clear();
 	model = modelTab;
 
+	td::String info("Processing model: ");
+	info += name;
+	logView.appendLog(info, LogType::info);
+	
 	for(const auto &dep : depenends)
-		model.addWtih(GlobalEvents::getMainWindowPtr()->getModelFromTabOrFile(dep.pathOrTabName), dep.alias);
+		if(dep.pathOrTabName != name){
+			model.addWtih(GlobalEvents::getMainWindowPtr()->getModelFromTabOrFile(dep.pathOrTabName), dep.alias);
+		}
 	
 
 	return model;
@@ -163,7 +183,7 @@ const modelNode& ViewForTab::getModelNode()
 
 ViewForTab::~ViewForTab()
 {
-	if (lastSaved != tabView->getVersion()) {
+	if (lastSaved != tabView->getVersion() || path.isNull()) {
 		// reci korisniku da mora servirati
 	}
 	delete tabView;

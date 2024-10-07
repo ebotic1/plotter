@@ -349,11 +349,11 @@ modelNode &modelNode::addWtih(const modelNode &model, const td::String &alias)
 			if (std::strcmp(thisNode->getName(), n->getName()) == 0) {
 				found = true;
 				for (const auto& child : n->nodes)
-					thisNode->nodes.push_back(child);
+					thisNode->nodes.push_back(child->createCopy());
 			}
 			
 		if (!found)
-			nodes.push_back(n);
+			nodes.push_back(n->createCopy());
 	}
 	return *this;
 }

@@ -9,6 +9,7 @@
 #include "startingView.h"
 #include "ToolBar.h"
 #include "../../EquationToXML/inc/nodes.h"
+#include "baseView.h"
 
 class ViewForTab;
 
@@ -38,6 +39,7 @@ private:
     static std::vector<fileModels> loadedModels;
 
     void simulate();
+    void addTab(ViewForTab::BaseClass *tab, const td::String &settingsStr, const td::String &path = td::String());
 
 public:
     MainWindow();

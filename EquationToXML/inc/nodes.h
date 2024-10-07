@@ -34,7 +34,7 @@ public:
 	baseNode &operator =(baseNode&) = delete;
 
 	void printNodeToString(td::String& string) const;
-	void printNode(const td::String &path) const;
+	bool printNode(const td::String &path) const;
 	virtual void printNode(xml::Writer& w) const;
 	inline td::String& operator[](td::String attrib) {
 		return attribs[attrib];

@@ -25,6 +25,7 @@ public:
 	};
 	struct DependencyDesc {
 		td::String pathOrTabName, alias;
+		DependencyDesc(const char* path, int str1Size, const char* alis, int str2Size);
 	};
 
 public:

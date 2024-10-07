@@ -2,7 +2,7 @@
 #include <gui/MenuBar.h>
 #include <gui/MenuItem.h>
 
-enum menuBarActionIDs{New=1, Simulate, Save, SaveAs, Open, Export, Settings, EmptyModel, OpenFromFile};
+enum menuBarActionIDs{New=1, Simulate, Save, SaveAs, Export, Settings, EmptyModel, OpenFromFile};
 
 enum subMenuIDs{subMenuModel=1, subMenuNewModel, subMenuSettings, subMenuNewText, subMenuNewGraphical};
 

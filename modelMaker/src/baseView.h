@@ -15,6 +15,8 @@ class LogView : private gui::View {
 	mutable gui::TextEdit textMain;
 	gui::VerticalLayout _vl;
 
+	static int errorLen, infoLen, warLen;
+
 	friend class ViewForTab;
 
 public:
@@ -36,7 +38,7 @@ public:
 		void modelRolledBack() {--version; }
 	public:
 		virtual bool save(const td::String& path, const td::String& settingsString) { return false; }
-		virtual td::String saveAs(const td::String& settingsString) { return ""; }
+		virtual void saveAs(const td::String& settingsString, td::String *newPath) {}
 		virtual void getModel(modelNode& model) {}
 		virtual bool openFile(const td::String& path, td::String& settingsString) { return false; }
 		unsigned int getVersion() const { return version; }
@@ -47,7 +49,8 @@ private:
 	std::vector<ModelSettings::FunctionDesc> funcionsDesc;
 	std::vector<ModelSettings::DependencyDesc> depenends;
 
-	gui::SplitterLayout mainView, tabAndLogView;
+	gui::SplitterLayout mainView, tabAndLogSplitter;
+	gui::View tabAndLogView;
 
 
 	td::String path, name;
@@ -61,7 +64,7 @@ private:
 
 public:
 	using exceptionCantAccessFile = td::String;
-	ViewForTab(BaseClass *);
+	ViewForTab(BaseClass *, const td::String &settingsStr = td::String());
 
 	const LogView& getLog();
 	const BaseClass &getMainView();
@@ -70,10 +73,11 @@ public:
 	const td::String &getName();
 	void setName(const td::String &name);
 	bool loadFile(const td::String& path);
-	bool save();
-	bool saveAs();
+	void save();
+	void saveAs();
 	void exportToXML(td::String path);
 	void getTimes(double& startTime, double& endTime, double& stepTime, unsigned int& maxIterations);
+	void setPath(const td::String &path);
 	const modelNode &getModelNode();
 
 	~ViewForTab();

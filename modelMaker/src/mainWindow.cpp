@@ -67,11 +67,38 @@ void MainWindow::changeTabName(const td::String &name, ViewForTab *tab)
 
 }
 
+
+
+void MainWindow::addTab(ViewForTab::BaseClass *tab, const td::String &settingsStr, const td::String &path){
+    ViewForTab *wholeTab = nullptr;
+    if(GraphicalEditorView *ptr = dynamic_cast<GraphicalEditorView *>(tab); ptr != nullptr){
+        wholeTab = new ViewForTab(ptr, settingsStr);
+        _tabView.addView(wholeTab, tr("newGraphTab"), &guiEditorIcon);
+        wholeTab->setName(tr("newGraphTab"));
+    }
+    else if(TextEditorView *ptr = dynamic_cast<TextEditorView *>(tab); ptr != nullptr){
+        wholeTab = new ViewForTab(ptr, settingsStr);
+        _tabView.addView(wholeTab, tr("newTextTab"), &textEditorIcon);
+        wholeTab->setName(tr("newGraphTab"));
+    }
+
+
+
+
+    if(wholeTab != nullptr){
+        wholeTab->setPath(path);
+        showStartScreen(false);
+    }
+    else
+        throw "addTab method from MainWindow failed to recognize tab type";
+}
+
+
+
 bool MainWindow::onActionItem(gui::ActionItemDescriptor& aiDesc)
 {
-    int menuID = aiDesc._menuID;
 
-    if(menuID == toolBarID){ //ako je izvor toolbar
+    if(aiDesc._menuID == toolBarID){ //ako je izvor toolbar
 
         auto action = toolBarActionIDs(aiDesc._actionItemID);
 
@@ -86,6 +113,7 @@ bool MainWindow::onActionItem(gui::ActionItemDescriptor& aiDesc)
     //izvor mora biti menu bar ili poziv preko global events
     menuBarActionIDs action = (menuBarActionIDs) aiDesc._actionItemID;
     subMenuIDs subMenuID = (subMenuIDs) aiDesc._firstSubmenuID;
+    subMenuIDs menuID = (subMenuIDs) aiDesc._menuID;
 
     if(action == menuBarActionIDs::Settings){
         auto settings = new settingsDialog(this);
@@ -98,35 +126,81 @@ bool MainWindow::onActionItem(gui::ActionItemDescriptor& aiDesc)
 
     if(action == menuBarActionIDs::EmptyModel && subMenuID == subMenuIDs::subMenuNewGraphical){
         showStartScreen(false);
-        _tabView.addView(new ViewForTab(new GraphicalEditorView), tr("newGraphTab"), &guiEditorIcon);
-        auto ptr = ((ViewForTab *)(_tabView.getView(_tabView.getNumberOfViews() - 1)));
-        ptr->setName(tr("newGraphTab"));
-        const_cast<ViewForTab::BaseClass&>(ptr->getMainView()).setFocus(true);
+        addTab(new GraphicalEditorView, "");
         return true;
     }
 
 
     if(action == menuBarActionIDs::EmptyModel && subMenuID == subMenuIDs::subMenuNewText){
         showStartScreen(false);
-        _tabView.addView(new ViewForTab(new TextEditorView), tr("newTextTab"), &textEditorIcon);
-        auto ptr = ((ViewForTab *)(_tabView.getView(_tabView.getNumberOfViews() - 1)));
-        ptr->setName(tr("newTextTab"));
-        const_cast<ViewForTab::BaseClass&>(ptr->getMainView()).setFocus(true);
+        addTab(new TextEditorView, "");
         return true;
     }
 
+
+
+
+
+
+
+
+
     ViewForTab *currentView = (ViewForTab*)this->_tabView.getCurrentView();
-    if(_tabView.getNumberOfViews() == 0)
+ 
+
+
+
+
+
+
+
+
+    if(action == menuBarActionIDs::OpenFromFile){
+        auto &o = *new gui::OpenFileDialog(this, tr("openModel"), {{"Text model", "*.txt"}}, tr("open"));
+        if(menuID == subMenuIDs::subMenuModel){
+           if(_tabView.getNumberOfViews() == 0)
+                return true;
+            o.openModal([currentView](gui::FileDialog* d){
+                auto path = d->getFileName();
+                if(path.isNull())
+                    return;
+                currentView->loadFile(path);
+            });
+        }
+        if(menuID == subMenuIDs::subMenuNewModel){
+                 o.openModal([this](gui::FileDialog* d){
+            auto path = d->getFileName();
+            if(path.isNull())
+                return;
+            
+            td::String settings;
+
+            if(path.endsWith(".txt") || path.endsWith(".xml")){
+                auto ptr = new TextEditorView;
+                if(ptr->openFile(path, settings)){
+                    addTab(ptr, settings, path);
+                    return;
+                }
+                else
+                    delete ptr;
+            }
+
+        });   
+            return true;
+        }
+    }
+
+
+   if(_tabView.getNumberOfViews() == 0) //ostale akcije nemaju smisla ako nema ni jedan tab otvoren
         return true;
+
+
 
     if(action == menuBarActionIDs::Simulate){
         simulate(currentView);
         return true;
     }
 
-    if(action == menuBarActionIDs::OpenFromFile && subMenuID == subMenuIDs::subMenuNewModel){
-
-    }
 
     if(action == menuBarActionIDs::Export){
         auto path = new gui::SaveFileDialog(this, tr("ExporttoXML"), ".xml", tr("Export"), currentView->getName().c_str());
@@ -139,6 +213,17 @@ bool MainWindow::onActionItem(gui::ActionItemDescriptor& aiDesc)
         return true;
     }
 
+
+    if(action == menuBarActionIDs::Save){
+        currentView->save();
+        return true;
+    }
+
+    if(action == menuBarActionIDs::SaveAs){
+        currentView->saveAs();
+        return true;
+    }
+
   
     return false;
 }
@@ -148,13 +233,14 @@ const modelNode &MainWindow::getModelFromTabOrFile(const td::String &modelNameOr
 {
     bool sucess;
     if(modelNameOrPath.endsWith(".xml")){//file
-        if(!std::filesystem::exists(modelNameOrPath.c_str()))
+        std::filesystem::path file(modelNameOrPath.c_str());
+        if(!std::filesystem::exists(file))
             throw (exceptionCantAccessFile) modelNameOrPath;
         
-        auto time = std::filesystem::last_write_time(modelNameOrPath.c_str()).time_since_epoch();
+        auto time = std::filesystem::last_write_time(file).time_since_epoch();
         for(auto &m: loadedModels){
             if(m.path == modelNameOrPath)
-                if(time >= m.timeModified)
+                if(time == m.timeModified)
                     return m.model;
                 else{
                     sucess = m.model.readFromFile(modelNameOrPath);

@@ -39,5 +39,9 @@
 		<Res id="noTypeFound" tr="Nije pronaden tip modela, pretpostavlja se &quot;DAE&quot;" />
 		<Res id="supportedModelsInfo" tr="Unutar tag-a &quot;Model:&quot; postaviti atribut &quot;type =&quot; DAE/ODE/WLS" />
 		<Res id="preproc" tr="Pretprocesorske komande:" />
+		<Res id="saveFile" tr="Pohranivanje modela" />
+		<Res id="cantSaveFile" tr="Došlo je do greške, model nije spašen." />
+		<Res id="openModel" tr="Otvori model" />
+		<Res id="open" tr="Otvori" />
 	</Translations>
 </DevRes>
