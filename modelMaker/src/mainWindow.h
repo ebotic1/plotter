@@ -43,13 +43,13 @@ private:
 
 public:
     MainWindow();
-
-    using exceptionCantAccessFile = td::String;
-    using exceptionCantFindTab = td::String;
+    struct exceptionCantAccessFile { td::String message; };
+    struct exceptionCantFindTab { td::String message; };
     bool onActionItem(gui::ActionItemDescriptor& aiDesc) override;
     void showStartScreen(bool show);
     void changeTabName(const td::String &name, ViewForTab *tab);
     void simulate(ViewForTab* tab);
+    void openFile(const td::String& path);
     const modelNode &getModelFromTabOrFile(const td::String &modelNameOrPath);
 
     ~MainWindow();

@@ -9,6 +9,7 @@
 #include <xml/DOMParser.h> 
 #include <xml/SAXParser.h> 
 
+#define INDENT_CHAR "\t"
 
 class nameNode : public baseNode {
 	td::String name;
@@ -19,7 +20,7 @@ public:
 		baseNode(node) {
 		name = node.name;
 	}
-	baseNode* createCopy() override {
+	baseNode* createCopy(const td::String& alias) override {
 		return new nameNode(*this);
 	}
 	bool nodeAction(const td::String& command, baseNode*& newChild) override {
@@ -43,8 +44,13 @@ public:
 		baseNode(node){
 		tip = node.tip;
 	}
-	baseNode* createCopy() override {
+	baseNode* createCopy(const td::String& alias) override {
 		return new conditionNode(*this);
+	}
+	void prettyPrint(cnt::StringBuilder<>& str, const td::String& indent) const override{
+		str << indent << conditionNode::getName() << "\n";
+		for (const auto& attrib : attribs)
+			str << indent << INDENT_CHAR << attrib.first << " = " << attrib.second << "\n";
 	}
 	virtual bool nodeAction(const td::String& command, baseNode*& newChild) override;
 	inline const char* getName() const override {
@@ -54,13 +60,54 @@ public:
 
 conditionNode::conditionNode(type t) : tip(t) {}
 
+static inline void addAlias(td::String &line, const td::String& alias) {
+	if (alias.isNull())
+		return;
+	std::cmatch match;
+	cnt::StringBuilderSmall str;
+
+	const td::UTF8* start = line.begin();
+	const td::UTF8* previousStart = start;
+	while (std::regex_search(start, line.end(), match, baseNode::varPatten)) {
+		str << line.subStr(previousStart - line.begin(), match[1].first - line.begin()) << alias << ".";
+		previousStart = start;
+		start = match.suffix().first;
+	}
+	str.getString(line);
+}
+
 class singleEquation : public baseNode {
 	bool added = false;
 	bool consumeEnd = false;
 public:
-	baseNode* createCopy() override {
-		return new singleEquation(*this);
+	baseNode* createCopy(const td::String& alias) override {
+		singleEquation &equation = *new singleEquation(*this);
+		
+		if (auto itFx = equation.attribs.find("fx"); itFx != equation.attribs.end())
+			addAlias(itFx->second, alias);
+		if (auto itW = equation.attribs.find("w"); itW != equation.attribs.end())
+			addAlias(itW->second, alias);
+		
+		return &equation;
 	}
+
+	void prettyPrint(cnt::StringBuilder<>& str, const td::String& indent) const override{
+		if (auto itFx = attribs.find("fx"); itFx != attribs.end())
+			str << indent << itFx->second;
+		if (auto itW = attribs.find("w"); itW != attribs.end())
+			str << indent << " [ " << itW->second << " ]";
+		
+		str << indent << "\n";
+
+		for (const auto& attrib : attribs) {
+			if (attrib.first.cCompare("fx") == 0)
+				continue;
+			else if (attrib.first.cCompare("w") == 0)
+				continue;
+			str << indent << INDENT_CHAR << attrib.first << " = " << attrib.second << "\n";
+		}
+	}
+
 	virtual bool nodeAction(const td::String& command, baseNode*& newChild) override {
 		if (command.beginsWithCI("then"))
 			return true;
@@ -123,7 +170,7 @@ class containerNode : public baseNode {
 public:
 	containerNode(){}
 	containerNode(const containerNode<containerName, nodeType>& node) = default;
-	baseNode* createCopy() override {
+	baseNode* createCopy(const td::String &alias) override {
 		return new containerNode<containerName, nodeType>(*this);
 	}
 	bool nodeAction(const td::String& command, baseNode*& newChild) override{
@@ -160,8 +207,25 @@ template<typename variableName>
 class variableNode : public baseNode {
 	bool added = false;
 public:
-	virtual baseNode* createCopy() {
-		return new variableNode<variableName>(*this);
+	virtual baseNode* createCopy(const td::String &alias) override{
+		auto &var = *new variableNode<variableName>(*this);
+		if (auto it = var.attribs.find("name"); it != var.attribs.end())
+			addAlias(it->second, alias);
+		return &var;
+	}
+	void prettyPrint(cnt::StringBuilder<>& str, const td::String& indent) const override {
+		if (auto it = attribs.find("name"); it != attribs.end())
+			str << indent << it->second;
+		if (auto it = attribs.find("val"); it != attribs.end())
+			str << " = " << it->second;
+		str << indent << "\n";
+		for (const auto& attrib : attribs) {
+			if (attrib.first.cCompare("name") == 0)
+				continue;
+			else if (attrib.first.cCompare("val") == 0)
+				continue;
+			str << indent << INDENT_CHAR << attrib.first << " = " << attrib.second << "\n";
+		}
 	}
 	bool nodeAction(const td::String& command, baseNode*& newChild) override {
 		if (added) return false;
@@ -256,7 +320,7 @@ class initNode : public baseNode {
 public:
 	initNode(){}
 	initNode(const initNode& node) = default;
-	baseNode* createCopy() override {
+	baseNode* createCopy(const td::String &alias) override {
 		return new initNode(*this);
 	}
 	virtual bool nodeAction(const td::String& command, baseNode*& newChild) override {
@@ -338,10 +402,6 @@ bool modelNode::nodeAction(const td::String& command, baseNode*& newChild){
 modelNode &modelNode::addWtih(const modelNode &model, const td::String &alias)
 {
 
-	if(!alias.isNull()){
-		
-	}
-
     bool found;
 	for (const auto& n : model.nodes) {
 		found = false;
@@ -349,11 +409,11 @@ modelNode &modelNode::addWtih(const modelNode &model, const td::String &alias)
 			if (std::strcmp(thisNode->getName(), n->getName()) == 0) {
 				found = true;
 				for (const auto& child : n->nodes)
-					thisNode->nodes.push_back(child->createCopy());
+					thisNode->nodes.push_back(child->createCopy(alias));
 			}
 			
 		if (!found)
-			nodes.push_back(n->createCopy());
+			nodes.push_back(n->createCopy(alias));
 	}
 	return *this;
 }
@@ -439,7 +499,8 @@ bool modelNode::readFromFile(const td::String &path)
 	return true;
 
 }
-baseNode *modelNode::createCopy()
+
+baseNode *modelNode::createCopy(const td::String& alias)
 {
 	return new modelNode(*this);
 }

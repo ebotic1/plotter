@@ -14,7 +14,7 @@
 		<Res id="DoNoRestart" tr="Kasnije" />
 		<Res id="Restart" tr="Ponovno pokretanje" />
 		<Res id="settingsShort" tr="Postavke" />
-		<Res id="startingExplanation" tr="Da bi ste započeli sa radom pritisnute na meni tipku u gornjem lijevom ćošku i pritisnute na &quot;novo&quot; ili izaberite neku od sljedećih opcija:" />
+		<Res id="startingExplanation" tr="Da bi ste započeli sa radom pritisnute na meni tipku u gornjem lijevom ćošku i pritisnute na &quot;Novi prozor&quot; ili izaberite neku od sljedećih opcija:" />
 		<Res id="graphicalEditorLabel" tr="Grafički uređivač modela" />
 		<Res id="textEditorLabel" tr="Tekstualni unos jednačina" />
 		<Res id="NewTab" tr="Novi prozor" />

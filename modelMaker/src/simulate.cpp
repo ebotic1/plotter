@@ -86,3 +86,4 @@ void MainWindow::simulate(ViewForTab *tab)
 	*/
 	
 }
+

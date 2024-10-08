@@ -31,7 +31,6 @@ public:
 
 	gui::Window* createInitialWindow() override{
 		return mainWindow = new MainWindow();
-		
 	}
 
 };

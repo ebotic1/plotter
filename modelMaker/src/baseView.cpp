@@ -113,8 +113,10 @@ void ViewForTab::save(){
 		return;
 	}
 
-	if (tabView->save(path, settings.getString()))
+	if (tabView->save(path, settings.getString())) {
 		lastSaved = tabView->getVersion();
+		logView.appendLog("Model saved", LogType::info);
+	}
 
 }
 
@@ -126,7 +128,10 @@ void ViewForTab::saveAs(){
 
 void ViewForTab::exportToXML(td::String path)
 {
-	getModelNode().printNode(path);
+	bool error;
+	getModelNode(error).printNode(path);
+	if (error)
+		showAlert(tr("error"), tr("modelExtractionError"));
 }
 
 void ViewForTab::getTimes(double& startTime, double& endTime, double& stepTime, unsigned int& maxIterations)
@@ -158,26 +163,69 @@ void ViewForTab::updateSettings()
 
 }
 
-const modelNode& ViewForTab::getModelNode()
+const modelNode& ViewForTab::getModelNode(bool &error)
 {
+	error = false;
+	if (includeGuard) {
+		logView.appendLog("Circular dependency detected, this model includes itself", LogType::error);
+		error = true;
+		includeGuard = false;
+		return emptyModel;
+	}
+	else
+		includeGuard = true;
+
 	updateModelNode();
 	updateSettings();
 
 	model.clear();
 	model = modelTab;
 
-	td::String info("Processing model: ");
-	info += name;
-	logView.appendLog(info, LogType::info);
+
 	
-	for(const auto &dep : depenends)
-		if(dep.pathOrTabName != name){
+	for (const auto& dep : depenends) {
+		try {
+			td::String log;
+			if (dep.pathOrTabName.endsWith(".xml"))
+				log += "Processing file ";
+			else
+				log += "Processing model ";
+
+
+			log += dep.pathOrTabName;
+			logView.appendLog(log, LogType::info);
 			model.addWtih(GlobalEvents::getMainWindowPtr()->getModelFromTabOrFile(dep.pathOrTabName), dep.alias);
 		}
-	
+		catch (MainWindow::exceptionCantFindTab &) {
+			logView.appendLog("Cant find requested model, no tab with such name exists", LogType::error);
+			error = true;
+		}
+		catch (MainWindow::exceptionCantAccessFile &) {
+			logView.appendLog("Cant find or access file", LogType::error);
+			error = true;
+		}
+		catch (modelNode::exceptionInvalidBlockName& name) {
+			cnt::StringBuilderSmall s;
+			s << "Unrecognized block \"" << name.message << "\", Discarding model";
+			td::String log;
+			s.getString(log);
+			logView.appendLog(log, LogType::error);
+			error = true;
+		}
+		catch (...) {
+			logView.appendLog("Unknown error occured, discarding model", LogType::error);
+			error = true;
+		}
 
+	}
+	
+	if (auto it = model.attribs.find("name"); it != model.attribs.end())
+		GlobalEvents::getMainWindowPtr()->changeTabName(it->second, this);
+
+	includeGuard = false;
 	return model;
 }
+
 
 
 

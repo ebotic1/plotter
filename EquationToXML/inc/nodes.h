@@ -6,6 +6,8 @@
 #include "cnt/PushBackVector.h"
 #include "td/String.h"
 #include <vector>
+#include <cnt/StringBuilder.h>
+#include <regex>
 
 
 
@@ -21,21 +23,25 @@ protected:
 	virtual bool nodeAction(const td::String& command, baseNode*& newChild) = 0;
 	td::String comment;
 	size_t addLine(std::vector<std::pair<td::String, td::String>>& lines, size_t startLine = 0);
+	virtual void prettyPrint(cnt::StringBuilder<>& str, const td::String &indent) const;
 	void clear();
 
 public:
 	std::vector<baseNode*> nodes;
 	std::map<td::String, td::String> attribs;
+	static const std::regex varPatten;
 
 	baseNode();
 	baseNode(baseNode&&) = delete;
 	baseNode(const baseNode& node);
-	virtual baseNode* createCopy() = 0;
+	virtual baseNode* createCopy(const td::String &alias) = 0;
 	baseNode &operator =(baseNode&) = delete;
 
 	void printNodeToString(td::String& string) const;
 	bool printNode(const td::String &path) const;
 	virtual void printNode(xml::Writer& w) const;
+
+	void prettyPrint(td::String& text) const;
 	inline td::String& operator[](td::String attrib) {
 		return attribs[attrib];
 	}
@@ -64,7 +70,7 @@ class modelNode : public baseNode {
 public:
 
 	static const td::String attributeKeywords[];
-	using exceptionInvalidBlockName = td::String;
+	struct exceptionInvalidBlockName { td::String message; };
 	modelNode() {};
 	modelNode(const modelNode& model);
 	modelNode &operator =(const modelNode &model);
@@ -73,7 +79,7 @@ public:
 	modelNode& addWtih(const modelNode &model, const td::String &alias);
 	void clear();
 	bool readFromFile(const td::String &path);
-	baseNode* createCopy() override;
+	baseNode* createCopy(const td::String& alias) override;
 	inline const char* getName() const override {
 		return "Model";
 	}

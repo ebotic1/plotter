@@ -4,6 +4,7 @@
 #include "guiEditor/view.h"
 #include "textEditor/View.h"
 #include <xml/DOMParser.h>
+#include <tuple>
 
 std::vector<fileModels> MainWindow::loadedModels;
 
@@ -37,7 +38,14 @@ MainWindow::MainWindow()
     });
 
     _switcherView.addView(&_tabView);
-    
+
+
+    int argc;
+    const char** argv;
+    std::tie(argc, argv) = getApplication()->getMainArgs();
+    for (int i = 1; i < argc; ++i) {
+        openFile(argv[i]);
+    }
 }
 
 void MainWindow::showStartScreen(bool show)
@@ -75,18 +83,20 @@ void MainWindow::addTab(ViewForTab::BaseClass *tab, const td::String &settingsSt
         wholeTab = new ViewForTab(ptr, settingsStr);
         _tabView.addView(wholeTab, tr("newGraphTab"), &guiEditorIcon);
         wholeTab->setName(tr("newGraphTab"));
+        wholeTab->setPath(path);
     }
     else if(TextEditorView *ptr = dynamic_cast<TextEditorView *>(tab); ptr != nullptr){
         wholeTab = new ViewForTab(ptr, settingsStr);
         _tabView.addView(wholeTab, tr("newTextTab"), &textEditorIcon);
         wholeTab->setName(tr("newGraphTab"));
+        if (path.endsWith(".txt"));
+            wholeTab->setPath(path);
     }
 
 
 
 
     if(wholeTab != nullptr){
-        wholeTab->setPath(path);
         showStartScreen(false);
     }
     else
@@ -156,7 +166,7 @@ bool MainWindow::onActionItem(gui::ActionItemDescriptor& aiDesc)
 
 
     if(action == menuBarActionIDs::OpenFromFile){
-        auto &o = *new gui::OpenFileDialog(this, tr("openModel"), {{"Text model", "*.txt"}}, tr("open"));
+        auto &o = *new gui::OpenFileDialog(this, tr("openModel"), {{"Text model", "*.txt"}, {"XML model", "*.xml"} }, tr("open"));
         if(menuID == subMenuIDs::subMenuModel){
            if(_tabView.getNumberOfViews() == 0)
                 return true;
@@ -173,17 +183,7 @@ bool MainWindow::onActionItem(gui::ActionItemDescriptor& aiDesc)
             if(path.isNull())
                 return;
             
-            td::String settings;
-
-            if(path.endsWith(".txt") || path.endsWith(".xml")){
-                auto ptr = new TextEditorView;
-                if(ptr->openFile(path, settings)){
-                    addTab(ptr, settings, path);
-                    return;
-                }
-                else
-                    delete ptr;
-            }
+            openFile(path);
 
         });   
             return true;
@@ -228,6 +228,20 @@ bool MainWindow::onActionItem(gui::ActionItemDescriptor& aiDesc)
     return false;
 }
 
+void MainWindow::openFile(const td::String& path)
+{
+    td::String settings;
+
+    if (path.endsWith(".txt") || path.endsWith(".xml")) {
+        auto ptr = new TextEditorView;
+        if (ptr->openFile(path, settings)) {
+            addTab(ptr, settings, path);
+            return;
+        }
+        else
+            delete ptr;
+    }
+}
 
 const modelNode &MainWindow::getModelFromTabOrFile(const td::String &modelNameOrPath)
 {
@@ -264,7 +278,7 @@ const modelNode &MainWindow::getModelFromTabOrFile(const td::String &modelNameOr
         for(int i = 0; i<_tabView.getNumberOfViews(); ++i)
             if(((ViewForTab *)_tabView.getView(i))->getName() == modelNameOrPath){
                 sucess = true;
-                return ((ViewForTab *)_tabView.getView(i))->getModelNode();
+                return ((ViewForTab *)_tabView.getView(i))->getModelNode(sucess);
             }        
         throw (exceptionCantFindTab) modelNameOrPath;
     }

@@ -118,7 +118,7 @@ void ModelSettings::loadFromString(const td::String &settingsString)
 
 	pattern = R"(start(.+?))";
 	if (std::regex_search(settingsString.begin(), settingsString.end(), match, pattern))
-		startTime.setValue(timeType(td::String(match[1].first, match[1].length()).toDouble()), false);
+		td::String(match[1].first, match[1].length()).toDouble();
 
 	
 

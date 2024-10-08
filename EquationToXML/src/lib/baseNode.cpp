@@ -2,11 +2,13 @@
 #include <vector>
 #include <cnt/PushBackVector.h>
 #include "td/String.h"
+#include <stack>
 
 #define BACK_COMMENT_CHAR "ˇ"
+#define INDENT_CHAR "\t"
 
 const td::String baseNode::attributeKeywords[] = { "type", "domain", "name", "eps", "dT", "signal", "out", "desc", "method"};
-
+const std::regex baseNode::varPatten = std::regex(R"((^|[^A-Za-z_\.])(\w+))");
 
 
 void baseNode::printNodeToString(td::String& string) const{
@@ -74,6 +76,43 @@ void baseNode::printNode(xml::Writer& w) const{
 
 
 
+void baseNode::prettyPrint(td::String& text) const
+{
+	cnt::StringBuilder str;
+	td::String indent;
+	
+	std::stack<const baseNode*> stack;
+	stack.push(this);
+	const baseNode* current;
+
+	while (!stack.empty()) {
+		current = stack.top();
+		stack.pop();
+		
+		if (current == nullptr) {
+			indent.reduceSize(1);
+			continue;
+		}
+
+		current->prettyPrint(str, indent);
+//
+
+		if (!current->nodes.empty()) {
+			stack.push(nullptr);
+			indent += INDENT_CHAR;
+		}
+
+		for (auto it = current->nodes.rbegin(); it != current->nodes.rend(); ++it)
+			stack.push(*it);
+
+		
+	}
+
+	str.getString(text);
+}
+
+
+
 size_t baseNode::addLine(std::vector<std::pair<td::String, td::String>> &lines, size_t startLine) {
 	while (startLine < lines.size()) {
 		if (lines[startLine].first.isNull() && !lines[startLine].second.isNull()) {
@@ -135,6 +174,13 @@ size_t baseNode::addLine(std::vector<std::pair<td::String, td::String>> &lines, 
 		parent->lastChlid = parent;
 
 	return startLine;
+}
+
+void baseNode::prettyPrint(cnt::StringBuilder<>& str, const td::String& indent) const
+{
+	str << indent << getName() << ":\n";
+	for (const auto& attrib : attribs)
+		str << indent << INDENT_CHAR << attrib.first << " = " << attrib.second << "\n";
 }
 
 void baseNode::addComment(const td::String& comment) {
@@ -200,5 +246,5 @@ baseNode::baseNode(const baseNode& node)
 	parent = node.parent;
 	attribs = node.attribs;
 	for (const auto& n : node.nodes)
-		nodes.emplace_back(n->createCopy());
+		nodes.emplace_back(n->createCopy(""));
 }

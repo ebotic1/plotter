@@ -10,20 +10,22 @@
 
 #include <gui/DrawableButton.h>
 #include <gui/DrawableString.h>
+#include <gui/_aux/CellInfo.h>
 
 #include "MenuBar.h"
 #include "globalEvents.h"
 
 
+
 class NiceButton : public gui::DrawableButton{
 
     gui::DrawableString text;
-    inline static gui::Font font;
-    inline static bool fontInit = false;
+    inline static gui::Font::ID font = gui::Font::ID::SystemLargerBold;
     gui::Size size;
     gui::Shape shape;
     td::ColorID color;
     gui::Rect boundingRect;
+    static constexpr float lineWidth = 5;
 
     gui::ActionItemDescriptor action;
 
@@ -32,17 +34,12 @@ public:
     NiceButton(const td::String &ButtonText, int subMenuID, int actionID, td::ColorID color = td::ColorID::SysCtrlBack):
         color(color),
         text(ButtonText),
-        action(0, subMenuID, 0, actionID, nullptr)
+        action(subMenuID, subMenuID, 0, actionID, nullptr)
     {
-        
-        if(!fontInit){
-            fontInit = true;
-            font.create("Serif", 10, gui::Font::Style::Bold, gui::Font::Unit::Point);
-        }
-        constexpr float lineWidth = 5;
 
-        text.measure(&font, size);
-        size.width *= 0.35;
+        text.measure(font, size);
+        size.width += 60;
+        size.height += 30;
 
 
         setSizeLimits(size.width + lineWidth, gui::Control::Limit::Fixed, size.height + lineWidth, gui::Control::Limit::Fixed);
@@ -55,7 +52,7 @@ public:
     void onDraw(const gui::Rect& rect) override{
         
         shape.drawFillAndWire(color, td::ColorID::SysText);
-        text.draw(boundingRect, &font, td::ColorID::SysText, td::TextAlignment::Center, td::VAlignment::Center);
+        text.draw(boundingRect, font, td::ColorID::SysText, td::TextAlignment::Center, td::VAlignment::Center);
 
     }
 
@@ -65,13 +62,38 @@ public:
         return true;
     }
 
+
+    void measure(gui::CellInfo& cell) override {
+        gui::DrawableButton::measure(cell);
+        cell.nResVer = 0;
+        cell.minVer = size.height + lineWidth;
+    }
+
+ 
+};
+
+
+class TextEdit : public gui::TextEdit {
+
+public:
+    TextEdit():
+        gui::TextEdit() {
+
+    }
+
+    void measure(gui::CellInfo& cell) override {
+        gui::TextEdit::measure(cell);
+        cell.nResVer = 0;
+        cell.minVer = 100;
+    }
+
 };
 
 
 class StartingView: public gui::ViewScroller
 {
-    gui::TextEdit _labelStartExplain;
-    gui::TextEdit _labelTextEditor, _labelGraphicalEditor;
+    TextEdit _labelStartExplain;
+    TextEdit _labelTextEditor, _labelGraphicalEditor;
 
     NiceButton buttons[5];
     gui::HorizontalLayout layoutHorizontal;
@@ -81,7 +103,7 @@ class StartingView: public gui::ViewScroller
 
     void setUpTextEdit(gui::TextEdit &t, const td::String &string){
         t.setText(string);
-        t.setFontSize(11);
+        t.setFontSize(16);
         t.setFlat();
         t.setAsReadOnly();
         t.setSizeLimits(0, gui::Control::Limit::None, 50, gui::Control::Limit::Fixed);
@@ -91,7 +113,7 @@ public:
 
     StartingView():
         gui::ViewScroller(gui::ViewScroller::Type::ScrollAndAutoHide, gui::ViewScroller::Type::ScrollAndAutoHide),
-        layoutMain(5), layoutHorizontal(2), layoutGraph(4), layoutText(4),
+        layoutMain(6), layoutHorizontal(2), layoutGraph(5), layoutText(5),
         buttons{
             {tr("openFromFile"), subMenuNewModel, menuBarActionIDs::OpenFromFile}, 
             {tr("emptyModel"), subMenuNewGraphical , menuBarActionIDs::EmptyModel}, 
@@ -104,26 +126,38 @@ public:
         setUpTextEdit(_labelTextEditor, tr("textEditorLabel"));
 
         
-        
+        auto appendButton = [](NiceButton &b, gui::VerticalLayout &v) {
+            v << b;
+            v.appendSpace(10);
+            };
 
         layoutGraph << _labelGraphicalEditor;
-        layoutGraph << buttons[1] << buttons[2];
-        //layoutGraph.appendSpacer();
+        appendButton(buttons[1], layoutGraph);
+        appendButton(buttons[2], layoutGraph);
         
 
         layoutText << _labelTextEditor;
-        layoutText << buttons[3] << buttons[4]; 
-        //layoutText.appendSpacer();
+        appendButton(buttons[3], layoutText);
+        appendButton(buttons[4], layoutText);
+
+       
 
         layoutHorizontal << layoutText << layoutGraph;
 
         layoutMain << _labelStartExplain;
-        layoutMain.appendSpace(10);
-        layoutMain << buttons[0] << layoutHorizontal;
-        //layoutMain.appendSpacer();
+        layoutMain.appendSpace(15);
+        layoutMain << buttons[0];
+        layoutMain.appendSpace(29);
+        layoutMain << layoutHorizontal;
+        layoutMain.appendSpacer();
         
         helperView.setLayout(&layoutMain);
         setContentView(&helperView);
+    }
+
+    void measure(gui::CellInfo& cell) override {
+        gui::ViewScroller::measure(cell);
+        //cell.nResVer = 0;
     }
 
 };

@@ -44,7 +44,7 @@ bool TextEditorView::save(const td::String &path, const td::String &settingsStri
 void TextEditorView::saveAs(const td::String &settingsString, td::String *newPath)
 {
 
-	td::String *settingsStringPtr = new td::String(std::move(settingsString));
+	td::String *settingsStringPtr = new td::String(settingsString);
 	auto &s = *new gui::SaveFileDialog (this, tr("saveFile"), ".txt");
 	s.openModal([newPath, this, settingsStringPtr](gui::FileDialog *dialog){
 		auto path = dialog->getFileName();
@@ -70,10 +70,10 @@ bool TextEditorView::openFile(const td::String &path, td::String &settingsString
 		if(!in)
 			return false;
 
-		char buffer[3];
+		char buffer[10];
 		while(in){
 			in.read(buffer, sizeof(buffer));
-			s << buffer;
+			s.appendString(buffer, in.gcount());
 		}
 
 		td::String code;
@@ -84,7 +84,23 @@ bool TextEditorView::openFile(const td::String &path, td::String &settingsString
 		return true;
 	}
 	if(path.endsWith(".xml")){
-
+		try {
+			td::String s;
+			GlobalEvents::getMainWindowPtr()->getModelFromTabOrFile(path).prettyPrint(s);
+			equationView.textMain.setText(s);
+			return true;
+		}
+		catch (MainWindow::exceptionCantAccessFile&) {
+			showAlert(tr("error"), tr("cantLoadXML"));
+		}
+		catch (modelNode::exceptionInvalidBlockName& name) {
+			cnt::StringBuilderSmall s;
+			s << "Unrecognized block \"" << name.message << "Cant load model";
+			return false;
+		}
+		catch (...) {
+			return false;
+		}
 	}
 	return false;
 }

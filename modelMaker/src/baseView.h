@@ -53,9 +53,11 @@ private:
 	gui::View tabAndLogView;
 
 
+
 	td::String path, name;
 	unsigned int lastSaved = 0, lastModelExtract = 0, lastSettingsVer = 0;
-	modelNode model, modelTab;
+	modelNode model, modelTab, emptyModel;
+	bool includeGuard = false;
 
 	BaseClass* tabView = nullptr;
 
@@ -63,7 +65,6 @@ private:
 	void updateSettings();
 
 public:
-	using exceptionCantAccessFile = td::String;
 	ViewForTab(BaseClass *, const td::String &settingsStr = td::String());
 
 	const LogView& getLog();
@@ -78,7 +79,7 @@ public:
 	void exportToXML(td::String path);
 	void getTimes(double& startTime, double& endTime, double& stepTime, unsigned int& maxIterations);
 	void setPath(const td::String &path);
-	const modelNode &getModelNode();
+	const modelNode &getModelNode(bool &error);
 
 	~ViewForTab();
 
