@@ -197,7 +197,7 @@ void TFBlock::writeToModel(modelNode& model, Nodes& nodes)
 
 	var.processCommands(inputName);
 	if (!isConnectedFrom) {
-		var.nodes.back()->attribs["out"] = "true";
+		var.getNodes().back()->attribs["out"] = "true";
 
 		if (inputName.find('=') != -1)
 			nle.processCommands(inputName);
@@ -205,7 +205,7 @@ void TFBlock::writeToModel(modelNode& model, Nodes& nodes)
 
 	var.processCommands(outputName);
 	if (!getIsConnectedTo())
-		var.nodes.back()->attribs["out"] = "true";
+		var.getNodes().back()->attribs["out"] = "true";
 
 	inputName = inputName.subStr(0, inputName.find("=") - 1);
 	outputName = outputName.subStr(0, outputName.find("=") - 1);

@@ -62,7 +62,6 @@ void LogView::appendLog(const td::String text, LogType type) const
 	const auto& strFromBuilder = str.toString();
 	textMain.appendString(str.toString());
 
-
 	textMain.setColor(range, color);
 }
 
@@ -237,3 +236,8 @@ ViewForTab::~ViewForTab()
 	delete tabView;
 }
 
+const std::vector<ModelSettings::FunctionDesc> &ViewForTab::getFunctions()
+{
+    updateSettings();
+	return funcionsDesc;
+}

@@ -89,7 +89,7 @@ void MainWindow::addTab(ViewForTab::BaseClass *tab, const td::String &settingsSt
         wholeTab = new ViewForTab(ptr, settingsStr);
         _tabView.addView(wholeTab, tr("newTextTab"), &textEditorIcon);
         wholeTab->setName(tr("newGraphTab"));
-        if (path.endsWith(".txt"));
+        if (path.endsWith(".txt"))
             wholeTab->setPath(path);
     }
 

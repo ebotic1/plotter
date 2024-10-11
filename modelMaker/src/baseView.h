@@ -80,6 +80,7 @@ public:
 	void getTimes(double& startTime, double& endTime, double& stepTime, unsigned int& maxIterations);
 	void setPath(const td::String &path);
 	const modelNode &getModelNode(bool &error);
+	const std::vector<ModelSettings::FunctionDesc> &getFunctions();
 
 	~ViewForTab();
 

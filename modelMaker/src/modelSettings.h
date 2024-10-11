@@ -1,3 +1,4 @@
+#pragma once
 #include <gui/View.h>
 #include <gui/TextEdit.h>
 #include <gui/VerticalLayout.h>

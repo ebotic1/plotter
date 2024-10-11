@@ -431,7 +431,7 @@ bool kanvas::exportToXML(const td::String &path){
 	mod.processCommands("Params:\nVars:");
 	BlockBase::Nodes nodes;
 
-	baseNode& params = *mod.nodes[0];
+	baseNode& params = *mod.getNodes()[0];
 
 
 	for (auto &block : blocks)

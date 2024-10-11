@@ -1,11 +1,14 @@
 #include "codeEdit.h"
 #include "../ToolBar.h"
-#include <regex>
+#include "View.h"
 
 
 
-CodeEdit::CodeEdit() : gui::TextEdit(gui::TextEdit::HorizontalScroll::Yes, gui::TextEdit::Events::Send)
+CodeEdit::CodeEdit(TextEditorView *parent) : 
+gui::TextEdit(gui::TextEdit::HorizontalScroll::Yes, gui::TextEdit::Events::Send),
+parent(parent)
 {
+
 	
 
 }
@@ -14,9 +17,11 @@ CodeEdit::CodeEdit() : gui::TextEdit(gui::TextEdit::HorizontalScroll::Yes, gui::
 
 bool CodeEdit::onKeyPressed(const gui::Key& key)
 {
+	parent->modelChanged();
+
 	gui::Range r;
 	getSelection(r);
-	const auto& text = getText();
+	text = getText();
 	int pEnd = text.find('\n', r.location);
 	int pStart = text.findFromRight('\n', r.location);
 	pStart = (pStart == -1) ? 0 : pStart;
@@ -34,10 +39,13 @@ bool CodeEdit::onKeyReleased(const gui::Key& key)
 
 void CodeEdit::processText(const gui::Range& r)
 {
-	const auto& text = getText();
-	//const char *str = text.subStr(r.location, r.length).c_str();
-	
-	
+	gui::Range rangeFound;
+	setColor(r, td::ColorID::SysText);
+	while(std::regex_search((const td::UTF8 *)text.begin() + r.location, (const td::UTF8 *) text.begin() + r.location + r.length, match, modelNode::varPatten)){
+		rangeFound.location = match[1].first - text.begin();
+		rangeFound.length = match[1].length();
+		setColor(r, td::ColorID::Crimson);
+	}
 
 }
 

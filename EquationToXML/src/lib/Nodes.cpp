@@ -16,12 +16,12 @@ class nameNode : public baseNode {
 public:
 	nameNode(const td::String &name) : name(name) {}
 	nameNode(td::String &&name) : name(name) {}
-	nameNode(const nameNode& node) :
-		baseNode(node) {
+	nameNode(const nameNode& node, const td::String &alias ) :
+		baseNode(node, alias) {
 		name = node.name;
 	}
 	baseNode* createCopy(const td::String& alias) override {
-		return new nameNode(*this);
+		return new nameNode(*this, alias);
 	}
 	bool nodeAction(const td::String& command, baseNode*& newChild) override {
 		return false;
@@ -40,18 +40,40 @@ private:
 	type tip;
 public:
 	conditionNode(type);
-	conditionNode(const conditionNode& node):
-		baseNode(node){
+	conditionNode(const conditionNode& node, const td::String &alias):
+		baseNode(node, alias){
 		tip = node.tip;
 	}
 	baseNode* createCopy(const td::String& alias) override {
-		return new conditionNode(*this);
+		return new conditionNode(*this, alias);
 	}
-	void prettyPrint(cnt::StringBuilder<>& str, const td::String& indent) const override{
-		str << indent << conditionNode::getName() << "\n";
+	void prettyPrint(cnt::StringBuilder<>& str, td::String& indent) const override{
+		if(getName()[0] != 'T'){ //not Then
+			indent.reduceSize(1);
+			str << indent << conditionNode::getName() << "\n";
+			indent += INDENT_CHAR;
+		}
+
+		if (auto itFx = attribs.find("fx"); itFx != attribs.end())
+			str  << indent << itFx->second << "\n";
 		for (const auto& attrib : attribs)
-			str << indent << INDENT_CHAR << attrib.first << " = " << attrib.second << "\n";
+			if(attrib.first.cCompare("fx") != 0)
+				str  << indent << attrib.first << " = " << attrib.second << "\n";
 	}
+
+	void prettyPrintClosing(cnt::StringBuilder<>& str, td::String &indent) const override{
+		const auto &nodes = getParent()->getNodes();
+		for(int i = 0; i < nodes.size(); ++i)
+			if(nodes[i] == this){
+				if(i != nodes.size()-1)
+					if(auto ptr = dynamic_cast<conditionNode *>(nodes[i+1]);  ptr != nullptr && ptr->tip == type::elsee)
+						return;
+				indent.reduceSize(1);
+				str << indent << "end if\n";
+				indent += INDENT_CHAR;
+			}
+	}
+
 	virtual bool nodeAction(const td::String& command, baseNode*& newChild) override;
 	inline const char* getName() const override {
 		return (tip == type::thenn) ? "Then" : "Else";
@@ -60,6 +82,13 @@ public:
 
 conditionNode::conditionNode(type t) : tip(t) {}
 
+
+static td::String subStr(const td::String &str, int pozStart, int pozEnd){
+	if(pozStart >= pozEnd)
+		return td::String();
+	return td::String(str.begin() + pozStart, pozEnd - pozStart);
+}
+
 static inline void addAlias(td::String &line, const td::String& alias) {
 	if (alias.isNull())
 		return;
@@ -67,12 +96,15 @@ static inline void addAlias(td::String &line, const td::String& alias) {
 	cnt::StringBuilderSmall str;
 
 	const td::UTF8* start = line.begin();
-	const td::UTF8* previousStart = start;
+	const td::UTF8* previousEnd = start;
 	while (std::regex_search(start, line.end(), match, baseNode::varPatten)) {
-		str << line.subStr(previousStart - line.begin(), match[1].first - line.begin()) << alias << ".";
-		previousStart = start;
+		//str << td::String(previousEnd, match[1].first - line.begin() - previousEnd) << alias << ".";
+		str << subStr(line, previousEnd - line.begin(), match[2].first - line.begin()) << alias << ".";
+		previousEnd = match[2].first;
 		start = match.suffix().first;
 	}
+	
+	str << subStr(line, previousEnd - line.begin(), line.end() - line.begin());
 	str.getString(line);
 }
 
@@ -80,33 +112,54 @@ class singleEquation : public baseNode {
 	bool added = false;
 	bool consumeEnd = false;
 public:
+	singleEquation() = default;
+	singleEquation(const singleEquation &n, const td::String &alias ):baseNode(n, alias)
+	{
+		added = n.added;
+		consumeEnd = n.consumeEnd;
+	}
 	baseNode* createCopy(const td::String& alias) override {
-		singleEquation &equation = *new singleEquation(*this);
+		singleEquation &equation = *new singleEquation(*this, alias);
 		
 		if (auto itFx = equation.attribs.find("fx"); itFx != equation.attribs.end())
 			addAlias(itFx->second, alias);
 		if (auto itW = equation.attribs.find("w"); itW != equation.attribs.end())
 			addAlias(itW->second, alias);
+		if (auto it = equation.attribs.find("cond"); it != equation.attribs.end())
+			addAlias(it->second, alias);
 		
 		return &equation;
 	}
 
-	void prettyPrint(cnt::StringBuilder<>& str, const td::String& indent) const override{
+	void prettyPrint(cnt::StringBuilder<>& str, td::String& indent) const override{
+		if (auto it = attribs.find("cond"); it != attribs.end()){
+			str << indent << "if " << it->second;
+			indent += INDENT_CHAR;
+		}
+
 		if (auto itFx = attribs.find("fx"); itFx != attribs.end())
 			str << indent << itFx->second;
 		if (auto itW = attribs.find("w"); itW != attribs.end())
 			str << indent << " [ " << itW->second << " ]";
 		
-		str << indent << "\n";
+		str << "\n";
 
 		for (const auto& attrib : attribs) {
 			if (attrib.first.cCompare("fx") == 0)
 				continue;
 			else if (attrib.first.cCompare("w") == 0)
 				continue;
-			str << indent << INDENT_CHAR << attrib.first << " = " << attrib.second << "\n";
+			else if (attrib.first.cCompare("cond") == 0)
+				continue;
+			str << indent << attrib.first << " = " << attrib.second << "\n";
 		}
 	}
+
+	void prettyPrintClosing(cnt::StringBuilder<>& str, td::String &indent) const override{
+		if (auto it = attribs.find("cond"); it != attribs.end())
+			indent.reduceSize(1);
+	}
+
 
 	virtual bool nodeAction(const td::String& command, baseNode*& newChild) override {
 		if (command.beginsWithCI("then"))
@@ -168,10 +221,12 @@ template<typename containerName, typename nodeType>
 class containerNode : public baseNode {
 	bool done = false;
 public:
-	containerNode(){}
+	containerNode() = default;
 	containerNode(const containerNode<containerName, nodeType>& node) = default;
+	containerNode(const containerNode<containerName, nodeType>& node, const td::String &alias):
+	baseNode(node,alias){}
 	baseNode* createCopy(const td::String &alias) override {
-		return new containerNode<containerName, nodeType>(*this);
+		return new containerNode<containerName, nodeType>(*this, alias);
 	}
 	bool nodeAction(const td::String& command, baseNode*& newChild) override{
 		if (done) return false;
@@ -184,8 +239,8 @@ public:
 		}
 		if (command.getLastChar() == ':') return false;
 		if (command.beginsWithCI("end")) {
-			//done = true;
-			return false;
+			done = true;
+			return true;
 		}
 
 
@@ -207,18 +262,22 @@ template<typename variableName>
 class variableNode : public baseNode {
 	bool added = false;
 public:
+	variableNode() = default;
+	variableNode(const variableNode &n) = default;
+	variableNode(const variableNode &n, const td::String &alias):
+		baseNode(n,alias){}
 	virtual baseNode* createCopy(const td::String &alias) override{
-		auto &var = *new variableNode<variableName>(*this);
+		auto &var = *new variableNode(*this, alias);
 		if (auto it = var.attribs.find("name"); it != var.attribs.end())
 			addAlias(it->second, alias);
 		return &var;
 	}
-	void prettyPrint(cnt::StringBuilder<>& str, const td::String& indent) const override {
+	void prettyPrint(cnt::StringBuilder<>& str, td::String& indent) const override {
 		if (auto it = attribs.find("name"); it != attribs.end())
 			str << indent << it->second;
 		if (auto it = attribs.find("val"); it != attribs.end())
 			str << " = " << it->second;
-		str << indent << "\n";
+		str << "\n";
 		for (const auto& attrib : attribs) {
 			if (attrib.first.cCompare("name") == 0)
 				continue;
@@ -227,6 +286,11 @@ public:
 			str << indent << INDENT_CHAR << attrib.first << " = " << attrib.second << "\n";
 		}
 	}
+
+	void prettyPrintClosing(cnt::StringBuilder<>& str, td::String &indent) const override{
+		
+	}
+
 	bool nodeAction(const td::String& command, baseNode*& newChild) override {
 		if (added) return false;
 		added = true;
@@ -263,7 +327,7 @@ bool conditionNode::nodeAction(const td::String& command, baseNode*& newChild){
 	if (command.findCI("else") != -1)
 		return false;
 	
-	nodes.push_back(new singleEquation());
+	nodes.push_back(new singleEquation);
 	newChild = nodes.back();
 
 	return false;
@@ -318,10 +382,13 @@ typedef containerNode<TfName, singleEquation> TFsNode;
 
 class initNode : public baseNode {
 public:
-	initNode(){}
-	initNode(const initNode& node) = default;
+	initNode() = default;
+	initNode(const initNode& node, const td::String &alias ):
+		baseNode(node, alias){
+
+		}
 	baseNode* createCopy(const td::String &alias) override {
-		return new initNode(*this);
+		return new initNode(*this, alias);
 	}
 	virtual bool nodeAction(const td::String& command, baseNode*& newChild) override {
 
@@ -339,8 +406,8 @@ public:
 };
 
 
-modelNode::modelNode(const modelNode& model):
-	baseNode(model)
+modelNode::modelNode(const modelNode& model, const td::String &alias):
+	baseNode(model, alias)
 {
 	done = model.done;
 }
@@ -408,8 +475,8 @@ modelNode &modelNode::addWtih(const modelNode &model, const td::String &alias)
 		for (const auto& thisNode : nodes)
 			if (std::strcmp(thisNode->getName(), n->getName()) == 0) {
 				found = true;
-				for (const auto& child : n->nodes)
-					thisNode->nodes.push_back(child->createCopy(alias));
+				for (const auto& child : n->getNodes())
+					thisNode->addChild(child->createCopy(alias));
 			}
 			
 		if (!found)
@@ -431,49 +498,50 @@ static void addNodeFromXML(xml::FileParser::node_iterator &it, baseNode &node){
 	while(!it.end()){
 		name = it->getName();
 		if(name.cCompare("Model") == 0)
-			node.nodes.emplace_back(new modelNode);
+			node.addChild(new modelNode);
 		else if(name.cCompare("Vars") == 0)
-			node.nodes.emplace_back(new varsNode);
+			node.addChild(new varsNode);
 		else if(name.cCompare("Var") == 0)
-			node.nodes.emplace_back(new variableNode<varName>);
+			node.addChild(new variableNode<varName>);
 		else if(name.cCompare("Params") == 0)
-			node.nodes.emplace_back(new paramsNode);
+			node.addChild(new paramsNode);
 		else if(name.cCompare("Param") == 0)
-			node.nodes.emplace_back(new variableNode<paramName>);
+			node.addChild(new variableNode<paramName>);
 		else if(name.cCompare("NLEqs") == 0)
-			node.nodes.emplace_back(new NLEquationsNode);
+			node.addChild(new NLEquationsNode);
 		else if(name.cCompare("Eq") == 0)
-			node.nodes.emplace_back(new singleEquation);
+			node.addChild(new singleEquation);
 		else if(name.cCompare("Then") == 0)
-			node.nodes.emplace_back(new conditionNode(conditionNode::type::thenn));
+			node.addChild(new conditionNode(conditionNode::type::thenn));
 		else if(name.cCompare("Else") == 0)
-			node.nodes.emplace_back(new conditionNode(conditionNode::type::elsee));
+			node.addChild(new conditionNode(conditionNode::type::elsee));
 		else if(name.cCompare("Group") == 0)
-			node.nodes.emplace_back(new containerNode<GroupName, singleEquation>);
+			node.addChild(new containerNode<GroupName, singleEquation>);
 		else if(name.cCompare("ODEqs") == 0)
-			node.nodes.emplace_back(new ODEquationsNode);
+			node.addChild(new ODEquationsNode);
 		else if(name.cCompare("Init") == 0)
-			node.nodes.emplace_back(new initNode);
+			node.addChild(new initNode);
 		else if(name.cCompare("PostProc") == 0)
-			node.nodes.emplace_back(new postProcNode);
+			node.addChild(new postProcNode);
 		else if(name.cCompare("MeasEqs") == 0)
-			node.nodes.emplace_back(new MeasEqNode);
+			node.addChild(new MeasEqNode);
 		else if(name.cCompare("Limits") == 0)
-			node.nodes.emplace_back(new LimitNode);
+			node.addChild(new LimitNode);
 		else if(name.cCompare("ECs") == 0)
-			node.nodes.emplace_back(new ECsNode);
+			node.addChild(new ECsNode);
 		else if(name.cCompare("TFs") == 0)
-			node.nodes.emplace_back(new TFsNode);
+			node.addChild(new TFsNode);
 		else{
-			node.nodes.emplace_back(new nameNode(name));
+			node.addChild(new nameNode(name));
 			throw (modelNode::exceptionInvalidBlockName) name;
 		}
 
 		for(const auto &at : it->attribs)
-			node.nodes.back()->attribs[at.getName()] = at.getValue();
+			node.getNodes().back()->attribs[at.getName()] = at.getValue();
+
 
 		auto childIter = it.getChildNode();
-		addNodeFromXML(childIter, *node.nodes.back());
+		addNodeFromXML(childIter, *node.getNodes().back());
 
 		++it;
 	}

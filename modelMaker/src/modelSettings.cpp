@@ -97,7 +97,7 @@ void ModelSettings::getStartStopTime(double& startTime, double& endTime, double&
 	stepTime = temp.dec3Val().getAsFloat();
 
 	this->maxIter.getValue(temp);
-	//maxIterations = temp.u4Val();
+	maxIterations = temp.u4Val();
 
 }
 
@@ -114,11 +114,34 @@ void ModelSettings::loadFromString(const td::String &settingsString)
 		return;
 	
 	std::regex pattern;
+	td::String patternStr, retVal;
 	std::cmatch match;
 
-	pattern = R"(start(.+?))";
-	if (std::regex_search(settingsString.begin(), settingsString.end(), match, pattern))
-		td::String(match[1].first, match[1].length()).toDouble();
+	auto getVal = [&settingsString, &pattern, &match, &patternStr](const td::String& tag, td::String &retVal){
+		patternStr.format(R"(%s\(((?:\n|.)+?)\))", tag.c_str());
+		pattern = patternStr.c_str();
+		if (std::regex_search(settingsString.begin(), settingsString.end(), match, pattern)){
+			retVal = td::String(match[1].first, match[1].length());
+			return true;
+		}
+		return false;
+	};
+
+	if(getVal("start", retVal))
+		startTime.setValue((timeType)retVal.toDouble());
+
+	if(getVal("end", retVal))
+		endTime.setValue((timeType)retVal.toDouble());
+
+	if(getVal("step", retVal))
+		stepTime.setValue((stepType)retVal.toDouble());
+
+	if(getVal("maxIter", retVal))
+		maxIter.setValue((td::UINT4)retVal.toInt());
+
+	if(getVal("preProc", retVal))
+		preprocesCommands.setText(retVal);
+	
 
 	
 

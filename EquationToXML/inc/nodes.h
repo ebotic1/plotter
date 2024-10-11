@@ -20,17 +20,21 @@ class baseNode {
 
 protected:
 	
+	std::vector<baseNode*> nodes;
 	virtual bool nodeAction(const td::String& command, baseNode*& newChild) = 0;
 	td::String comment;
 	size_t addLine(std::vector<std::pair<td::String, td::String>>& lines, size_t startLine = 0);
-	virtual void prettyPrint(cnt::StringBuilder<>& str, const td::String &indent) const;
+	virtual void prettyPrint(cnt::StringBuilder<>& str, td::String &indent) const;
+	virtual void prettyPrintClosing(cnt::StringBuilder<>& str, td::String &indent) const;
 	void clear();
+	baseNode(const baseNode& node, const td::String &alias);
 
 public:
-	std::vector<baseNode*> nodes;
+	
 	std::map<td::String, td::String> attribs;
 	static const std::regex varPatten;
-
+	const std::vector<baseNode*> &getNodes();
+	baseNode *getParent() const;
 	baseNode();
 	baseNode(baseNode&&) = delete;
 	baseNode(const baseNode& node);
@@ -47,6 +51,7 @@ public:
 	}
 	void addComment(const td::String& comment);
 	void addComment(td::String&& comment);
+	void addChild(baseNode *childNode);
 
 	void processCommands(const td::String& text);
 	virtual inline const char* getName() const = 0;
@@ -66,13 +71,13 @@ public:
 
 class modelNode : public baseNode {
 	bool done = false;
-
+	modelNode(const modelNode& model, const td::String &alias);
 public:
 
 	static const td::String attributeKeywords[];
 	struct exceptionInvalidBlockName { td::String message; };
 	modelNode() {};
-	modelNode(const modelNode& model);
+	modelNode(const modelNode& model) = default;
 	modelNode &operator =(const modelNode &model);
 	modelNode(td::String command);
 	bool nodeAction(const td::String& command, baseNode*& newChild) override;

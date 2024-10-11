@@ -167,7 +167,7 @@ void BlockBase::setPosition(const gui::Point& position){
 		if (nodes.nodes[(int)id[i]] != nullptr)
 			continue;
 
-		for (auto& node : model.nodes)
+		for (const auto& node : model.getNodes())
 			if (std::strcmp(node->getName(), nazivi[(int)id[i]]) == 0) {
 				nodes.nodes[(int)id[i]] = node;
 				goto NEXT_NODE;

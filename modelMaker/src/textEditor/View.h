@@ -5,27 +5,13 @@
 #include "../baseView.h"
 
 
-class TextEditorView;
-
-class EquationView : public gui::View {
-
-	gui::TextEdit textCodeNumbers;
-	gui::HorizontalLayout _hl;
-
-
-public:
-	CodeEdit textMain;
-
-	EquationView();
-
-};
-
 
 class TextEditorView : public ViewForTab::BaseClass {
 
-	EquationView equationView;
+	CodeEdit textMain;
 	gui::HorizontalLayout _hl;
 
+	friend class CodeEdit;
 public:
 
 	

@@ -8,7 +8,7 @@
 #define INDENT_CHAR "\t"
 
 const td::String baseNode::attributeKeywords[] = { "type", "domain", "name", "eps", "dT", "signal", "out", "desc", "method"};
-const std::regex baseNode::varPatten = std::regex(R"((^|[^A-Za-z_\.])(\w+))");
+const std::regex baseNode::varPatten = std::regex(R"((^|[^A-Za-z_\.])([a-zA-Z_](?:\w+?)?)(?:$|[^A-Za-z_\.]))");
 
 
 void baseNode::printNodeToString(td::String& string) const{
@@ -87,23 +87,34 @@ void baseNode::prettyPrint(td::String& text) const
 
 	while (!stack.empty()) {
 		current = stack.top();
-		stack.pop();
 		
 		if (current == nullptr) {
-			indent.reduceSize(1);
+			stack.pop();
+			stack.top()->prettyPrintClosing(str, indent);
+			stack.pop();
 			continue;
 		}
 
+
 		current->prettyPrint(str, indent);
-//
+
+		if(!current->comment.isNull()){
+			str << current->comment << "\n";
+		}
+		
+
+
 
 		if (!current->nodes.empty()) {
 			stack.push(nullptr);
-			indent += INDENT_CHAR;
-		}
 
-		for (auto it = current->nodes.rbegin(); it != current->nodes.rend(); ++it)
+			for (auto it = current->nodes.rbegin(); it != current->nodes.rend(); ++it)
 			stack.push(*it);
+
+		}else{
+			stack.pop();
+			current->prettyPrintClosing(str, indent);
+		}
 
 		
 	}
@@ -176,15 +187,24 @@ size_t baseNode::addLine(std::vector<std::pair<td::String, td::String>> &lines, 
 	return startLine;
 }
 
-void baseNode::prettyPrint(cnt::StringBuilder<>& str, const td::String& indent) const
+void baseNode::prettyPrint(cnt::StringBuilder<>& str, td::String& indent) const
 {
+	if(parent != nullptr && !parent->attribs.empty())
+		str << indent << "\n";
 	str << indent << getName() << ":\n";
+	indent += INDENT_CHAR;
 	for (const auto& attrib : attribs)
-		str << indent << INDENT_CHAR << attrib.first << " = " << attrib.second << "\n";
+		str << indent << attrib.first << " = " << attrib.second << "\n";
+
 }
 
-void baseNode::addComment(const td::String& comment) {
-	if (comment.isNull())
+void baseNode::prettyPrintClosing(cnt::StringBuilder<> &str, td::String &indent) const
+{
+	indent.reduceSize(1);
+}
+void baseNode::addComment(const td::String &comment)
+{
+    if (comment.isNull())
 		return;
 	this->comment += comment;
 }
@@ -199,8 +219,14 @@ void baseNode::addComment(td::String&& comment) {
 	}
 }
 
-void baseNode::processCommands(const td::String& text) {
-	std::vector<std::pair<td::String, td::String>> lines;
+void baseNode::addChild(baseNode *childNode)
+{
+	nodes.emplace_back(childNode);
+	nodes.back()->parent = this;
+}
+void baseNode::processCommands(const td::String &text)
+{
+    std::vector<std::pair<td::String, td::String>> lines;
 	cnt::PushBackVector<td::String> l;
 	parent = nullptr;
 	text.split("\n;", l, true, true);
@@ -220,9 +246,6 @@ void baseNode::processCommands(const td::String& text) {
 	addLine(lines);
 }
 
-
-
-
 void baseNode::clear()
 {
 	for (const auto& node : nodes)
@@ -234,7 +257,24 @@ void baseNode::clear()
 	parent = nullptr;
 }
 
+baseNode::baseNode(const baseNode &node, const td::String &alias)
+{
+	comment = node.comment;
+	lastChlid = node.lastChlid;
+	parent = node.parent;
+	attribs = node.attribs;
+	for (const auto& n : node.nodes)
+		nodes.emplace_back(n->createCopy(alias));
+}
+const std::vector<baseNode *> &baseNode::getNodes()
+{
+    return nodes;
+}
 
+baseNode *baseNode::getParent() const
+{
+    return parent;
+}
 baseNode::baseNode()
 {
 }

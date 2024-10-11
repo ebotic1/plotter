@@ -35,7 +35,6 @@
 		<Res id="openFromFile" tr="Open file" />
 		<Res id="stepTime" tr="Step: " />
 		<Res id="embedGraph" tr="Embed plot in window" />
-		<Res id="unsupportedType" tr="Unsupported model type &quot;" />
 		<Res id="noTypeFound" tr="No type attribute found, assuiming &quot;DAE&quot;" />
 		<Res id="supportedModelsInfo" tr="Inside &quot;Model:&quot; tag use attribute &quot;type =&quot; DAE/ODE/WLS" />
 		<Res id="preproc" tr="Preprocessing commands:" />
@@ -43,5 +42,8 @@
 		<Res id="cantSaveFile" tr="Error occured, could not save model." />
 		<Res id="openModel" tr="Open model" />
 		<Res id="open" tr="Open" />
+		<Res id="cantLoadXML" tr="Cant find or access file" />
+		<Res id="noModelTagFound" tr="&quot;Model:&quot; tag not found, cant interpet file" />
+		<Res id="simulationFailed" tr="failed to extract model, simulation stopped" />
 	</Translations>
 </DevRes>
