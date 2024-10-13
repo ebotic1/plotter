@@ -8,13 +8,11 @@
 #include <vector>
 #include <cnt/StringBuilder.h>
 #include <regex>
-
-
+#include <unordered_set>
+#include <td/StringConverter.h>
 
 
 class baseNode {
-
-	static const td::String attributeKeywords[];
 	baseNode* parent = nullptr;
 	baseNode* lastChlid = this;
 
@@ -31,6 +29,7 @@ protected:
 
 public:
 	
+	static const std::unordered_set<td::String> attributeKeywords;
 	std::map<td::String, td::String> attribs;
 	static const std::regex varPatten;
 	const std::vector<baseNode*> &getNodes();
@@ -74,7 +73,6 @@ class modelNode : public baseNode {
 	modelNode(const modelNode& model, const td::String &alias);
 public:
 
-	static const td::String attributeKeywords[];
 	struct exceptionInvalidBlockName { td::String message; };
 	modelNode() {};
 	modelNode(const modelNode& model) = default;

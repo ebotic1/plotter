@@ -1,6 +1,7 @@
 #include "modelSettings.h"
 #include <gui/GridComposer.h>
 #include <regex>
+#include "globalEvents.h"
 
 using timeType = td::Decimal2;
 auto timeTypeTD = td::DataType::decimal2;
@@ -28,9 +29,26 @@ ModelSettings::ModelSettings() :
 	setUpLineEditSize(startTime,  td::Variant(timeType(0.0)));
 	setUpLineEditSize(endTime,  td::Variant(timeType(10.0)));
 	setUpLineEditSize(stepTime,  td::Variant(stepType(0.01)));
-	setUpLineEditSize(maxIter, td::Variant(td::UINT4(1)));
+	setUpLineEditSize(maxIter, td::Variant(td::UINT4(500)));
 
-	preprocesCommands.onChangedSelection([this](){++version;});
+	preprocesCommands.onChangedSelection([this](){
+		
+		++version;
+		auto text = preprocesCommands.getText();
+		const char *start = text.begin();
+		static std::cmatch match;
+		static std::regex keywordPatten(R"(import|as|function|dataset|of|versus)");
+		static gui::Range rangeFound;
+
+		while(std::regex_search((const td::UTF8 *)start, (const td::UTF8 *) text.end(), match, keywordPatten)){
+			rangeFound.location = match[0].first - text.begin();
+			rangeFound.length = match[0].length();
+			preprocesCommands.setColor(rangeFound, GlobalEvents::settingsVars.colorKeyword);
+			start = match.suffix().first;
+	}
+	
+	});
+	preprocesCommands.setFontSize(GlobalEvents::settingsVars.textSize);
 
 	gui::GridComposer grid(_gridLayout);
 	grid.appendRow(_lblStart) << startTime;

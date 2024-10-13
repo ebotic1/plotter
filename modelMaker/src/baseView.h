@@ -4,6 +4,8 @@
 #include <gui/VerticalLayout.h>
 #include <gui/HorizontalLayout.h>
 #include <gui/SplitterLayout.h>
+#include <unordered_set>
+#include <td/StringConverter.h>
 
 #include "../../EquationToXML/inc/nodes.h"
 #include "modelSettings.h"
@@ -23,7 +25,7 @@ public:
 
 	enum class LogType { info, warning, error };
 	LogView();
-	void appendLog(const td::String text, LogType type) const;
+	void appendLog(const td::String text, LogType type, bool discardThisLog = false) const;
 };
 
 
@@ -40,6 +42,7 @@ public:
 		virtual bool save(const td::String& path, const td::String& settingsString) { return false; }
 		virtual void saveAs(const td::String& settingsString, td::String *newPath) {}
 		virtual void getModel(modelNode& model) {}
+		virtual void setVariabesAndParams(std::unordered_set<td::String> &&vars, std::unordered_set<td::String> &&params){}
 		virtual bool openFile(const td::String& path, td::String& settingsString) { return false; }
 		unsigned int getVersion() const { return version; }
 	};
@@ -79,7 +82,7 @@ public:
 	void exportToXML(td::String path);
 	void getTimes(double& startTime, double& endTime, double& stepTime, unsigned int& maxIterations);
 	void setPath(const td::String &path);
-	const modelNode &getModelNode(bool &error);
+	const modelNode &getModelNode(bool &error, bool supressLogs = false);
 	const std::vector<ModelSettings::FunctionDesc> &getFunctions();
 
 	~ViewForTab();

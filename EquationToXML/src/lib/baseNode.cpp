@@ -7,7 +7,8 @@
 #define BACK_COMMENT_CHAR "ˇ"
 #define INDENT_CHAR "\t"
 
-const td::String baseNode::attributeKeywords[] = { "type", "domain", "name", "eps", "dT", "signal", "out", "desc", "method"};
+const std::unordered_set<td::String> baseNode::attributeKeywords{"type", "domain", "name", "eps", "dT", "signal", "out", "desc", "method"};
+//const td::String baseNode::attributeKeywords[] = { "type", "domain", "name", "eps", "dT", "signal", "out", "desc", "method"};
 const std::regex baseNode::varPatten = std::regex(R"((^|[^A-Za-z_\.])([a-zA-Z_](?:\w+?)?)(?:$|[^A-Za-z_\.]))");
 
 
@@ -144,14 +145,11 @@ size_t baseNode::addLine(std::vector<std::pair<td::String, td::String>> &lines, 
 		bool found = false;
 		if (pozEq != -1) {
 			td::String keyword = lines[startLine].first.subStr(0, pozEq - 1).trimRight();
-			for (auto & var : attributeKeywords) {
-				if (var == keyword) {
-					lastChlid->setAttrib(lines[startLine].first.subStr(0, pozEq - 1).trimRight(), lines[startLine].first.subStr(pozEq + 1, -1).trimLeft());
-					lastChlid->addComment(lines[startLine].second);
-					found = true;
-					break;
+			if(attributeKeywords.contains(keyword)){
+				lastChlid->setAttrib(lines[startLine].first.subStr(0, pozEq - 1).trimRight(), lines[startLine].first.subStr(pozEq + 1, -1).trimLeft());
+				lastChlid->addComment(lines[startLine].second);
+				found = true;
 				}
-			}
 		}
 		if (found) {
 			++startLine;

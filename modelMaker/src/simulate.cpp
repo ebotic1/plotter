@@ -59,7 +59,7 @@ void MainWindow::simulate(ViewForTab *tab)
 		return;
 	}
 	
-
+	return; //izbridaati
 	bool isComplex;
 	if(auto it = model.attribs.find("domain"); it == model.attribs.end())
 		isComplex = false;
@@ -125,14 +125,8 @@ void MainWindow::simulate(ViewForTab *tab)
 		}
 
 		s->init(modelStr, sc::IDblSolver::SourceType::Memory);
-		try{
-			s->solve(startTime, stepTime, endTime, new SolutionBuffer(&logView, funcs, s));
-		}catch(...){
-			td::String str("Solver crashed with error message: ");
-			str += s->getLastErrorStr();
-			logView.appendLog(str, LogType::error);
-			return;
-		}
+		s->solve(startTime, stepTime, endTime, new SolutionBuffer(&logView, funcs, s), 0);
+
 
 
 
@@ -142,6 +136,12 @@ void MainWindow::simulate(ViewForTab *tab)
 		double r[599];
 		s->getResults(r);
 		int c = 3;
+
+		auto kk = s->getVariablesPtr();
+		double d = *kk;
+
+		int x = 8;
+
 
 	}else{
 		sc::ICmplxSolver *s;
@@ -163,14 +163,7 @@ void MainWindow::simulate(ViewForTab *tab)
 
 
 		s->init(modelStr, sc::ICmplxSolver::SourceType::Memory);
-		try{
-			s->solve(startTime, stepTime, endTime, new SolutionBuffer(&logView, funcs, s));
-		}catch(...){
-			td::String str("Simulation crashed with error message: ");
-			str += s->getLastErrorStr();
-			logView.appendLog(str, LogType::error);
-			return;
-		}
+		s->solve(startTime, stepTime, endTime, nullptr);
 
 
 

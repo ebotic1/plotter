@@ -33,6 +33,8 @@ public:
 		return mainWindow = new MainWindow();
 	}
 
+	
+
 };
 
 int main(int argc, const char** argv) {

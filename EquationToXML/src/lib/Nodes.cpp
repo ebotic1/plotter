@@ -433,7 +433,7 @@ bool modelNode::nodeAction(const td::String& command, baseNode*& newChild){
 	}
 
 
-	if (command.getLastChar() == ':') { //radi se o novom elementu
+	if (command.getLastChar() == ':' || true) { //radi se o novom elementu // uvijek true jer treba da baci exception jer ako je doslo do ove funkcije onda nije rijec o atributu tako da nek baci exception jer neka je greska
 		if (command.cCompareNoCase("Vars:") == 0)
 			nodes.push_back(new varsNode());
 		else if (command.cCompareNoCase("Params:") == 0)
@@ -457,7 +457,7 @@ bool modelNode::nodeAction(const td::String& command, baseNode*& newChild){
 		else if (command.cCompareNoCase("TFs:") == 0 || command.cCompareNoCase("TF:") == 0)
 			nodes.push_back(new TFsNode);
 		else
-			nodes.push_back(new nameNode(command.subStr(0, command.length() - 2)));
+			throw exceptionInvalidBlockName(command);
 
 		newChild = nodes.back();
 		return true;

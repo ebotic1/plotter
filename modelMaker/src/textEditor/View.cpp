@@ -111,6 +111,8 @@ bool TextEditorView::openFile(const td::String &path, td::String &settingsString
 		s.getString(code);
 
 		textMain.setText(code);
+		textMain.processText();
+		textMain.setFontSize(GlobalEvents::settingsVars.textSize);
 		
 		return true;
 	}
@@ -119,6 +121,7 @@ bool TextEditorView::openFile(const td::String &path, td::String &settingsString
 			td::String s;
 			GlobalEvents::getMainWindowPtr()->getModelFromTabOrFile(path).prettyPrint(s);
 			textMain.setText(s);
+			textMain.setFontSize(GlobalEvents::settingsVars.textSize);
 			return true;
 		}
 		catch (MainWindow::exceptionCantAccessFile&) {
@@ -137,4 +140,11 @@ bool TextEditorView::openFile(const td::String &path, td::String &settingsString
 		}
 	}
 	return false;
+}
+
+
+void TextEditorView::setVariabesAndParams(std::unordered_set<td::String> &&vars, std::unordered_set<td::String> &&params){
+	this->vars = vars;
+	this->params = params;
+	textMain.processText();
 }

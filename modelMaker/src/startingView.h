@@ -36,17 +36,19 @@ public:
         text(ButtonText),
         action(subMenuID, subMenuID, 0, actionID, nullptr)
     {
-
+        
+        text.measure(font, size); // izbrisati
         text.measure(font, size);
         size.width += 60;
         size.height += 30;
 
 
-        setSizeLimits(size.width + lineWidth, gui::Control::Limit::Fixed, size.height + lineWidth, gui::Control::Limit::Fixed);
+        setSizeLimits(size.width + lineWidth , gui::Control::Limit::Fixed, size.height + lineWidth, gui::Control::Limit::Fixed);
 
         boundingRect.setOrigin({lineWidth/2,lineWidth/2});
-        boundingRect.setSize(size);
+        boundingRect.setSize({size.width, size.height});
         shape.createRoundedRect(boundingRect, 20, lineWidth);
+        boundingRect.setSize(size);
     }
 
     void onDraw(const gui::Rect& rect) override{

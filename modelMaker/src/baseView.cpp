@@ -23,8 +23,10 @@ LogView::LogView() :
 
 }
 
-void LogView::appendLog(const td::String text, LogType type) const
+void LogView::appendLog(const td::String text, LogType type, bool discardThisLog) const
 {
+	if(discardThisLog)
+		return;
 	td::Time t(true);
 	cnt::StringBuilderSmall str;
 	td::ColorID color;
@@ -77,7 +79,8 @@ ViewForTab::ViewForTab(BaseClass* tabView, const td::String &settingsStr):
 	mainView.setContent(settings, tabAndLogView);
 
 	settings.loadFromString(settingsStr);
-
+	bool error;
+	getModelNode(error, true);
 	setLayout(&mainView);
 }
 
@@ -147,8 +150,9 @@ void ViewForTab::updateModelNode()
 	if (lastModelExtract == tabView->getVersion())
 		return;
 
-	lastModelExtract = tabView->getVersion();
 	tabView->getModel(modelTab);
+
+	lastModelExtract = tabView->getVersion();
 }
 
 void ViewForTab::updateSettings()
@@ -162,11 +166,11 @@ void ViewForTab::updateSettings()
 
 }
 
-const modelNode& ViewForTab::getModelNode(bool &error)
+const modelNode& ViewForTab::getModelNode(bool &error, bool supressLogs)
 {
 	error = false;
 	if (includeGuard) {
-		logView.appendLog("Circular dependency detected, this model includes itself", LogType::error);
+		logView.appendLog("Circular dependency detected, this model includes itself", LogType::error, supressLogs);
 		error = true;
 		includeGuard = false;
 		return emptyModel;
@@ -174,7 +178,18 @@ const modelNode& ViewForTab::getModelNode(bool &error)
 	else
 		includeGuard = true;
 
-	updateModelNode();
+	try{
+		updateModelNode();
+	}catch(modelNode::exceptionInvalidBlockName &blName){
+		td::String log("Cant generate model ");
+		log += name;
+		log += ", unrecognized block ";
+		log += blName.message;
+		logView.appendLog(log, LogType::error, supressLogs);
+		error = true;
+		return emptyModel;
+	}
+
 	updateSettings();
 
 	model.clear();
@@ -192,15 +207,15 @@ const modelNode& ViewForTab::getModelNode(bool &error)
 
 
 			log += dep.pathOrTabName;
-			logView.appendLog(log, LogType::info);
+			logView.appendLog(log, LogType::info, supressLogs);
 			model.addWtih(GlobalEvents::getMainWindowPtr()->getModelFromTabOrFile(dep.pathOrTabName), dep.alias);
 		}
 		catch (MainWindow::exceptionCantFindTab &) {
-			logView.appendLog("Cant find requested model, no tab with such name exists", LogType::error);
+			logView.appendLog("Cant find requested model, no tab with such name exists", LogType::error, supressLogs);
 			error = true;
 		}
 		catch (MainWindow::exceptionCantAccessFile &) {
-			logView.appendLog("Cant find or access file", LogType::error);
+			logView.appendLog("Cant find or access file", LogType::error, supressLogs);
 			error = true;
 		}
 		catch (modelNode::exceptionInvalidBlockName& name) {
@@ -208,11 +223,11 @@ const modelNode& ViewForTab::getModelNode(bool &error)
 			s << "Unrecognized block \"" << name.message << "\", Discarding model";
 			td::String log;
 			s.getString(log);
-			logView.appendLog(log, LogType::error);
+			logView.appendLog(log, LogType::error, supressLogs);
 			error = true;
 		}
 		catch (...) {
-			logView.appendLog("Unknown error occured, discarding model", LogType::error);
+			logView.appendLog("Unknown error occured, discarding model", LogType::error, supressLogs);
 			error = true;
 		}
 
@@ -220,6 +235,19 @@ const modelNode& ViewForTab::getModelNode(bool &error)
 	
 	if (auto it = model.attribs.find("name"); it != model.attribs.end())
 		GlobalEvents::getMainWindowPtr()->changeTabName(it->second, this);
+	
+	std::unordered_set<td::String> vars, params;
+
+	for(const auto &node : model.getNodes()){
+		if(std::strcmp(node->getName(), "Params") == 0)
+			for(const auto &param : node->getNodes())
+				params.insert(param->attribs["name"]);
+		if(std::strcmp(node->getName(), "Vars") == 0)
+			for(const auto &param : node->getNodes())
+				vars.insert(param->attribs["name"]);
+	}
+
+	tabView->setVariabesAndParams(std::move(vars), std::move(params));
 
 	includeGuard = false;
 	return model;

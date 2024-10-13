@@ -50,8 +50,10 @@ public:
     void changeTabName(const td::String &name, ViewForTab *tab);
     void simulate(ViewForTab* tab);
     void openFile(const td::String& path);
+    void onInitialAppearance();
     const modelNode &getModelFromTabOrFile(const td::String &modelNameOrPath);
 
+    bool shouldClose();
     ~MainWindow();
 };
 

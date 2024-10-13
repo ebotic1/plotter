@@ -39,13 +39,6 @@ MainWindow::MainWindow()
 
     _switcherView.addView(&_tabView);
 
-
-    int argc;
-    const char** argv;
-    std::tie(argc, argv) = getApplication()->getMainArgs();
-    for (int i = 1; i < argc; ++i) {
-        openFile(argv[i]);
-    }
 }
 
 void MainWindow::showStartScreen(bool show)
@@ -69,9 +62,10 @@ void MainWindow::changeTabName(const td::String &name, ViewForTab *tab)
     tab->setName(name);
     for(int i = 0; i<_tabView.getNumberOfViews(); ++i)
         if(_tabView.getView(i) == tab){
-            //_tabView.changeTabName(i, name);
+            _tabView.setTitle(i, name);
             return;
         }
+
 
 }
 
@@ -81,14 +75,14 @@ void MainWindow::addTab(ViewForTab::BaseClass *tab, const td::String &settingsSt
     ViewForTab *wholeTab = nullptr;
     if(GraphicalEditorView *ptr = dynamic_cast<GraphicalEditorView *>(tab); ptr != nullptr){
         wholeTab = new ViewForTab(ptr, settingsStr);
-        _tabView.addView(wholeTab, tr("newGraphTab"), &guiEditorIcon);
-        wholeTab->setName(tr("newGraphTab"));
+        _tabView.addView(wholeTab, "", &guiEditorIcon);
+        changeTabName(wholeTab->getName().isNull()  ? tr("newGraphTab") : wholeTab->getName(), wholeTab);
         wholeTab->setPath(path);
     }
     else if(TextEditorView *ptr = dynamic_cast<TextEditorView *>(tab); ptr != nullptr){
         wholeTab = new ViewForTab(ptr, settingsStr);
-        _tabView.addView(wholeTab, tr("newTextTab"), &textEditorIcon);
-        wholeTab->setName(tr("newGraphTab"));
+        _tabView.addView(wholeTab, "", &textEditorIcon);
+        changeTabName(wholeTab->getName().isNull()  ? tr("newTextTab") : wholeTab->getName(), wholeTab);
         if (path.endsWith(".txt"))
             wholeTab->setPath(path);
     }
@@ -243,6 +237,23 @@ void MainWindow::openFile(const td::String& path)
     }
 }
 
+void MainWindow::onInitialAppearance()
+{
+
+    
+
+    GlobalEvents::loadSettingsVars(getApplication());
+
+    int argc;
+    const char** argv;
+    std::tie(argc, argv) = getApplication()->getMainArgs();
+    for (int i = 1; i < argc; ++i) {
+        openFile(argv[i]);
+    }
+
+
+}
+
 const modelNode &MainWindow::getModelFromTabOrFile(const td::String &modelNameOrPath)
 {
     bool sucess;
@@ -287,7 +298,14 @@ const modelNode &MainWindow::getModelFromTabOrFile(const td::String &modelNameOr
     return m;
 }
 
+bool MainWindow::shouldClose()
+{
+    GlobalEvents::settingsVars.saveValues();
+    return true;
+}
 
+MainWindow::~MainWindow()
+{
 
-MainWindow::~MainWindow(){}
-
+    
+}
