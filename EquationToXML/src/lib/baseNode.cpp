@@ -9,7 +9,9 @@
 
 const std::unordered_set<td::String> baseNode::attributeKeywords{"type", "domain", "name", "eps", "dT", "signal", "out", "desc", "method"};
 //const td::String baseNode::attributeKeywords[] = { "type", "domain", "name", "eps", "dT", "signal", "out", "desc", "method"};
-const std::regex baseNode::varPatten = std::regex(R"((^|[^A-Za-z_\.])([a-zA-Z_](?:\w+?)?)(?:$|[^A-Za-z_\.]))");
+const std::regex baseNode::varPatten = std::regex(R"((^|[^A-Za-z_\.])([a-zA-Z_](?:[\w0-9.]+?)?)(?:$|[^A-Za-z_\.]))");
+const std::unordered_set<td::String> baseNode::functionKeywords{"abs","acos","asin","atg","cos","exp","sqrt","ln","log",\
+"sin","tg", "sqr", "atan2", "sign", "sinh", "cosh", "tgh", "asnh", "acsh", "atgh", "disc","conj", "real", "imag"};
 
 
 void baseNode::printNodeToString(td::String& string) const{
@@ -234,6 +236,7 @@ void baseNode::processCommands(const td::String &text)
 		if(l[i].isNull())
 			continue;
 		poz = l[i].find("//");
+
 		if (poz == -1)
 			lines.emplace_back<std::pair<td::String, td::String>>({ l[i], "" });
 		else if (poz != 0)

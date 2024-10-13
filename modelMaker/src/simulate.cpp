@@ -59,7 +59,7 @@ void MainWindow::simulate(ViewForTab *tab)
 		return;
 	}
 	
-	return; //izbridaati
+	//return; //izbridaati
 	bool isComplex;
 	if(auto it = model.attribs.find("domain"); it == model.attribs.end())
 		isComplex = false;
@@ -138,7 +138,7 @@ void MainWindow::simulate(ViewForTab *tab)
 		int c = 3;
 
 		auto kk = s->getVariablesPtr();
-		double d = *kk;
+		//double d = *kk;
 
 		int x = 8;
 

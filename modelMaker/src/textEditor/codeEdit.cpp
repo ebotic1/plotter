@@ -6,7 +6,7 @@
 
 const std::regex CodeEdit::varPattern = std::regex(R"((^|[^A-Za-z_\.])([a-zA-Z_](?:[\w.]+?)?)(?:$|[^A-Za-z_\.]))");
 const std::regex CodeEdit::attribPattern = std::regex(R"(([a-zA-Z_]+?)(?:\s+)?=)");
-const std::regex CodeEdit::expPattern = std::regex(R"(\^\((.+?)\)|([a-zA-Z_.]+?))");
+const std::regex CodeEdit::expPattern = std::regex(R"(\^(?:(\(.+?\))|((?:[0-9]+?)?(?:[\w_.]+)?)))");
 
 void CodeEdit::onPaste(){
 	processText();
@@ -42,8 +42,8 @@ bool CodeEdit::onKeyPressed(const gui::Key& key)
 	gui::Range r;
 	getSelection(r);
 	text = getText();
-	int pEnd = text.find('\n', r.location);
-	int pStart = text.findFromRight('\n', r.location);
+	int pEnd = text.find('\n', r.location + 1);
+	int pStart = text.findFromRight('\n', r.location - 1);
 	pStart = (pStart == -1) ? 0 : pStart;
 	pEnd = (pEnd == -1) ? text.length() : pEnd;
 	processText(gui::Range(pStart, pEnd - pStart));
@@ -60,7 +60,8 @@ bool CodeEdit::onKeyReleased(const gui::Key& key)
 void CodeEdit::processText(const gui::Range& r)
 {
 	gui::Range rangeFound;
-	setColor(r, td::ColorID::SysText);
+	removeColor(r);
+	removeMarkup(r, gui::Font::Markup::Superscript);
 	const char *start = text.begin() + r.location;
 	while(std::regex_search((const td::UTF8 *)start, (const td::UTF8 *) text.begin() + r.location + r.length, match, varPattern)){
 		rangeFound.location = match[2].first - text.begin();
@@ -91,12 +92,15 @@ void CodeEdit::processText(const gui::Range& r)
 		if(match[1].matched){
 			rangeFound.location = match[1].first - text.begin();
 			rangeFound.length = match[1].length();
-			setColor(rangeFound, td::ColorID::Transparent);
+		}
+		else{
+			rangeFound.location = match[2].first - text.begin();
+			rangeFound.length = match[2].length();
 		}
 
 
 		
-		//setColor(rangeFound, GlobalEvents::settingsVars.colorVariable);
+		setMarkup(rangeFound, gui::Font::Markup::Superscript);
 		start = match.suffix().first;
 	}
 

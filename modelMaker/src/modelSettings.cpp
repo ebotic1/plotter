@@ -32,17 +32,16 @@ ModelSettings::ModelSettings() :
 	setUpLineEditSize(maxIter, td::Variant(td::UINT4(500)));
 
 	preprocesCommands.onChangedSelection([this](){
-		
 		++version;
 		auto text = preprocesCommands.getText();
 		const char *start = text.begin();
 		static std::cmatch match;
-		static std::regex keywordPatten(R"(import|as|function|dataset|of|versus)");
+		static std::regex keywordPatten(R"((?:^|\s)(import|as|function|dataset|of|versus|vs)(?:$|\s))");
 		static gui::Range rangeFound;
-
+		preprocesCommands.removeColor(gui::Range(0,text.length()));
 		while(std::regex_search((const td::UTF8 *)start, (const td::UTF8 *) text.end(), match, keywordPatten)){
-			rangeFound.location = match[0].first - text.begin();
-			rangeFound.length = match[0].length();
+			rangeFound.location = match[1].first - text.begin();
+			rangeFound.length = match[1].length();
 			preprocesCommands.setColor(rangeFound, GlobalEvents::settingsVars.colorKeyword);
 			start = match.suffix().first;
 	}
@@ -88,7 +87,7 @@ void ModelSettings::getDependencies(std::vector<DependencyDesc>& desc)
 void ModelSettings::getFunctions(std::vector<FunctionDesc>& desc)
 {
 	desc.clear();
-	std::regex pattern(R"((?:[^!]|)(function|dataset)\s+(?:([^;\n]+?)\s+of\s+)?([^\s\n;]+?)\s+versus\s+([^\s\n;]+?)(?:\s+)?(?:[;\n]|$))");
+	std::regex pattern(R"((?:[^!]|)(function|dataset)\s+(?:([^;\n]+?)\s+of\s+)?([^\s\n;]+?)\s+(?:versus|vs)\s+([^\s\n;]+?)(?:\s+)?(?:[;\n]|$))");
 	std::cmatch match;
 
 	const auto& cmnds = preprocesCommands.getText();

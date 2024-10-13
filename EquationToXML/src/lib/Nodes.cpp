@@ -10,6 +10,7 @@
 #include <xml/SAXParser.h> 
 
 #define INDENT_CHAR "\t"
+#define IMPLICIT_MULTIPLY true
 
 class nameNode : public baseNode {
 	td::String name;
@@ -90,6 +91,26 @@ static td::String subStr(const td::String &str, int pozStart, int pozEnd){
 }
 
 static inline void addAlias(td::String &line, const td::String& alias) {
+
+	/*
+				str.clean();
+			start = l[i].begin();
+			previousEnd = start;
+			const td::UTF8 *end = (poz == -1) ? l[i].end() : l[i].begin() + poz + 1;
+			while (std::regex_search(start, end, match, baseNode::varPatten)) {
+				td::String var(match[2].first, match[2].length());
+				if(match[2].first != l[i].begin() && std::isdigit(*(match[2].first - 1))){
+					str << td::String(previousEnd, match[2].first - previousEnd) << " * " << var;
+					previousEnd = match[2].first;
+				}
+				start = match.suffix().first;
+			}
+			if(start != l[i].begin()){
+				str << td::String(previousEnd, l[i].end()-1 - previousEnd);
+				str.getString(l[i]);
+			}
+	
+	*/
 	if (alias.isNull())
 		return;
 	std::cmatch match;
@@ -97,10 +118,13 @@ static inline void addAlias(td::String &line, const td::String& alias) {
 
 	const td::UTF8* start = line.begin();
 	const td::UTF8* previousEnd = start;
+	td::String result;
 	while (std::regex_search(start, line.end(), match, baseNode::varPatten)) {
-		//str << td::String(previousEnd, match[1].first - line.begin() - previousEnd) << alias << ".";
-		str << subStr(line, previousEnd - line.begin(), match[2].first - line.begin()) << alias << ".";
-		previousEnd = match[2].first;
+		result = subStr(line, previousEnd - line.begin(), match[2].first - line.begin());
+		if(!(result.isNull() || modelNode::functionKeywords.contains(result))){
+			str <<  result << alias << ".";
+			previousEnd = match[2].first;
+		}
 		start = match.suffix().first;
 	}
 	
