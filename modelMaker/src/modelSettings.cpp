@@ -14,6 +14,12 @@ static void setUpLineEditSize(gui::NumericEdit& edit, const td::Variant &startVa
 	edit.setValue(startValue);
 }
 
+
+ModelSettings::FunctionDesc::FunctionDesc(const Type& type, const td::String& name, const td::String& yAxis, const td::String& xAxis)
+	: type(type), name(name), xAxis(xAxis), yAxis(yAxis), Ycomplex(false), Xcomplex(false)
+{
+}
+
 ModelSettings::ModelSettings() :
 	_vl(6),
 	_gridLayout(4,2),
@@ -114,6 +120,8 @@ void ModelSettings::getFunctions(std::vector<FunctionDesc>& desc)
 		start = match.suffix().first;
 	}
 	for (auto& d : desc) {
+		if (d.name.cCompare("0") == 0)
+			d.name = d.xAxis;
 		markComplex(d.xAxis, d.Xcomplex);
 		markComplex(d.yAxis, d.Ycomplex);
 	}

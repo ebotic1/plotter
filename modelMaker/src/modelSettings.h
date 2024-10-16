@@ -19,15 +19,15 @@ class ModelSettings : public gui::View {
 	unsigned int version = 1;
 
 public:
-
 	struct FunctionDesc {
 		enum class Type{graph, points} type;
-		td::String name, xAxis, yAxis;
-		bool Xcomplex = false, Ycomplex = false;
+		td::String name, yAxis, xAxis;
+		bool Ycomplex = false, Xcomplex = false;
+		FunctionDesc(const Type& type, const td::String& name, const td::String& xAxis, const td::String& yAxis);
 	};
 	struct DependencyDesc {
 		td::String pathOrTabName, alias;
-		DependencyDesc(const char* path, int str1Size, const char* alis, int str2Size);
+		DependencyDesc(const char* path, int str1Size, const char* alias, int str2Size);
 	};
 
 public:

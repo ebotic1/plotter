@@ -58,14 +58,25 @@ public:
 	
 		std::map<td::String, td::INT4>::iterator itX, itY, end = outVars.end();
 		td::String xAxis, yAxis;
+		int paramIntX, paramIntY;
+
+
+
 
 		for (const auto& funD : functions) {
 			if (funD.xAxis.cCompare("0") == 0 && funD.yAxis.cCompare("0") == 0)
 				continue;
 
+
+#ifdef MU_DEBUG
+			td::String log2("Processing function: ");
+			log2 += funD.name;
+			logger->appendLog(log2, LogType::warning);
+#endif // MU_DEBUG
+
 			if constexpr (!std::is_same<resultType, td::cmplx>::value) {
 				if (funD.Xcomplex || funD.Ycomplex)
-					goto CONTINUE_SOLVER_WITH_ERROR;
+					continue;
 			}
 			else {
 				xAxis = addCmplxTag(funD.xAxis, funD.Xcomplex);
@@ -76,77 +87,71 @@ public:
 			itX = outVars.find(funD.xAxis);
 			itY = outVars.find(funD.yAxis);
 
+			paramIntX = (itX == end) ? solver->getParamIndex(funD.xAxis.c_str()) : -1;
+			paramIntY = (itY == end) ? solver->getParamIndex(funD.yAxis.c_str()) : -1;
 
-				if (itX == end) {
-					int paramInt = solver->getParamIndex(funD.xAxis.c_str());
-
-					if (paramInt < 0) {
-						if(funD.xAxis.cCompare("0") != 0)
-							goto CONTINUE_SOLVER_WITH_ERROR;
-						
-						int paramIntY = solver->getParamIndex(funD.yAxis.c_str());
-						if (paramIntY < 0)
-							goto CONTINUE_SOLVER_WITH_ERROR;
-
-						if constexpr (!std::is_same<resultType, td::cmplx>::value) {
-							if(funD.type == ModelSettings::FunctionDesc::Type::graph)
-								outFuncs.push_back(DataDraw::FunctionDesc(funD.name, nullptr, solver->getParamsPtr() + paramIntY, 1, "", funD.yAxis));
-							else
-								outDataSet.push_back(DataDraw::FunctionDesc(funD.name, nullptr, solver->getParamsPtr() + paramIntY, 1, "", funD.yAxis));
-						}
-						else {
-							//solver->getParamsPtr()[paramIntY].real
-							outDataSet.push_back(DataDraw::FunctionDesc(funD.name, nullptr, nullptr, 1, "real + i*imag", "")); //emir
-						}
-					}
-					else {
-						if (funD.yAxis.cCompare("0") != 0)
-							goto CONTINUE_SOLVER_WITH_ERROR;
-
-						if constexpr (!std::is_same<resultType, td::cmplx>::value) {
-							if (funD.type == ModelSettings::FunctionDesc::Type::graph)
-								outFuncs.push_back(DataDraw::FunctionDesc(funD.name, solver->getParamsPtr() + paramInt, nullptr, 1, funD.xAxis, ""));
-							else
-								outDataSet.push_back(DataDraw::FunctionDesc(funD.name, solver->getParamsPtr() + paramInt, nullptr, 1, funD.xAxis, ""));
-						}
-						else {
-							outDataSet.push_back(DataDraw::FunctionDesc(funD.name, nullptr, nullptr, 1, "real + i*imag", "")); //emir
-						}
-					}
+			if (itX != end && itY != end) { //dva niza
+				if constexpr (!std::is_same<resultType, td::cmplx>::value) {
+					if (funD.type == ModelSettings::FunctionDesc::Type::graph)
+						outFuncs.push_back(DataDraw::FunctionDesc(funD.name, getPointerToVar(funD.xAxis), getPointerToVar(funD.yAxis), maxPoints, funD.xAxis, funD.yAxis));
+					else
+						outDataSet.push_back(DataDraw::FunctionDesc(funD.name, getPointerToVar(funD.xAxis), getPointerToVar(funD.yAxis), maxPoints, funD.xAxis, funD.yAxis));
 				}
 				else {
-					if (itY != end) {
-						if constexpr (!std::is_same<resultType, td::cmplx>::value) {
-							if (funD.type == ModelSettings::FunctionDesc::Type::graph)
-								outFuncs.push_back(DataDraw::FunctionDesc(funD.name, getPointerToVar(funD.xAxis), getPointerToVar(funD.yAxis), maxPoints, funD.xAxis, funD.yAxis));
-							else
-								outDataSet.push_back(DataDraw::FunctionDesc(funD.name, getPointerToVar(funD.xAxis), getPointerToVar(funD.yAxis), maxPoints, funD.xAxis, funD.yAxis));
-						}
-						else {
 
-							if (funD.type == ModelSettings::FunctionDesc::Type::graph)
-								outFuncs.push_back(DataDraw::FunctionDesc(funD.name, getPointerToVar(xAxis), getPointerToVar(yAxis), maxPoints, xAxis, yAxis));
-							else
-								outDataSet.push_back(DataDraw::FunctionDesc(funD.name, getPointerToVar(xAxis), getPointerToVar(yAxis), maxPoints, xAxis, yAxis));
-						}
-					}
-					else {
-						if (funD.yAxis.cCompare("0") != 0)
-							goto CONTINUE_SOLVER_WITH_ERROR;
-						if constexpr (!std::is_same<resultType, td::cmplx>::value)
-							outDataSet.push_back(DataDraw::FunctionDesc(funD.name, getPointerToVar(funD.xAxis), nullptr, maxPoints, funD.xAxis, ""));
-						else {
-							outDataSet.push_back(DataDraw::FunctionDesc(funD.name, getPointerToVar(xAxis), nullptr, maxPoints, xAxis, ""));
-						}
-					}
+					if (funD.type == ModelSettings::FunctionDesc::Type::graph)
+						outFuncs.push_back(DataDraw::FunctionDesc(funD.name, getPointerToVar(xAxis), getPointerToVar(yAxis), maxPoints, xAxis, yAxis));
+					else
+						outDataSet.push_back(DataDraw::FunctionDesc(funD.name, getPointerToVar(xAxis), getPointerToVar(yAxis), maxPoints, xAxis, yAxis));
 				}
-
 				continue;
+			}
 
-			CONTINUE_SOLVER_WITH_ERROR:
-				td::String log("Discarding function/dataset ");
-				log += funD.name;
-				logger->appendLog(log, LogType::warning);
+
+
+
+			if (itX == end && paramIntX > 0 && funD.yAxis.cCompare("0") == 0) { // parametar u x
+				if constexpr (!std::is_same<resultType, td::cmplx>::value) {
+					if (funD.type == ModelSettings::FunctionDesc::Type::graph)
+						outFuncs.push_back(DataDraw::FunctionDesc(funD.name, solver->getParamsPtr() + paramIntX, nullptr, 1, funD.xAxis, ""));
+					else
+						outDataSet.push_back(DataDraw::FunctionDesc(funD.name, solver->getParamsPtr() + paramIntX, nullptr, 1, funD.xAxis, ""));
+				}
+				else {
+					outDataSet.push_back(DataDraw::FunctionDesc(funD.name, nullptr, nullptr, 1, "real + i*imag", "")); //emir
+				}
+				continue;
+			}
+
+
+			if (itY == end && paramIntY > 0 && funD.xAxis.cCompare("0") == 0) { // parametar u y
+				if constexpr (!std::is_same<resultType, td::cmplx>::value) {
+					if (funD.type == ModelSettings::FunctionDesc::Type::graph)
+						outFuncs.push_back(DataDraw::FunctionDesc(funD.name, nullptr, solver->getParamsPtr() + paramIntY, 1, "", funD.yAxis));
+					else
+						outDataSet.push_back(DataDraw::FunctionDesc(funD.name, nullptr, solver->getParamsPtr() + paramIntY, 1, "", funD.yAxis));
+				}
+				else {
+					//solver->getParamsPtr()[paramIntY].real
+					outDataSet.push_back(DataDraw::FunctionDesc(funD.name, nullptr, nullptr, 1, "real + i*imag", "")); //emir
+				}
+				continue;
+			}
+
+			if (itY != end && funD.xAxis.cCompare("0") == 0) { // jedan niz
+
+				if constexpr (!std::is_same<resultType, td::cmplx>::value)
+					outDataSet.push_back(DataDraw::FunctionDesc(funD.name, nullptr, getPointerToVar(funD.yAxis), maxPoints, "", funD.yAxis));
+				else {
+					outDataSet.push_back(DataDraw::FunctionDesc(funD.name, nullptr, getPointerToVar(xAxis), maxPoints, "", yAxis));
+				}
+				continue;
+			}
+
+
+			td::String log("Discarding function/dataset ");
+			log += funD.name;
+			logger->appendLog(log, LogType::warning);
 
 
 			
@@ -198,6 +203,7 @@ public:
 			str << "Simulation stopped with error: " << solver->getLastErrorStr();
 			str.getString(log);
 			logger->appendLog(log, LogType::error);
+			return;
 		}
 		else {
 			std::chrono::duration<double> d = std::chrono::duration_cast<std::chrono::duration<double>>(std::chrono::steady_clock::now() - startTime);

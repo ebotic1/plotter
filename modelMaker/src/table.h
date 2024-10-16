@@ -31,6 +31,8 @@ public:
 		numbersStr = text;
 		numbersStr.measure(font, sz);
 		textSet = true;
+		setSizeLimits(sz.width, gui::Control::Limit::Fixed, sz.height, gui::Control::Limit::Fixed);
+		setBackgroundColor(td::ColorID::LightGray);
 	}
 
 	void setNumbers(double *numbers, unsigned int size){
@@ -60,12 +62,44 @@ static inline void setSizeToBigger(gui::Size &initialSize, const gui::Size compa
 	initialSize.height = (initialSize.height > initialSize.height) ? initialSize.height : comparedSize.height;
 }
 
+class radi : public gui::View {
+public:
+	radi() {
+
+	}
+
+	bool getModelSize(gui::Size& modelSize) const override {
+//		modelSize.width = 400;
+	//	modelSize.height = 3000;
+		return true;
+	}
+
+	void measure(gui::CellInfo& c) override{
+		gui::View::measure(c);
+	//	c.minVer = 3000;
+		//c.minHor = 1000;
+	//	c.nResHor = 1;
+	//	c.nResVer = 1;
+	}
+
+	void reMeasure(gui::CellInfo& c) override {
+		gui::View::reMeasure(c);
+//		c.minVer = 3000;
+//		c.minHor = 1000;
+//		c.nResHor = 1;
+	//	c.nResVer = 1;
+	}
+
+};
+
 class Table : public gui::ViewScroller {
 	std::vector<gui::GridLayout *> layouts;
 	std::vector<gui::Label *> labels;
-	std::vector<NumberColumn> numberCols;
+	std::vector<NumberColumn *> numberCols;
 	gui::HorizontalLayout _hLayout;
-	gui::View mainView;
+	gui::GridLayout _gridVertLayout;
+	gui::VerticalLayout _vLayout;
+	radi mainView;
 	gui::Size sz = {0,0};
 
 public:
@@ -73,47 +107,168 @@ public:
 		gui::ViewScroller(gui::ViewScroller::Type::ScrollerAlwaysVisible, gui::ViewScroller::Type::ScrollerAlwaysVisible),
 		_hLayout(funcs.size()),
 		layouts(funcs.size()),
-		labels(funcs.size() * 3),
-		numberCols(funcs.size() * 2)
+		_gridVertLayout(funcs.size(),3),
+		_vLayout(3)
 	{
+		int verticalCnt = 0;
+
 		for (int i = 0; i < funcs.size(); ++i) {
-			layouts[i] = new gui::GridLayout(3, 2);
 
-			labels[3 * i] = new gui::Label(funcs[i].name);
-			labels[3 * i + 1] = new gui::Label(funcs[i].xname);
-			labels[3 * i + 2] = new gui::Label(funcs[i].yname);
-			if (funcs[i].name != funcs[i].yname);
-				layouts[i]->insert(0, 0, *labels[3 * i], 2, td::HAlignment::Center);
+			if (funcs[i].x == nullptr && funcs[i].y == nullptr) {
 
-			layouts[i]->insert(1, 0, *labels[3 * i + 1], td::HAlignment::Center);
-			layouts[i]->insert(1, 1, *labels[3 * i + 2], td::HAlignment::Center);
+				td::String niceName = funcs[i].name;
+				niceName += ": ";
+
+				labels.push_back(new gui::Label(niceName));
+				labels.push_back(new gui::Label(funcs[i].xname));
+				_gridVertLayout.insert(verticalCnt, 0, *labels.end()[-2]);
+				_gridVertLayout.insert(verticalCnt, 2, *labels.end()[-1]);
+
+				verticalCnt += 1;
+				continue;
+			}
+
+			if (funcs[i].x != nullptr && funcs[i].y == nullptr && funcs[i].size == 1) { //param u x
+
+				if (funcs[i].name != funcs[i].xname) 
+					labels.push_back(new gui::Label(funcs[i].name));
+				else
+					labels.push_back(new gui::Label(""));
+					
+				
+
+				_gridVertLayout.insert(verticalCnt, 0, *labels.end()[-1]);
+
+				labels.push_back(new gui::Label(funcs[i].xname));
+				_gridVertLayout.insert(verticalCnt, 1, *labels.end()[-1]);
+
+				td::String result;
+				result.fromNumber(*funcs[i].x);
+
+				labels.push_back(new gui::Label(result));;
+				_gridVertLayout.insert(verticalCnt, 2, *labels.end()[-1]);
 
 
-			
-			
-			numberCols[2 * i].setNumbers(funcs[i].x, funcs[i].size);
-			numberCols[2 * i + 1].setNumbers(funcs[i].y, funcs[i].size);
+				verticalCnt += 1;
+				continue;
 
-			setSizeToBigger(sz,	numberCols[2 * i].getSize());
-			setSizeToBigger(sz,	numberCols[2 * i + 1].getSize());
+			}
 
-			layouts[i]->insert(2, 0, numberCols[2 * i], td::HAlignment::Center);
-			layouts[i]->insert(2, 1, numberCols[2 * i + 1], td::HAlignment::Center);
 
-			_hLayout << *layouts[i];
+			if (funcs[i].x == nullptr && funcs[i].y != nullptr && funcs[i].size == 1) { //param u y
+
+				if (funcs[i].name != funcs[i].yname)
+					labels.push_back(new gui::Label(funcs[i].name));
+				else
+					labels.push_back(new gui::Label(""));
+
+
+
+				_gridVertLayout.insert(verticalCnt, 0, *labels.end()[-1]);
+
+				labels.push_back(new gui::Label(funcs[i].yname));
+				_gridVertLayout.insert(verticalCnt, 1, *labels.end()[-1]);
+
+				td::String result;
+				result.fromNumber(*funcs[i].y);
+
+				labels.push_back(new gui::Label(result));;
+				_gridVertLayout.insert(verticalCnt, 2, *labels.end()[-1]);
+
+
+				verticalCnt += 1;
+				continue;
+
+			}
+
+
+			if (funcs[i].x != nullptr && funcs[i].y != nullptr) { //dva niza
+				layouts.push_back(new gui::GridLayout(3, 2));
+				auto& layout = layouts.back();
+
+				
+				labels.push_back(new gui::Label(funcs[i].yname));
+				labels.push_back(new gui::Label(funcs[i].xname));
+				layout->insert(1, 0, *labels.end()[-2], td::HAlignment::Center);
+				layout->insert(1, 1, *labels.end()[-1], td::HAlignment::Center);
+
+
+				if (funcs[i].name != funcs[i].yname)
+					labels.push_back(new gui::Label(funcs[i].name));
+				else
+					labels.push_back(new gui::Label(""));
+
+				layout->insert(0, 0, *labels.end()[-1], 2, td::HAlignment::Center);
+				
+
+				numberCols.push_back(new NumberColumn());
+				numberCols.push_back(new NumberColumn());
+
+				numberCols.end()[-2]->setNumbers(funcs[i].y, funcs[i].size);
+				numberCols.end()[-1]->setNumbers(funcs[i].x, funcs[i].size);
+
+				setSizeToBigger(sz, numberCols.end()[-2]->getSize());
+				setSizeToBigger(sz, numberCols.end()[-1]->getSize());
+
+				layout->insert(2, 0, *numberCols.end()[-2], td::HAlignment::Center);
+				layout->insert(2, 1, *numberCols.end()[-1], td::HAlignment::Center);
+
+
+
+				_hLayout << *layout;
+				continue;
+			}
+
+			if (funcs[i].x == nullptr && funcs[i].y != nullptr) { //jedan niz
+				layouts.push_back(new gui::GridLayout(3, 2));
+				auto& layout = layouts.back();
+
+				labels.push_back(new gui::Label(funcs[i].yname));
+				layout->insert(1, 0, *labels.end()[-1], td::HAlignment::Center);
+
+				if (funcs[i].name != funcs[i].yname) 
+					labels.push_back(new gui::Label(funcs[i].name));
+				else
+					labels.push_back(new gui::Label(""));
+				
+				layout->insert(0, 0, *labels.end()[-1], 2, td::HAlignment::Center);
+
+				
+				numberCols.push_back(new NumberColumn());
+
+				numberCols.end()[-1]->setNumbers(funcs[i].y, funcs[i].size);
+
+				layout->insert(2, 0, *numberCols.end()[-1], td::HAlignment::Center);
+
+				_hLayout << *layout;
+				continue;
+
+			}
 
 
 		}
 
-		mainView.setLayout(&_hLayout);
+		
+
+		if (verticalCnt > 0) {
+			_vLayout << _gridVertLayout;
+			_vLayout.appendSpace(25);
+		}
+
+		_vLayout << _hLayout;
+
+		mainView.setLayout(&_vLayout);
 		setContentView(&mainView);
-		setContentSize({400,3000});
-		scaleContent(4);
+		//setContentSize({4000,3000});
+		getContentSize(sz);
+
+		int x = 3;
+
 	}
 
 	bool getModelSize(gui::Size& modelSize) const override{
-		modelSize.width = 400;
-		modelSize.height = 3000;
+//		modelSize.width = 400;
+//		modelSize.height = 3000;
 		return true;
 	}
 
@@ -121,6 +276,8 @@ public:
 		for (const auto& ptr : labels)
 			delete ptr;
 		for (const auto& ptr : layouts)
+			delete ptr;
+		for (const auto& ptr : numberCols)
 			delete ptr;
 
 	}
