@@ -324,7 +324,7 @@ void MainWindow::simulate(ViewForTab *tab)
 		static_assert(false, "wrong pointer type for initSimulation");
 
 		
-		s->solve(startTime, stepTime, endTime, new SolutionBuffer(&logView, funcs, 2 + (startTime-endTime)/stepTime, s), 0);
+		s->solve(startTime, stepTime, endTime, new SolutionBuffer(&logView, funcs, 1 + std::abs(startTime-endTime)/stepTime, s), 0);
 		err = s->getLastErrorStr();
 	};
 

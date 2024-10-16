@@ -24,14 +24,6 @@ DataDraw::DataDraw():
 	setLayout(&_hl);
 
 
-	double x[] = { 1,2,3,4,5 };
-	double y[] = { 1,2,3,4,5 };
-	double x2[] = { 1,2,3,4,5 };
-	double y2[] = { 1,4,9,16,25 };
-
-	FunctionDesc f("imefun", x, y, 5, "x", "y");
-	FunctionDesc f2("kvadrat", x2, y2, 5, "x", "x^2");
-	addData("sim1", { f, f2, f,f2 }, Type::table);
 
 }
 

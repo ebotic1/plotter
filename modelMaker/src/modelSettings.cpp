@@ -103,10 +103,14 @@ void ModelSettings::getFunctions(std::vector<FunctionDesc>& desc)
 	const auto& cmnds = preprocesCommands.getText();
 	auto start = cmnds.begin();
 	while (std::regex_search(start, cmnds.end(), match, pattern)){
-		if (match[1].length() == 8) //duzina rijeci "funkcija" je 8, malo nerobusno ali dobro je
-			desc.emplace_back(FunctionDesc::Type::graph, match[2].matched ? match[2].first : match[3].first, match[3].first, match[4].first);
-		else
-			desc.emplace_back(FunctionDesc::Type::points, match[2].matched ? match[2].first : match[3].first, match[3].first, match[4].first);
+
+		desc.emplace_back(FunctionDesc::Type::graph, match[2].matched ? td::String(match[2].first, match[2].length()) : td::String(match[3].first, match[3].length()),\
+		td::String(match[3].first, match[3].length()),\
+		td::String(match[4].first, match[4].length()));
+
+		if (match[1].length() != 8) //duzina rijeci "funkcija" je 8, malo nerobusno ali dobro je
+			desc.back().type = FunctionDesc::Type::points;
+
 		start = match.suffix().first;
 	}
 	for (auto& d : desc) {
