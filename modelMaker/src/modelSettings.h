@@ -23,6 +23,7 @@ public:
 	struct FunctionDesc {
 		enum class Type{graph, points} type;
 		td::String name, xAxis, yAxis;
+		bool Xcomplex = false, Ycomplex = false;
 	};
 	struct DependencyDesc {
 		td::String pathOrTabName, alias;

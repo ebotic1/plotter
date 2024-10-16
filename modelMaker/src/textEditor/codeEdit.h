@@ -2,11 +2,12 @@
 #include <gui/TextEdit.h>
 #include <gui/HorizontalLayout.h>
 #include <regex>
+#include "../baseView.h"
 
 class TextEditorView;
 
 class CodeEdit : public gui::TextEdit {
-	TextEditorView *parent;
+	ViewForTab::BaseClass *parent;
 	td::String text;
 	std::cmatch match;
 	void onPaste();
@@ -17,7 +18,7 @@ class CodeEdit : public gui::TextEdit {
 
 public:
 
-	CodeEdit(TextEditorView *parent);
+	CodeEdit(ViewForTab::BaseClass *parent);
 	bool onKeyPressed(const gui::Key& key) override;
 	bool onKeyReleased(const gui::Key& key) override;
 	void processText(const gui::Range& r);

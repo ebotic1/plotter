@@ -143,8 +143,7 @@ bool TextEditorView::openFile(const td::String &path, td::String &settingsString
 }
 
 
-void TextEditorView::setVariabesAndParams(std::unordered_set<td::String> &&vars, std::unordered_set<td::String> &&params){
-	this->vars = vars;
-	this->params = params;
+void TextEditorView::refreshVisuals(){
+	textMain.setFontName(GlobalEvents::settingsVars.font);
 	textMain.processText();
 }

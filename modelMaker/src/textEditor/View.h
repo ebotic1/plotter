@@ -25,6 +25,6 @@ public:
 	bool save(const td::String& path, const td::String& settingsString) override;
 	void saveAs(const td::String& settingsString, td::String *newPath) override;
 	bool openFile(const td::String& path, td::String& settingsString) override;
-	void setVariabesAndParams(std::unordered_set<td::String> &&vars, std::unordered_set<td::String> &&params);
+	void refreshVisuals() override;
 
 };

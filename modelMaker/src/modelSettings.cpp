@@ -36,7 +36,7 @@ ModelSettings::ModelSettings() :
 		auto text = preprocesCommands.getText();
 		const char *start = text.begin();
 		static std::cmatch match;
-		static std::regex keywordPatten(R"((?:^|\s)(import|as|function|dataset|of|versus|vs)(?:$|\s))");
+		static std::regex keywordPatten(R"(((?:^|\s)(import|as|function|dataset|of|versus|vs|0)|(.real|.imag))(?:$|\s))");
 		static gui::Range rangeFound;
 		preprocesCommands.removeColor(gui::Range(0,text.length()));
 		while(std::regex_search((const td::UTF8 *)start, (const td::UTF8 *) text.end(), match, keywordPatten)){
@@ -84,6 +84,16 @@ void ModelSettings::getDependencies(std::vector<DependencyDesc>& desc)
 
 }
 
+inline static void markComplex(td::String& name, bool& isComplex) {
+	if (name.endsWith(".real"))
+		name.reduceSize(5);
+	else if (name.endsWith(".imag")) {
+		name.reduceSize(5);
+		isComplex = true;
+	}
+}
+
+
 void ModelSettings::getFunctions(std::vector<FunctionDesc>& desc)
 {
 	desc.clear();
@@ -98,6 +108,10 @@ void ModelSettings::getFunctions(std::vector<FunctionDesc>& desc)
 		else
 			desc.emplace_back(FunctionDesc::Type::points, match[2].matched ? match[2].first : match[3].first, match[3].first, match[4].first);
 		start = match.suffix().first;
+	}
+	for (auto& d : desc) {
+		markComplex(d.xAxis, d.Xcomplex);
+		markComplex(d.yAxis, d.Ycomplex);
 	}
 }
 

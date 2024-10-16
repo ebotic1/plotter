@@ -1,4 +1,5 @@
 #pragma once
+#include <gui/SplitterLayout.h>
 #include <gui/Window.h>
 #include <gui/TabView.h>
 #include <td/String.h>
@@ -10,6 +11,7 @@
 #include "ToolBar.h"
 #include "../../EquationToXML/inc/nodes.h"
 #include "baseView.h"
+#include "dataDrawer.h"
 
 class ViewForTab;
 
@@ -24,6 +26,12 @@ struct fileModels{
         {}
 };
 
+class DataDrawerWindow : public gui::Window {
+public:
+    static constexpr int dataDrawerWindowID = 10;
+    DataDrawerWindow(gui::Window* parent, DataDraw *mainView);
+};
+
 class MainWindow : public gui::Window
 {
 private:
@@ -31,6 +39,12 @@ private:
     ToolBar _toolBar;
     gui::TabView _tabView;
     gui::ViewSwitcher _switcherView;
+    gui::View* mainView = nullptr;
+    gui::SplitterLayout* splitterView = nullptr;
+    DataDraw dataDrawer;
+    DataDrawerWindow *dataDrawerWindow = nullptr;
+    gui::HorizontalLayout _hLayout;
+
     StartingView startingView;
     ContextMenus _contextMenu;
 
@@ -52,6 +66,7 @@ public:
     void openFile(const td::String& path);
     void onInitialAppearance();
     const modelNode &getModelFromTabOrFile(const td::String &modelNameOrPath);
+    DataDraw* getDataDrawer(bool openWindow = true);
 
     bool shouldClose();
     ~MainWindow();

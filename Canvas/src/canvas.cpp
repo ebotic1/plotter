@@ -11,7 +11,7 @@
 #include "gui/Transformation.h"
 
 #define SELECT_COLOR td::ColorID::Green
-#define FONT gui::Font::ID::SystemNormal
+#define FONT gui::Font::ID::SystemBold
 
 const std::initializer_list<gui::InputDevice::Event> graph::inputs = { gui::InputDevice::Event::PrimaryClicks, gui::InputDevice::Event::SecondaryClicks, 
 gui::InputDevice::Event::Zoom, gui::InputDevice::Event::CursorDrag, gui::InputDevice::Event::CursorMove, gui::InputDevice::Event::Keyboard, 
@@ -582,10 +582,13 @@ graph::graph(bool startWithMargins, bool takeUserInput, td::ColorID backgroundCo
     for (const char *ime : std::vector<const char*>{":fullScreen", ":grid", ":legend", ":meni", ":save", ":reset", ":fitToWindow", ":info"})
         slike.emplace_back(ime, gui::Rect({ 0,0 }, gui::Size(32, 32)));
     
-
-    if (backgroundColor == axisColor)
+    if (backgroundColor == td::ColorID::SysCtrlBack)
+        axisColor = td::ColorID::SysText;
+    else if (backgroundColor == td::ColorID::SysText)
+        axisColor = td::ColorID::SysCtrlBack;
+    else if (backgroundColor == axisColor)
         axisColor = td::ColorID::Black;
-    if (backgroundColor == axisColor)
+    else if (backgroundColor == axisColor)
         axisColor = td::ColorID::White;
     setBackgroundColor(backgroundColor);
 
@@ -728,7 +731,7 @@ void graph::onResize(const gui::Size& newSize) {
 
     double distance = 20;
     for (size_t i = 0; i < slike.size(); ++i) {
-        slike[i].rect.setOrigin(distance, newSize.height - 32 - slike[i].rect.height());
+        slike[i].rect.setOrigin(distance,  32);
         distance += 32 + slike[i].rect.width();
     }
 
@@ -925,11 +928,11 @@ if (pastColors.size() == 0) {
         case td::ColorID::Black:
             boja = td::ColorID::White;
             break;
-        case td::ColorID::SysSelectedItemBack:
+        case td::ColorID::SysCtrlBack:
             boja = td::ColorID::SysText;
             break;
         case td::ColorID::SysText:
-            boja = td::ColorID::SysSelectedItemBack;
+            boja = td::ColorID::SysCtrlBack;
             break;
         default:
             boja = td::ColorID::Black;
@@ -995,24 +998,25 @@ void graph::drawAxis(){
 
 
 
+   
 
-
-    const gui::CoordType xAxisHeight = drawingRect.bottom;
+    const gui::CoordType xAxisHeight = drawMargins ? drawingRect.bottom : funkcije[0].realToTransformedY(0);
+    const gui::CoordType yAxisWidth = drawMargins ? drawingWindow.point.x : funkcije[0].realToTransformedX(0);
     while (line < drawingWindow.point.x + drawingWindow.size.width || lineY >= drawingWindow.point.y){
 
         constexpr double markLen = 7;
         if (lineY >= drawingWindow.point.y) { // Y osa
-            gui::Shape::drawLine({ drawingWindow.point.x - markLen, lineY }, { drawingWindow.point.x + markLen,  lineY }, axisColor, 2);
+            gui::Shape::drawLine({ yAxisWidth - markLen, lineY }, { yAxisWidth + markLen,  lineY }, axisColor, 2);
 
             gui::DrawableString broj(to_string(startValY));
      
             if (drawMargins) {
                 gui::Size sz;
                 broj.measure(FONT, sz);
-                broj.draw({ drawingWindow.point.x - markLen - 10 - sz.width,  lineY - numberHeight / 2 }, FONT, axisColor);
+                broj.draw({ yAxisWidth - markLen - 10 - sz.width,  lineY - numberHeight / 2 }, FONT, axisColor);
             }
             else 
-                broj.draw({ drawingWindow.point.x + markLen + 5,  lineY}, FONT, axisColor);
+                broj.draw({ yAxisWidth + markLen + 5,  lineY}, FONT, axisColor);
             
             if (drawGrid) 
                 gui::Shape::drawLine({ drawingWindow.point.x, lineY }, { drawingWindow.point.x + drawingWindow.size.width,  lineY }, axisColor, 1, td::LinePattern::Dash); 
@@ -1032,7 +1036,7 @@ void graph::drawAxis(){
                 broj.draw({ line - sz.width / 2 + 9, xAxisHeight - numberHeight - 22 }, FONT, axisColor);
 
             if (drawGrid) 
-                gui::Shape::drawLine({ line, xAxisHeight }, { line,  drawingWindow.point.y }, axisColor, 1, td::LinePattern::Dash);
+                gui::Shape::drawLine({ line, drawingRect.bottom }, { line,  drawingWindow.point.y }, axisColor, 1, td::LinePattern::Dash);
 
         }
 
@@ -1136,7 +1140,7 @@ void graph::showInformation(){
 
 void graph::saveMenu(){
     auto f = new gui::SaveFileDialog(this, "Save plot", { {"Encapsulated PostScript vector graphics format", "*.eps"}, {"Joint Photographic Experts Group image format", "*.jpg"}, 
-        {"Portable Network Graphics image format", "*.png"}, {"Scalable Vector Graphics image format", "*.svg"}, 
+        /*{"Portable Network Graphics image format", "*.png"},*/ {"Scalable Vector Graphics image format", "*.svg"},
         {"Plain text file format", "*.txt"}, {"Extensible Markup Language data format", "*.xml"}, {"Portable Document Format document format", "*.pdf"} });
     f->openModal([this](gui::FileDialog* pDlg) {
             return save(pDlg->getFileName());
@@ -1363,7 +1367,19 @@ void graph::onCursorEntered(const gui::InputDevice& inputDevice) {
 }
 
 
+void graph::measure(gui::CellInfo& cell)
+{
+    gui::Canvas::measure(cell);
+    cell.nResHor = 1;
+    cell.nResVer = 1;
+}
 
+void graph::reMeasure(gui::CellInfo& cell)
+{
+    gui::Canvas::measure(cell);
+    cell.nResHor = 1;
+    cell.nResVer = 1;
+}
 
 graph::~graph(){
     delete[] Limits;

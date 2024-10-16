@@ -119,13 +119,16 @@ void ViewForTab::save(){
 		lastSaved = tabView->getVersion();
 		logView.appendLog("Model saved", LogType::info);
 	}
-
+	bool error;
+	getModelNode(error, true); //samo da se procesuje ime modela i varijable/parametri
 }
 
 void ViewForTab::saveAs(){
+	bool error;
+	getModelNode(error, true);
 	path.clean();
 	tabView->saveAs(settings.getString(), &path);
-	lastSaved = tabView->getVersion();
+	lastSaved = tabView->getVersion(); // u sustini mozda serviranje ne bude uspjesno trebalo bi se u prethodnoj funkciji i pointer na lastSaved poslati ali u 99.99% slucajeva nije bitno, bice servirano
 }
 
 void ViewForTab::exportToXML(td::String path)
@@ -187,6 +190,7 @@ const modelNode& ViewForTab::getModelNode(bool &error, bool supressLogs)
 		log += blName.message;
 		logView.appendLog(log, LogType::error, supressLogs);
 		error = true;
+		includeGuard = false;
 		return emptyModel;
 	}
 
@@ -268,4 +272,21 @@ const std::vector<ModelSettings::FunctionDesc> &ViewForTab::getFunctions()
 {
     updateSettings();
 	return funcionsDesc;
+}
+
+void ViewForTab::BaseClass::setVariabesAndParams(std::unordered_set<td::String>&& vars, std::unordered_set<td::String>&& params)
+{
+	this->vars = vars;
+	this->params = params;
+	refreshVisuals();
+}
+
+const std::unordered_set<td::String> &ViewForTab::BaseClass::getVars()
+{
+	return vars;
+}
+
+const std::unordered_set<td::String> &ViewForTab::BaseClass::getParams()
+{
+	return params;
 }

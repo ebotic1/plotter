@@ -52,7 +52,7 @@ public:
 	bool exportToXML(const td::String& path);
 	void resetModel(bool resetCnt = true);
 
-	~kanvas();
+	virtual ~kanvas();
 
 	friend void globals::refreshCanvas();
 	

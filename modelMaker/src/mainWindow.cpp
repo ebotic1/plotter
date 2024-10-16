@@ -6,6 +6,8 @@
 #include <xml/DOMParser.h>
 #include <tuple>
 
+#include <gui/TableEdit.h>
+
 std::vector<fileModels> MainWindow::loadedModels;
 
 void MainWindow::simulate()
@@ -19,6 +21,7 @@ void MainWindow::simulate()
 MainWindow::MainWindow()
     : gui::Window(gui::Geometry(100, 10, 1100, 800)),
       _tabView(gui::TabHeader::Type::Dynamic, 5, 25),
+      _hLayout(2),
       textEditorIcon(":txtIcon"),
       guiEditorIcon(":guiIcon"),
       _switcherView(2)
@@ -27,10 +30,22 @@ MainWindow::MainWindow()
     _mainMenuBar.setAsMain(this);
     setToolBar(_toolBar);
     setContextMenus(&_contextMenu);
-
     _switcherView.addView(&startingView, true);
-    setCentralView(&_switcherView);
 
+
+    GlobalEvents::settingsVars.loadSettingsVars(getApplication());
+    if (GlobalEvents::settingsVars.embedPlot) {
+        _hLayout << _switcherView << dataDrawer;
+        mainView = new gui::View;
+        splitterView = new gui::SplitterLayout(gui::SplitterLayout::Orientation::Horizontal);
+        splitterView->setContent(_switcherView, dataDrawer);
+        mainView->setLayout(splitterView);
+        setCentralView(mainView);
+    }
+    else {
+
+        setCentralView(&_switcherView);
+    }
 
     _tabView.onClosedView([this](int) {
         if (_tabView.getNumberOfViews() == 1)
@@ -38,6 +53,7 @@ MainWindow::MainWindow()
     });
 
     _switcherView.addView(&_tabView);
+
 
 }
 
@@ -240,9 +256,9 @@ void MainWindow::openFile(const td::String& path)
 void MainWindow::onInitialAppearance()
 {
 
-    
+    if(!GlobalEvents::settingsVars.embedPlot)
+        dataDrawerWindow = new DataDrawerWindow(this, &dataDrawer);
 
-    GlobalEvents::loadSettingsVars(getApplication());
 
     int argc;
     const char** argv;
@@ -253,6 +269,19 @@ void MainWindow::onInitialAppearance()
 
 
 }
+
+DataDraw* MainWindow::getDataDrawer(bool openWindow)
+{
+    if(!openWindow || dataDrawerWindow == nullptr)
+        return &dataDrawer;
+
+    if (getAttachedWindow(DataDrawerWindow::dataDrawerWindowID) == nullptr)
+        dataDrawerWindow->open();
+
+
+    return &dataDrawer;
+}
+
 
 const modelNode &MainWindow::getModelFromTabOrFile(const td::String &modelNameOrPath)
 {
@@ -298,6 +327,7 @@ const modelNode &MainWindow::getModelFromTabOrFile(const td::String &modelNameOr
     return m;
 }
 
+
 bool MainWindow::shouldClose()
 {
     GlobalEvents::settingsVars.saveValues();
@@ -306,6 +336,13 @@ bool MainWindow::shouldClose()
 
 MainWindow::~MainWindow()
 {
-
+    delete mainView;
+    delete splitterView;
     
+}
+
+DataDrawerWindow::DataDrawerWindow(gui::Window *parent, DataDraw* mainView):
+    gui::Window(gui::Size(500, 500), parent, dataDrawerWindowID)
+{
+    setCentralView(mainView);
 }

@@ -51,7 +51,9 @@ public:
 	void prettyPrint(cnt::StringBuilder<>& str, td::String& indent) const override{
 		if(getName()[0] != 'T'){ //not Then
 			indent.reduceSize(1);
-			str << indent << conditionNode::getName() << "\n";
+			str << indent << conditionNode::getName();
+			prettyPrintComment(str);
+			str << "\n";
 			indent += INDENT_CHAR;
 		}
 
@@ -84,52 +86,40 @@ public:
 conditionNode::conditionNode(type t) : tip(t) {}
 
 
-static td::String subStr(const td::String &str, int pozStart, int pozEnd){
-	if(pozStart >= pozEnd)
-		return td::String();
-	return td::String(str.begin() + pozStart, pozEnd - pozStart);
-}
 
-static inline void addAlias(td::String &line, const td::String& alias) {
+static inline void addAlias(td::String &line, const td::String& alias) { //doda ime ispred varijable npr import.x, takoder dodaje "*" ispred varijable npr 3x pretvara u 3*x
 
-	/*
-				str.clean();
-			start = l[i].begin();
-			previousEnd = start;
-			const td::UTF8 *end = (poz == -1) ? l[i].end() : l[i].begin() + poz + 1;
-			while (std::regex_search(start, end, match, baseNode::varPatten)) {
-				td::String var(match[2].first, match[2].length());
-				if(match[2].first != l[i].begin() && std::isdigit(*(match[2].first - 1))){
-					str << td::String(previousEnd, match[2].first - previousEnd) << " * " << var;
-					previousEnd = match[2].first;
-				}
-				start = match.suffix().first;
-			}
-			if(start != l[i].begin()){
-				str << td::String(previousEnd, l[i].end()-1 - previousEnd);
-				str.getString(l[i]);
-			}
-	
-	*/
-	if (alias.isNull())
-		return;
 	std::cmatch match;
 	cnt::StringBuilderSmall str;
 
 	const td::UTF8* start = line.begin();
 	const td::UTF8* previousEnd = start;
-	td::String result;
-	while (std::regex_search(start, line.end(), match, baseNode::varPatten)) {
-		result = subStr(line, previousEnd - line.begin(), match[2].first - line.begin());
-		if(!(result.isNull() || modelNode::functionKeywords.contains(result))){
-			str <<  result << alias << ".";
-			previousEnd = match[2].first;
+	previousEnd = start;
+
+	while (std::regex_search(start, line.end(), match, modelNode::varPatten)) {
+		td::String var(match[2].first, match[2].length());
+		if constexpr (IMPLICIT_MULTIPLY) {
+			if (match[2].first != line.begin() && std::isdigit(*(match[2].first - 1))) {
+				str << td::String(previousEnd, match[2].first - previousEnd) << "*";
+				previousEnd = match[2].first;
+			}
 		}
+		if (!alias.isNull()) {
+			if (!modelNode::functionKeywords.contains(var)) {
+				str << td::String(previousEnd, match[2].first - previousEnd) << alias << ".";
+				previousEnd = match[2].first;
+			}
+		}
+
+
 		start = match.suffix().first;
 	}
 	
-	str << subStr(line, previousEnd - line.begin(), line.end() - line.begin());
-	str.getString(line);
+	if (start != line.begin()) {
+		str << td::String(previousEnd, line.end() - previousEnd);
+		str.getString(line);
+	}
+
 }
 
 class singleEquation : public baseNode {
@@ -166,6 +156,7 @@ public:
 		if (auto itW = attribs.find("w"); itW != attribs.end())
 			str << indent << " [ " << itW->second << " ]";
 		
+		prettyPrintComment(str);
 		str << "\n";
 
 		for (const auto& attrib : attribs) {
@@ -294,6 +285,8 @@ public:
 		auto &var = *new variableNode(*this, alias);
 		if (auto it = var.attribs.find("name"); it != var.attribs.end())
 			addAlias(it->second, alias);
+		if (auto it = var.attribs.find("val"); it != var.attribs.end())
+			addAlias(it->second, alias);
 		return &var;
 	}
 	void prettyPrint(cnt::StringBuilder<>& str, td::String& indent) const override {
@@ -301,6 +294,7 @@ public:
 			str << indent << it->second;
 		if (auto it = attribs.find("val"); it != attribs.end())
 			str << " = " << it->second;
+		prettyPrintComment(str);
 		str << "\n";
 		for (const auto& attrib : attribs) {
 			if (attrib.first.cCompare("name") == 0)
@@ -493,6 +487,26 @@ bool modelNode::nodeAction(const td::String& command, baseNode*& newChild){
 modelNode &modelNode::addWtih(const modelNode &model, const td::String &alias)
 {
 
+	for (const auto& a : model.attribs) {
+		if (a.first.cCompareNoCase("domain") == 0) {
+			if (!attribs.contains("domain"))
+				attribs["domain"] = a.second;
+			else if(attribs["domain"].cCompareNoCase("real") == 0)
+				attribs["domain"] = a.second;
+		}
+
+		if (a.first.cCompareNoCase("type") == 0) {
+			if (!attribs.contains("type"))
+				attribs["type"] = a.second;
+			else if (attribs["type"].cCompareNoCase("NR") == 0)
+				attribs["type"] = a.second;
+			else if (attribs["type"].cCompareNoCase("ODE") == 0 && a.second.cCompareNoCase("DAE") == 0)
+				attribs["type"] = "DAE";
+
+		}
+
+	}
+
     bool found;
 	for (const auto& n : model.nodes) {
 		found = false;
@@ -516,10 +530,133 @@ void modelNode::clear(){
 
 
 
+static bool getComment(td::String& comment, bool& alone, const char* path = nullptr) {
+	static std::ifstream file;
+	static std::string line;
+
+	if (path != nullptr) {
+		file.close();
+		file.open(path);
+#undef max
+		file.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+#define max ((() > ()) ? () : ())
+		std::getline(file, line);
+		return file.is_open();
+	}
+	if (!file.is_open() || file.eof()) {
+		alone = false;
+		return false;
+	}
+
+	comment.clean();
+
+	//check if multiple elements are on the same line, only the last one registers as having a comment
+	int pozComment, pozStart, pozEnd;
+	static int poz = 0;
+	while (true) {
+		if (file.eof()) {
+			pozComment = line.find("<!--", poz);
+			if (pozComment != -1)
+				break;
+			return true;
+		}
+
+		pozComment = line.find("<!--", poz);
+		pozStart = line.find("<", poz);
+		if (pozStart == pozComment && pozComment != -1) pozStart = line.find("<", pozComment + 1);
+		pozEnd = line.find(">", poz);
+
+		if (pozStart != -1 && line[pozStart + 1] == '/') {//element is closing tag (comment is independent, ignore)
+
+			if (pozComment != -1) {
+				poz = pozComment;
+				bool getSucces = getComment(comment, alone);
+				alone = false;
+				return getSucces;
+			}
+
+			//komentara nema, samo nadi kraj elementa i zapocni ponovo
+			while (poz = line.find(">", poz), (poz == -1 && !file.eof()))
+				std::getline(file, line);
+
+
+			if (file.eof()) {
+				alone = false;
+				comment.clean();
+				return false;
+			}
+
+			poz += 1;
+			continue;
+		}
+
+		if (pozComment == -1) { //nema komentara
+			if (pozEnd == -1) { //nema elementa
+				std::getline(file, line);
+				poz = 0;
+				continue;
+			}
+			else {//ima elementa
+				poz = pozEnd + 1;
+				alone = false;
+				return true;
+			}
+
+		}
+
+		if (pozComment < pozStart || pozStart == -1) { //komenatar prije pocetka elementa
+			alone = true;
+			break;
+		}
+		//komentar iza elementa
+
+		alone = false;
+		break;
+
+	}
+
+
+	pozComment += 4;
+	int poz2;
+
+
+	while ((poz2 = line.find("-->", poz)), poz2 == -1) {
+		comment += line.substr(pozComment);
+		//if (line.size() != 0) 
+		comment += "\n//";
+		pozComment = 0;
+		if (!std::getline(file, line))
+			return false;
+	}
+	comment += line.substr(pozComment, poz2 - pozComment);
+
+	poz = poz2 + 3;
+
+	return true;
+}
+
+
+
+
 static void addNodeFromXML(xml::FileParser::node_iterator &it, baseNode &node){
 	td::String name;
+	td::String comment;
+	bool alone;
 
 	while(!it.end()){
+
+
+		getComment(comment, alone);
+
+		if (alone) {
+			baseNode* lastNode = &node;
+			while (!lastNode->getNodes().empty())
+				lastNode = lastNode->getNodes().back();
+			comment += " ";
+			lastNode->addComment(comment);
+			continue;
+		}
+
 		name = it->getName();
 		if(name.cCompare("Model") == 0)
 			node.addChild(new modelNode);
@@ -563,6 +700,11 @@ static void addNodeFromXML(xml::FileParser::node_iterator &it, baseNode &node){
 		for(const auto &at : it->attribs)
 			node.getNodes().back()->attribs[at.getName()] = at.getValue();
 
+		if (!comment.isNull()) {
+			comment += " ";
+			node.getNodes().back()->addComment(comment);
+		}
+
 
 		auto childIter = it.getChildNode();
 		addNodeFromXML(childIter, *node.getNodes().back());
@@ -572,6 +714,11 @@ static void addNodeFromXML(xml::FileParser::node_iterator &it, baseNode &node){
 
 }
 
+
+
+
+
+
 bool modelNode::readFromFile(const td::String &path)
 {
     clear();
@@ -579,6 +726,12 @@ bool modelNode::readFromFile(const td::String &path)
 	par.parseFile(path);
 	if(!par.isOk())
 		return false;
+
+	td::String comment;
+	bool alone;
+	getComment(comment, alone, path.c_str());
+	getComment(comment, alone);
+
 	auto root = par.getRootNode();
 	if(root->getName().cCompareNoCase("Model") != 0)
 		return false;
@@ -594,7 +747,7 @@ bool modelNode::readFromFile(const td::String &path)
 
 baseNode *modelNode::createCopy(const td::String& alias)
 {
-	return new modelNode(*this);
+	return new modelNode(*this, alias);
 }
 
 

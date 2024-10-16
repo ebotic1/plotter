@@ -35,16 +35,21 @@ class ViewForTab : public gui::View {
 public:
 	class BaseClass : public gui::View {
 		unsigned int version = 1;
+		std::unordered_set<td::String> vars, params;
+		void setVariabesAndParams(std::unordered_set<td::String>&& vars, std::unordered_set<td::String>&& params);
+		friend class ViewForTab;
 	protected:
-		void modelChanged() { ++version; }
 		void modelRolledBack() {--version; }
 	public:
+		void modelChanged() { ++version; }
 		virtual bool save(const td::String& path, const td::String& settingsString) { return false; }
 		virtual void saveAs(const td::String& settingsString, td::String *newPath) {}
 		virtual void getModel(modelNode& model) {}
-		virtual void setVariabesAndParams(std::unordered_set<td::String> &&vars, std::unordered_set<td::String> &&params){}
+		virtual void refreshVisuals(){}
 		virtual bool openFile(const td::String& path, td::String& settingsString) { return false; }
 		unsigned int getVersion() const { return version; }
+		const std::unordered_set<td::String> &getVars();
+		const std::unordered_set<td::String> &getParams();
 	};
 private:
 	LogView logView;

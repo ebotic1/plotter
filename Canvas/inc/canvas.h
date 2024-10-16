@@ -1,11 +1,12 @@
 #pragma once
 #include "./../inc/function.h"
-#include "gui/Canvas.h"
+#include <gui/Canvas.h>
 #include "./../../common/defineExportImport.h"
-#include "gui/Image.h"
+#include <gui/Image.h>
 #include <vector>
-#include "gui/DrawableString.h"
+#include <gui/DrawableString.h>
 #include <deque>
+
 
 
 class IMPEXP graph : public gui::Canvas {
@@ -20,7 +21,7 @@ class IMPEXP graph : public gui::Canvas {
 	gui::Geometry drawingWindow;
 	gui::Rect drawingRect;
 	bool drawMargins;
-	double marginsFactor = 1.65;
+	double marginsFactor = 1.55;
 
 	bool active = false;
 	bool drawGrid = false;
@@ -131,6 +132,8 @@ public:
 
 	bool save(const td::String& path);
 
+	void measure(gui::CellInfo& cell) override;
+	void reMeasure(gui::CellInfo& cell) override;
 	~graph();
 
 };

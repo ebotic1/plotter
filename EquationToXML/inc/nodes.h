@@ -23,6 +23,7 @@ protected:
 	td::String comment;
 	size_t addLine(std::vector<std::pair<td::String, td::String>>& lines, size_t startLine = 0);
 	virtual void prettyPrint(cnt::StringBuilder<>& str, td::String &indent) const;
+	void prettyPrintComment(cnt::StringBuilder<>& str) const;
 	virtual void prettyPrintClosing(cnt::StringBuilder<>& str, td::String &indent) const;
 	void clear();
 	baseNode(const baseNode& node, const td::String &alias);

@@ -99,11 +99,16 @@ void baseNode::prettyPrint(td::String& text) const
 		}
 
 
+		if (!current->comment.isNull()) {
+			int bc = comment.find(BACK_COMMENT_CHAR);
+			if(bc != -1)
+				str << indent << "//" << td::String(current->comment.begin() + bc + 1, current->comment.length() - bc - 1) << "\n";
+		}
+
+		
 		current->prettyPrint(str, indent);
 
-		if(!current->comment.isNull()){
-			str << current->comment << "\n";
-		}
+
 		
 
 
@@ -191,10 +196,25 @@ void baseNode::prettyPrint(cnt::StringBuilder<>& str, td::String& indent) const
 {
 	if(parent != nullptr && !parent->attribs.empty())
 		str << indent << "\n";
-	str << indent << getName() << ":\n";
+	str << indent << getName() << ":";
+	prettyPrintComment(str);
+	str << "\n";
 	indent += INDENT_CHAR;
 	for (const auto& attrib : attribs)
 		str << indent << attrib.first << " = " << attrib.second << "\n";
+
+}
+
+void baseNode::prettyPrintComment(cnt::StringBuilder<>& str) const
+{
+	if (comment.isNull())
+		return;
+	
+	str << " //";
+	if (int poz = comment.find(BACK_COMMENT_CHAR); poz == -1)
+		str << comment;
+	else
+		str << td::String(comment.begin(), poz-1);
 
 }
 
