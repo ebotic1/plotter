@@ -41,6 +41,7 @@ MainWindow::MainWindow()
         splitterView->setContent(_switcherView, dataDrawer);
         mainView->setLayout(splitterView);
         setCentralView(mainView);
+        plotEmbedded = true;
     }
     else {
 
@@ -256,10 +257,6 @@ void MainWindow::openFile(const td::String& path)
 void MainWindow::onInitialAppearance()
 {
 
-    if(!GlobalEvents::settingsVars.embedPlot)
-        dataDrawerWindow = new DataDrawerWindow(this, &dataDrawer);
-
-
     int argc;
     const char** argv;
     std::tie(argc, argv) = getApplication()->getMainArgs();
@@ -272,11 +269,11 @@ void MainWindow::onInitialAppearance()
 
 DataDraw* MainWindow::getDataDrawer(bool openWindow)
 {
-    if(!openWindow || dataDrawerWindow == nullptr)
+    if(!openWindow || plotEmbedded) //POPRAVITI!!!
         return &dataDrawer;
 
     if (getAttachedWindow(DataDrawerWindow::dataDrawerWindowID) == nullptr)
-        dataDrawerWindow->open();
+        (new DataDrawerWindow(this, &dataDrawer))->open();
 
 
     return &dataDrawer;

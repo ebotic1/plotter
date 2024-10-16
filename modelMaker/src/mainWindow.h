@@ -42,7 +42,7 @@ private:
     gui::View* mainView = nullptr;
     gui::SplitterLayout* splitterView = nullptr;
     DataDraw dataDrawer;
-    DataDrawerWindow *dataDrawerWindow = nullptr;
+    bool plotEmbedded = false;
     gui::HorizontalLayout _hLayout;
 
     StartingView startingView;

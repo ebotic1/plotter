@@ -30,8 +30,8 @@ DataDraw::DataDraw():
 void DataDraw::measure(gui::CellInfo& cell)
 {
 	gui::View::measure(cell);
-	cell.nResHor = 1;
-	cell.nResVer = 1;
+	//cell.nResHor = 1;
+	//cell.nResVer = 1;
 	cell.minHor = 500;
 }
 

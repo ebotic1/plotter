@@ -31,7 +31,7 @@ public:
 		numbersStr = text;
 		numbersStr.measure(font, sz);
 		textSet = true;
-		setSizeLimits(sz.width, gui::Control::Limit::Fixed, sz.height, gui::Control::Limit::Fixed);
+		setSizeLimits(sz.width, gui::Control::Limit::Fixed);
 		setBackgroundColor(td::ColorID::LightGray);
 	}
 
@@ -58,36 +58,22 @@ public:
 };
 
 static inline void setSizeToBigger(gui::Size &initialSize, const gui::Size comparedSize){
-	initialSize.width = (initialSize.width > comparedSize.width) ? initialSize.width : comparedSize.width;
+	initialSize.width += comparedSize.width;
 	initialSize.height = (initialSize.height > initialSize.height) ? initialSize.height : comparedSize.height;
 }
 
-class radi : public gui::View {
+class viewWithSize : public gui::View {
 public:
-	radi() {
 
+	gui::Size size;
+
+	viewWithSize() {
+		size = { 0,0 };
 	}
 
 	bool getModelSize(gui::Size& modelSize) const override {
-//		modelSize.width = 400;
-	//	modelSize.height = 3000;
+		modelSize = size;
 		return true;
-	}
-
-	void measure(gui::CellInfo& c) override{
-		gui::View::measure(c);
-	//	c.minVer = 3000;
-		//c.minHor = 1000;
-	//	c.nResHor = 1;
-	//	c.nResVer = 1;
-	}
-
-	void reMeasure(gui::CellInfo& c) override {
-		gui::View::reMeasure(c);
-//		c.minVer = 3000;
-//		c.minHor = 1000;
-//		c.nResHor = 1;
-	//	c.nResVer = 1;
 	}
 
 };
@@ -99,14 +85,13 @@ class Table : public gui::ViewScroller {
 	gui::HorizontalLayout _hLayout;
 	gui::GridLayout _gridVertLayout;
 	gui::VerticalLayout _vLayout;
-	radi mainView;
+	viewWithSize mainView, paramsView;
 	gui::Size sz = {0,0};
 
 public:
 	Table(const std::vector<DataDraw::FunctionDesc> &funcs):
 		gui::ViewScroller(gui::ViewScroller::Type::ScrollerAlwaysVisible, gui::ViewScroller::Type::ScrollerAlwaysVisible),
 		_hLayout(funcs.size()),
-		layouts(funcs.size()),
 		_gridVertLayout(funcs.size(),3),
 		_vLayout(3)
 	{
@@ -235,8 +220,9 @@ public:
 
 				
 				numberCols.push_back(new NumberColumn());
-
 				numberCols.end()[-1]->setNumbers(funcs[i].y, funcs[i].size);
+
+				setSizeToBigger(sz, numberCols.end()[-2]->getSize());
 
 				layout->insert(2, 0, *numberCols.end()[-1], td::HAlignment::Center);
 
@@ -257,20 +243,12 @@ public:
 
 		_vLayout << _hLayout;
 
+		mainView.size = gui::Size(sz.width * 1.1, sz.height + verticalCnt * 35 + 180);
 		mainView.setLayout(&_vLayout);
 		setContentView(&mainView);
-		//setContentSize({4000,3000});
-		getContentSize(sz);
-
-		int x = 3;
 
 	}
 
-	bool getModelSize(gui::Size& modelSize) const override{
-//		modelSize.width = 400;
-//		modelSize.height = 3000;
-		return true;
-	}
 
 	~Table() {
 		for (const auto& ptr : labels)
