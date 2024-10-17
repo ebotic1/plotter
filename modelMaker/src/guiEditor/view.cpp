@@ -18,12 +18,14 @@ bool GraphicalEditorView::save(const td::String& path, const td::String& setting
 
 void GraphicalEditorView::saveAs(const td::String& settingsString, td::String* newPath)
 {
-	gui::SaveFileDialog& saveDiag = *new gui::SaveFileDialog(this, tr("saveTF"), { {tr("graphicalEditorSaveExpl"), "*.tfstate"}});
-	saveDiag.openModal([this, newPath, &settingsString](gui::FileDialog *d) {
+	auto ptrSettings = new td::String(settingsString);
+	gui::SaveFileDialog& saveDiag = *new gui::SaveFileDialog(this, tr("saveTF"), { {tr("tfFile"), "*.tfstate"}});
+	saveDiag.openModal([this, newPath, ptrSettings](gui::FileDialog *d) {
 		if (td::String path = d->getFileName(); !path.isNull()) {
-			if(_canvas.saveState(path, settingsString))
+			if(_canvas.saveState(path, *ptrSettings))
 				*newPath = path;
 		}
+		delete ptrSettings;
 	});
 
 }

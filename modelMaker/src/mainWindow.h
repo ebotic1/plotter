@@ -27,9 +27,11 @@ struct fileModels{
 };
 
 class DataDrawerWindow : public gui::Window {
+    DataDraw* storedView;
 public:
     static constexpr int dataDrawerWindowID = 10;
     DataDrawerWindow(gui::Window* parent, DataDraw *mainView);
+    ~DataDrawerWindow();
 };
 
 class MainWindow : public gui::Window

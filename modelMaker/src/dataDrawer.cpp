@@ -96,6 +96,17 @@ void DataDraw::addData(const td::String& name, const std::vector<FunctionDesc>& 
 	
 }
 
+void DataDraw::removeTabs()
+{
+	for (int i = 0; i < tabView.getNumberOfViews(); ++i) 
+		tabView.removeAll();
+}
+
+DataDraw::~DataDraw()
+{
+	int x = 0;
+}
+
 DataDraw::Tab::Tab(const td::String& name, gui::BaseView* view):
 	name(name),
 	view(view),

@@ -32,7 +32,7 @@ public:
 		numbersStr.measure(font, sz);
 		textSet = true;
 		setSizeLimits(sz.width, gui::Control::Limit::Fixed);
-		setBackgroundColor(td::ColorID::LightYellow);
+		setBackgroundColor(td::ColorID::Black);
 	}
 
 	void setNumbers(double *numbers, unsigned int size){
@@ -48,7 +48,7 @@ public:
 
 	void onDraw(const gui::Rect& rect){
 		if(textSet)
-			numbersStr.draw({0,0}, font, td::ColorID::SysText);
+			numbersStr.draw({0,0}, font, td::ColorID::White);
 	}
 
 	gui::Size getSize(){

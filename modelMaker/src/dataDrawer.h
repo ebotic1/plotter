@@ -39,4 +39,6 @@ public:
 	DataDraw();
 	void measure(gui::CellInfo& cell) override;
 	void addData(const td::String &name, const std::vector<FunctionDesc>& functions, Type tip);
+	void removeTabs();
+	~DataDraw();
 };

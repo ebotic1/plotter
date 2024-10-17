@@ -186,7 +186,7 @@ void ModelSettings::loadFromString(const td::String &settingsString)
 		preprocesCommands.setText(retVal);
 	
 
-	
+	preprocesCommands.setFontSize(GlobalEvents::settingsVars.textSize);
 
 	++version;
 

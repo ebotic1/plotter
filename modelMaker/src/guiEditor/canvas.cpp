@@ -215,8 +215,9 @@ bool kanvas::restoreState(const td::String& file, td::String& settingsString)
 	blockInterface::saveState();
 
 	try {
-		int size = 0;
+		settingsString.clean();
 		in >> settingsString;
+		int size = 0;
 		in >> size;
 		kopija.resize(size, nullptr);
 

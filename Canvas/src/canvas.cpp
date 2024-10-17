@@ -731,7 +731,7 @@ void graph::onResize(const gui::Size& newSize) {
 
     double distance = 20;
     for (size_t i = 0; i < slike.size(); ++i) {
-        slike[i].rect.setOrigin(distance,  32);
+        slike[i].rect.setOrigin(distance, 5);
         distance += 32 + slike[i].rect.width();
     }
 

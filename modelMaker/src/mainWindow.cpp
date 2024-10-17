@@ -19,7 +19,7 @@ void MainWindow::simulate()
 }
 
 MainWindow::MainWindow()
-    : gui::Window(gui::Geometry(100, 10, 1100, 800)),
+    : gui::Window(gui::Geometry(100, 10, 1500, 1000)),
       _tabView(gui::TabHeader::Type::Dynamic, 5, 25),
       _hLayout(2),
       textEditorIcon(":txtIcon"),
@@ -159,25 +159,10 @@ bool MainWindow::onActionItem(gui::ActionItemDescriptor& aiDesc)
     }
 
 
-
-
-
-
-
-
-
     ViewForTab *currentView = (ViewForTab*)this->_tabView.getCurrentView();
- 
-
-
-
-
-
-
-
 
     if(action == menuBarActionIDs::OpenFromFile){
-        auto &o = *new gui::OpenFileDialog(this, tr("openModel"), {{"Text model", "*.txt"}, {"XML model", "*.xml"}, {"TFeditor save file", "*.tfstate"} }, tr("open"));
+        auto &o = *new gui::OpenFileDialog(this, tr("openModel"), {{"Text model", "*.txt"}, {"XML model", "*.xml"}, {tr("tfFile"), "*.tfstate"} }, tr("open"));
         if(menuID == subMenuIDs::subMenuModel){
            if(_tabView.getNumberOfViews() == 0)
                 return true;
@@ -282,14 +267,20 @@ void MainWindow::onInitialAppearance()
 
 DataDraw* MainWindow::getDataDrawer(bool openWindow)
 {
+
+    static auto dataDrawerPtr = &dataDrawer;
+
     if(!openWindow || plotEmbedded)
-        return &dataDrawer;
-
-    if (getAttachedWindow(DataDrawerWindow::dataDrawerWindowID) == nullptr)
-        (new DataDrawerWindow(this, &dataDrawer))->open();
+        return dataDrawerPtr;
 
 
-    return &dataDrawer;
+    if (getAttachedWindow(DataDrawerWindow::dataDrawerWindowID) == nullptr){
+        dataDrawerPtr = new DataDraw; //workaround, view koji se nalazi u gui::Window prestaje biti validan nakon njegovog gasenja
+        (new DataDrawerWindow(this, dataDrawerPtr))->open();
+    }
+
+
+    return dataDrawerPtr;
 }
 
 
@@ -352,7 +343,13 @@ MainWindow::~MainWindow()
 }
 
 DataDrawerWindow::DataDrawerWindow(gui::Window *parent, DataDraw* mainView):
-    gui::Window(gui::Size(500, 500), parent, dataDrawerWindowID)
+    gui::Window(gui::Size(500, 500), parent, dataDrawerWindowID),
+    storedView(mainView)
 {
-    setCentralView(mainView);
+    setCentralView(storedView);
+}
+
+DataDrawerWindow::~DataDrawerWindow()
+{
+    delete storedView;
 }
