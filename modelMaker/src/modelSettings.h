@@ -23,7 +23,7 @@ public:
 		enum class Type{graph, points} type;
 		td::String name, yAxis, xAxis;
 		bool Ycomplex = false, Xcomplex = false;
-		FunctionDesc(const Type& type, const td::String& name, const td::String& xAxis, const td::String& yAxis);
+		FunctionDesc(const Type& type, const td::String& name, const td::String& yAxis, const td::String& xAxis);
 	};
 	struct DependencyDesc {
 		td::String pathOrTabName, alias;

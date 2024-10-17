@@ -45,20 +45,39 @@ void DataDraw::addData(const td::String& name, const std::vector<FunctionDesc>& 
 
 	if (tip == Type::graph) {
 		auto g = new graph(true, true, td::ColorID::SysCtrlBack);
-		td::String xname = functions[0].xname;
+		td::String xname = functions[0].xname, yname;
+		int ynameCnt = 0;
 
 		for (const auto& f : functions) {
-			g->addFunction(f.x, f.y, f.size, 2, td::LinePattern::Solid, f.name);
-			if (f.xname != xname)
-				xname.clean();
+
+			if (f.x != nullptr && f.y == nullptr && f.size == 1) { //param u x
+				g->verticals.emplace_back(*f.x);
+				continue;
+			}
+
+			if (f.y != nullptr && f.x == nullptr && f.size == 1) { //param u y
+				g->horizontals.emplace_back(*f.y);
+				continue;
+			}
+
+			if (f.x != nullptr && f.y != nullptr) { //dva niza
+				xname = f.xname;
+				if (ynameCnt++ == 0)
+					yname = f.yname;
+				g->addFunction(f.x, f.y, f.size, 2, td::LinePattern::Solid, f.name);
+				if (f.xname != xname)
+					xname.clean();
+			}
+
 		}
 
 		if (!xname.isNull())
 			g->setxAxisName(xname);
-		if (functions.size() == 1)
+		if (ynameCnt == 1)
 			g->setyAxisName(functions[0].yname);
 
 		tab = g;
+		
 	}
 	else {
 		auto table = new Table(functions);

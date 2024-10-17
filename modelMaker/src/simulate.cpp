@@ -23,6 +23,8 @@ class SolutionBuffer : public sc::ISolutionBuffer {
 	std::vector<std::pair<double*, resultType*>> storePointers, storePointersImag;
 	std::vector<DataDraw::FunctionDesc> outFuncs, outDataSet;
 
+	const td::String& modelName;
+
 	std::map<td::String, double*> NameToStorePtrCont;
 	double* getPointerToVar(const td::String &varName) {
 		if (NameToStorePtrCont.contains(varName))
@@ -39,22 +41,33 @@ class SolutionBuffer : public sc::ISolutionBuffer {
 			return td::String(name) += ".real";
 	}
 
+	inline td::String getCmplxString(td::cmplx number) {
+		cnt::StringBuilderSmall str;
+		str << number;
+		td::String result;
+		str.getString(result);
+		return result;
+	}
+
 public:
-	SolutionBuffer(const LogView *logger, const std::vector<ModelSettings::FunctionDesc> &functions, int maxPoints, solverType *solver):
+	SolutionBuffer(const td::String &modelName, const LogView *logger, const std::vector<ModelSettings::FunctionDesc> &functions, int maxPoints, solverType *solver):
 		functions(functions),
 		logger(logger),
 		solver(solver),
 		maxPoints(maxPoints),
+		modelName(modelName),
 		startTime(std::chrono::steady_clock::now())
 	{
-		
+		constexpr bool isComplex = std::is_same<resultType, td::cmplx>::value;
 		cnt::SafeFullVector<td::INT4> symbs;
 		solver->getOutSymbols(symbs);
 
 		std::map<td::String, td::INT4> outVars;
-
+		
 		for (const auto& index : symbs) 
 			outVars[solver->getSymbolName(index)] = index;
+		if (int index = solver->getParamIndex("t"); index >= 0)
+			outVars["t"] = index;
 	
 		std::map<td::String, td::INT4>::iterator itX, itY, end = outVars.end();
 		td::String xAxis, yAxis;
@@ -74,7 +87,7 @@ public:
 			logger->appendLog(log2, LogType::warning);
 #endif // MU_DEBUG
 
-			if constexpr (!std::is_same<resultType, td::cmplx>::value) {
+			if constexpr (!isComplex) {
 				if (funD.Xcomplex || funD.Ycomplex)
 					continue;
 			}
@@ -91,7 +104,7 @@ public:
 			paramIntY = (itY == end) ? solver->getParamIndex(funD.yAxis.c_str()) : -1;
 
 			if (itX != end && itY != end) { //dva niza
-				if constexpr (!std::is_same<resultType, td::cmplx>::value) {
+				if constexpr (!isComplex) {
 					if (funD.type == ModelSettings::FunctionDesc::Type::graph)
 						outFuncs.push_back(DataDraw::FunctionDesc(funD.name, getPointerToVar(funD.xAxis), getPointerToVar(funD.yAxis), maxPoints, funD.xAxis, funD.yAxis));
 					else
@@ -111,36 +124,35 @@ public:
 
 
 			if (itX == end && paramIntX > 0 && funD.yAxis.cCompare("0") == 0) { // parametar u x
-				if constexpr (!std::is_same<resultType, td::cmplx>::value) {
+				if constexpr (!isComplex) {
 					if (funD.type == ModelSettings::FunctionDesc::Type::graph)
 						outFuncs.push_back(DataDraw::FunctionDesc(funD.name, solver->getParamsPtr() + paramIntX, nullptr, 1, funD.xAxis, ""));
 					else
 						outDataSet.push_back(DataDraw::FunctionDesc(funD.name, solver->getParamsPtr() + paramIntX, nullptr, 1, funD.xAxis, ""));
 				}
 				else {
-					outDataSet.push_back(DataDraw::FunctionDesc(funD.name, nullptr, nullptr, 1, "real + i*imag", "")); //emir
+					outDataSet.push_back(DataDraw::FunctionDesc(funD.name, nullptr, nullptr, 0, "", getCmplxString(solver->getParamsPtr()[paramIntX])));
 				}
 				continue;
 			}
 
 
 			if (itY == end && paramIntY > 0 && funD.xAxis.cCompare("0") == 0) { // parametar u y
-				if constexpr (!std::is_same<resultType, td::cmplx>::value) {
+				if constexpr (!isComplex) {
 					if (funD.type == ModelSettings::FunctionDesc::Type::graph)
 						outFuncs.push_back(DataDraw::FunctionDesc(funD.name, nullptr, solver->getParamsPtr() + paramIntY, 1, "", funD.yAxis));
 					else
 						outDataSet.push_back(DataDraw::FunctionDesc(funD.name, nullptr, solver->getParamsPtr() + paramIntY, 1, "", funD.yAxis));
 				}
 				else {
-					//solver->getParamsPtr()[paramIntY].real
-					outDataSet.push_back(DataDraw::FunctionDesc(funD.name, nullptr, nullptr, 1, "real + i*imag", "")); //emir
+					outDataSet.push_back(DataDraw::FunctionDesc(funD.name, nullptr, nullptr, 0, "", getCmplxString(solver->getParamsPtr()[paramIntY]))); 
 				}
 				continue;
 			}
 
 			if (itY != end && funD.xAxis.cCompare("0") == 0) { // jedan niz
 
-				if constexpr (!std::is_same<resultType, td::cmplx>::value)
+				if constexpr (!isComplex)
 					outDataSet.push_back(DataDraw::FunctionDesc(funD.name, nullptr, getPointerToVar(funD.yAxis), maxPoints, "", funD.yAxis));
 				else {
 					outDataSet.push_back(DataDraw::FunctionDesc(funD.name, nullptr, getPointerToVar(xAxis), maxPoints, "", yAxis));
@@ -161,7 +173,12 @@ public:
 
 		td::String nameWithoutExtension;
 		for (const auto& nameAndPtr : NameToStorePtrCont) {
-			if constexpr (!std::is_same<resultType, td::cmplx>::value)
+			if (nameAndPtr.first.cCompare("t") == 0) {
+				storePointers.push_back({ nameAndPtr.second, solver->getParamsPtr() + outVars[nameAndPtr.first]});
+				continue;
+			}
+
+			if constexpr (!isComplex)
 				storePointers.push_back({ nameAndPtr.second, solver->getVariablesPtr() + outVars[nameAndPtr.first]});
 			else {
 				nameWithoutExtension = nameAndPtr.first;
@@ -173,7 +190,7 @@ public:
 			}
 		}
 
-
+		
 
 	}
 
@@ -213,15 +230,20 @@ public:
 
 		}
 
-		GlobalEvents::getMainWindowPtr()->getDataDrawer()->addData("modelName", outFuncs, DataDraw::Type::graph);
-		GlobalEvents::getMainWindowPtr()->getDataDrawer()->addData("modelName", outDataSet, DataDraw::Type::table);
+		td::String nameAndType(modelName);
+		nameAndType += "-graph";
+		GlobalEvents::getMainWindowPtr()->getDataDrawer()->addData(nameAndType, outFuncs, DataDraw::Type::graph);
+
+		nameAndType = modelName;
+		nameAndType += "-table";
+		GlobalEvents::getMainWindowPtr()->getDataDrawer()->addData(nameAndType, outDataSet, DataDraw::Type::table);
 	
 	}
 };
 
 
-SolutionBuffer(const LogView *, const std::vector<ModelSettings::FunctionDesc> &, int, sc::IDblSolver *) -> SolutionBuffer<sc::IDblSolver, double>;
-SolutionBuffer(const LogView *, const std::vector<ModelSettings::FunctionDesc> &, int, sc::ICmplxSolver *) -> SolutionBuffer<sc::ICmplxSolver, td::cmplx>;
+SolutionBuffer(const td::String &, const LogView *, const std::vector<ModelSettings::FunctionDesc> &, int, sc::IDblSolver *) -> SolutionBuffer<sc::IDblSolver, double>;
+SolutionBuffer(const td::String &, const LogView *, const std::vector<ModelSettings::FunctionDesc> &, int, sc::ICmplxSolver *) -> SolutionBuffer<sc::ICmplxSolver, td::cmplx>;
 
 
 enum class EquationTypes { NR, DAE, ODE, WLS };
@@ -238,7 +260,6 @@ void MainWindow::simulate(ViewForTab *tab)
 		return;
 	}
 	
-	//return; //izbridaati
 	bool isComplex;
 	if(auto it = model.attribs.find("domain"); it == model.attribs.end())
 		isComplex = false;
@@ -329,9 +350,35 @@ void MainWindow::simulate(ViewForTab *tab)
 	else
 		static_assert(false, "wrong pointer type for initSimulation");
 
-		
-		s->solve(startTime, stepTime, endTime, new SolutionBuffer(&logView, funcs, 1 + std::abs(startTime-endTime)/stepTime, s), 0);
+		bool useAutoFuncs = false;
+		std::vector<ModelSettings::FunctionDesc> autoFuncs;
+
+		if (funcs.empty()) {
+			useAutoFuncs = true;
+			cnt::SafeFullVector<td::INT4> symbs;
+			s->getOutSymbols(symbs);
+			int timeIndex = s->getParamIndex("t");
+			
+			if (timeIndex < 0) 
+				for (const auto& symIndex : symbs)
+					autoFuncs.push_back(ModelSettings::FunctionDesc(ModelSettings::FunctionDesc::Type::points, s->getSymbolName(symIndex), s->getSymbolName(symIndex), ""));
+			else 
+				for (const auto& symIndex : symbs)
+					autoFuncs.push_back(ModelSettings::FunctionDesc(ModelSettings::FunctionDesc::Type::graph, s->getSymbolName(symIndex), s->getSymbolName(symIndex), "t"));
+			
+		}
+
+		auto buffer = new SolutionBuffer(tab->getName(), &logView, useAutoFuncs ? autoFuncs : funcs, 1 + std::abs(startTime - endTime) / stepTime, s);
+		s->solve(startTime, stepTime, endTime, buffer, 0);
 		err = s->getLastErrorStr();
+
+
+		if (equationType == EquationTypes::NR) {
+			buffer->put();
+			buffer->finalize(err.isNull() ? sc::ISolutionBuffer::Status::SuccessfullyCompleted : sc::ISolutionBuffer::Status::Error);
+		}
+
+
 	};
 
 

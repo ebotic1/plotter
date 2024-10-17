@@ -42,10 +42,10 @@ void TextEditorView::saveAs(const td::String &settingsString, td::String *newPat
 	auto &s = *new gui::SaveFileDialog (this, tr("saveFile"), ".txt");
 	s.openModal([newPath, this, settingsStringPtr](gui::FileDialog *dialog){
 		auto path = dialog->getFileName();
-		if(!path.isNull()){
-			*newPath = path;
-			save(path, *settingsStringPtr);
-		}
+		if(!path.isNull())
+			if(save(path, *settingsStringPtr))
+				*newPath = path;
+		
 		delete settingsStringPtr;
 	});
 	

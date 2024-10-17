@@ -9,8 +9,6 @@
 class GraphicalEditorView: public ViewForTab::BaseClass {
 	gui::SplitterLayout spliter;
 	properties props;
-
-	gui::ViewScroller scroller;
 	
 	kanvas _canvas;
 
@@ -24,6 +22,11 @@ public:
 		return &_canvas;
 	}
 
+	bool save(const td::String& path, const td::String& settingsString);
+	void saveAs(const td::String& settingsString, td::String* newPath);
+	void getModel(modelNode& model);
+	void refreshVisuals();
+	bool openFile(const td::String& path, td::String& settingsString);
 
 };
 

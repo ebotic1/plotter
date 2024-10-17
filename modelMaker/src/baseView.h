@@ -42,11 +42,11 @@ public:
 		void modelRolledBack() {--version; }
 	public:
 		void modelChanged() { ++version; }
-		virtual bool save(const td::String& path, const td::String& settingsString) { return false; }
-		virtual void saveAs(const td::String& settingsString, td::String *newPath) {}
-		virtual void getModel(modelNode& model) {}
-		virtual void refreshVisuals(){}
-		virtual bool openFile(const td::String& path, td::String& settingsString) { return false; }
+		virtual bool save(const td::String& path, const td::String& settingsString) = 0;
+		virtual void saveAs(const td::String& settingsString, td::String* newPath) = 0;
+		virtual void getModel(modelNode& model) = 0;
+		virtual void refreshVisuals() = 0;
+		virtual bool openFile(const td::String& path, td::String& settingsString) = 0;
 		unsigned int getVersion() const { return version; }
 		const std::unordered_set<td::String> &getVars();
 		const std::unordered_set<td::String> &getParams();

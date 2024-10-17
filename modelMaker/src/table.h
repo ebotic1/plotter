@@ -32,7 +32,7 @@ public:
 		numbersStr.measure(font, sz);
 		textSet = true;
 		setSizeLimits(sz.width, gui::Control::Limit::Fixed);
-		setBackgroundColor(td::ColorID::LightGray);
+		setBackgroundColor(td::ColorID::LightYellow);
 	}
 
 	void setNumbers(double *numbers, unsigned int size){
@@ -96,16 +96,45 @@ public:
 		_vLayout(3)
 	{
 		int verticalCnt = 0;
+		
+
+
+		const auto addParamLine = [&](const td::String& functionName, const td::String& paramName, double* value) {
+			td::String result;
+			if (functionName != paramName)
+				result = functionName;
+			else
+				result = "";
+
+			result += "\t";
+
+			labels.push_back(new gui::Label(result));
+
+			_gridVertLayout.insert(verticalCnt, 0, *labels.end()[-1]);
+
+			result = paramName;
+			result += " = ";
+
+			labels.push_back(new gui::Label(result));
+			_gridVertLayout.insert(verticalCnt, 1, *labels.end()[-1], td::HAlignment::Right);
+			result.fromNumber(*value);
+
+			labels.push_back(new gui::Label(result));;
+			_gridVertLayout.insert(verticalCnt, 2, *labels.end()[-1]);
+
+			verticalCnt += 1;
+		};
+
 
 		for (int i = 0; i < funcs.size(); ++i) {
 
 			if (funcs[i].x == nullptr && funcs[i].y == nullptr) {
 
 				td::String niceName = funcs[i].name;
-				niceName += ": ";
+				niceName += " =\t";
 
 				labels.push_back(new gui::Label(niceName));
-				labels.push_back(new gui::Label(funcs[i].xname));
+				labels.push_back(new gui::Label(funcs[i].yname));
 				_gridVertLayout.insert(verticalCnt, 0, *labels.end()[-2]);
 				_gridVertLayout.insert(verticalCnt, 2, *labels.end()[-1]);
 
@@ -113,58 +142,17 @@ public:
 				continue;
 			}
 
+
 			if (funcs[i].x != nullptr && funcs[i].y == nullptr && funcs[i].size == 1) { //param u x
-
-				if (funcs[i].name != funcs[i].xname) 
-					labels.push_back(new gui::Label(funcs[i].name));
-				else
-					labels.push_back(new gui::Label(""));
-					
-				
-
-				_gridVertLayout.insert(verticalCnt, 0, *labels.end()[-1]);
-
-				labels.push_back(new gui::Label(funcs[i].xname));
-				_gridVertLayout.insert(verticalCnt, 1, *labels.end()[-1]);
-
-				td::String result;
-				result.fromNumber(*funcs[i].x);
-
-				labels.push_back(new gui::Label(result));;
-				_gridVertLayout.insert(verticalCnt, 2, *labels.end()[-1]);
-
-
-				verticalCnt += 1;
+				addParamLine(funcs[i].name, funcs[i].xname, funcs[i].x);
 				continue;
-
 			}
 
-
-			if (funcs[i].x == nullptr && funcs[i].y != nullptr && funcs[i].size == 1) { //param u y
-
-				if (funcs[i].name != funcs[i].yname)
-					labels.push_back(new gui::Label(funcs[i].name));
-				else
-					labels.push_back(new gui::Label(""));
-
-
-
-				_gridVertLayout.insert(verticalCnt, 0, *labels.end()[-1]);
-
-				labels.push_back(new gui::Label(funcs[i].yname));
-				_gridVertLayout.insert(verticalCnt, 1, *labels.end()[-1]);
-
-				td::String result;
-				result.fromNumber(*funcs[i].y);
-
-				labels.push_back(new gui::Label(result));;
-				_gridVertLayout.insert(verticalCnt, 2, *labels.end()[-1]);
-
-
-				verticalCnt += 1;
+			if (funcs[i].y != nullptr && funcs[i].x == nullptr && funcs[i].size == 1) { //param u y
+				addParamLine(funcs[i].name, funcs[i].yname, funcs[i].y);
 				continue;
-
 			}
+
 
 
 			if (funcs[i].x != nullptr && funcs[i].y != nullptr) { //dva niza
@@ -222,7 +210,7 @@ public:
 				numberCols.push_back(new NumberColumn());
 				numberCols.end()[-1]->setNumbers(funcs[i].y, funcs[i].size);
 
-				setSizeToBigger(sz, numberCols.end()[-2]->getSize());
+				setSizeToBigger(sz, numberCols.end()[-1]->getSize());
 
 				layout->insert(2, 0, *numberCols.end()[-1], td::HAlignment::Center);
 
@@ -234,19 +222,25 @@ public:
 
 		}
 
-		
+
 
 		if (verticalCnt > 0) {
-			_vLayout << _gridVertLayout;
-			_vLayout.appendSpace(25);
+			paramsView.setLayout(&_gridVertLayout);
+			_vLayout << paramsView;
+			_vLayout.appendSpace(15);
 		}
 
 		_vLayout << _hLayout;
-
 		mainView.size = gui::Size(sz.width * 1.1, sz.height + verticalCnt * 35 + 180);
 		mainView.setLayout(&_vLayout);
 		setContentView(&mainView);
 
+	}
+
+	void measure(gui::CellInfo& c) override {
+		gui::ViewScroller::measure(c);
+		c.minHor = 300;
+		c.nResHor = 1;
 	}
 
 

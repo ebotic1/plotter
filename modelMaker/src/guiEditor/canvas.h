@@ -43,10 +43,9 @@ public:
 	bool onActionItem(gui::ActionItemDescriptor& aiDesc) override;
 	bool onContextMenuUpdate(td::BYTE menuID, gui::ContextMenu* pMenu) override;
 
-	virtual bool onClick(gui::FileDialog* pDlg, td::UINT4 dlgID);
-
-	bool saveState(const td::String &file);
-	bool restoreState(const td::String &file);
+	void getModel(modelNode& model);
+	bool saveState(const td::String &file, const td::String &settingsString);
+	bool restoreState(const td::String &file, td::String &settingsString);
 	bool onKeyPressed(const gui::Key& key);
 
 	bool exportToXML(const td::String& path);

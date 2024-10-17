@@ -131,14 +131,43 @@ inline bool kanvas::onZoom(const gui::InputDevice& inputDevice) {
 
 
 
-inline bool kanvas::saveState(const td::String& file){
+void kanvas::getModel(modelNode& mod)
+{
+	mod.clear();
 
+	mod.processCommands("Params:\nVars:");
+	BlockBase::Nodes nodes;
+
+	baseNode& params = *mod.getNodes()[0];
+
+
+	for (auto& block : blocks)
+		block->writeToModel(mod, nodes);
+
+	td::Variant v;
+	globals::model_settings->edit.getValue(v);
+
+	params.processCommands("t // time");
+	params.processCommands(v.strVal());
+
+	mod.attribs = std::move(params.attribs);
+	params.attribs.clear();
+
+	mod["domain"] = "real";
+	mod["type"] = "DAE";
+	mod["name"] = globals::model_settings->name.getValue().strVal();
+
+}
+
+bool kanvas::saveState(const td::String& file, const td::String& settingsString)
+{
 	arch::FileSerializerOut temp;
 	if (!temp.open(file))
 		return false;
 
-	arch::ArchiveOut out("TFv2", temp);
+	arch::ArchiveOut out("TFv3", temp);
 	try {
+		out << settingsString;
 		out << int(blocks.size());
 		for (BlockBase* b : blocks)
 			b->saveToFile(out);
@@ -173,20 +202,21 @@ inline bool kanvas::saveState(const td::String& file){
 
 }
 
-inline bool kanvas::restoreState(const td::String& file){
-	
+bool kanvas::restoreState(const td::String& file, td::String& settingsString)
+{	
 	arch::FileSerializerIn temp;
 	if (!temp.open(file))
 		return false;
 
 	arch::ArchiveIn in(temp);
-	in.setSupportedMajorVersion("TFv2");
+	in.setSupportedMajorVersion("TFv3");
 	std::vector<BlockBase*> kopija;
 	td::Variant titl_v, param_v;
 	blockInterface::saveState();
 
 	try {
 		int size = 0;
+		in >> settingsString;
 		in >> size;
 		kopija.resize(size, nullptr);
 
@@ -345,117 +375,19 @@ inline bool kanvas::onActionItem(gui::ActionItemDescriptor& aiDesc) {
 		}
 	}
 
-
-	if (aiDesc._menuID == 1) {
-		if (aiDesc._actionItemID == 1) {
-			resetModel();
-		}
-	}
-	
-
-	if (aiDesc._actionItemID == 2) { // open
-		gui::OpenFileDialog* p = new gui::OpenFileDialog(this, "Open model", { {"TFeditor save file", "*.tfstate"} }, "Open");
-		p->openModalWithID(2,this);
-		return true;
-	}
-
-
-	if (aiDesc._actionItemID == 3) { // save
-
-		if (currentPath.isNull()) {
-			showAlert("error", "No file is currently open (use 'save as')");
-			return true;
-		}
-
-		if (!saveState(currentPath))
-			showAlert("error", "cannot save file");
-		return true;
-
-	}
-
-	if (aiDesc._actionItemID == 4) { // save as
-		gui::SaveFileDialog* p = new gui::SaveFileDialog(this, "Save as", { {"TFeditor save file", "*.tfstate"} }, "SavedModel.tfstate");
-		p->openModalWithID(4, this);
-		return true;
-	}
-
-
-
-	if (aiDesc._actionItemID == 100) { // export
-		gui::SaveFileDialog* p = new gui::SaveFileDialog(this, "Export to", ".xml", "Export");
-		p->openModalWithID(5, this);
-		return true;
-	}
 	return false;
 }
 
 
-
-inline bool kanvas::onClick(gui::FileDialog* pDlg, td::UINT4 dlgID) {
-	
-	if (dlgID == 2) {//open
-		if (!restoreState(pDlg->getFileName()))
-			showAlert("error", "cannot open file");
-		return true;
-	}
-
-	if (dlgID == 4) {//save as
-		if (!saveState(pDlg->getFileName()))
-			showAlert("error", "cannot open file");
-		else
-			currentPath = pDlg->getFileName();
-		return true;
-	}
-
-	if (dlgID == 5) {//export
-		if (!exportToXML(pDlg->getFileName()))
-			showAlert("error", "cannot export model");
-		return true;
-	}
-	
-	return false;
-}
 
 
 
 bool kanvas::exportToXML(const td::String &path){
 
-	xml::Writer w;
-	w.open(path);
-	w.startDocument();
-	if (!w.isOk())
-		return false;
-
 	modelNode mod;
+	getModel(mod);
+	return mod.printNode(path);
 
-	mod.processCommands("Params:\nVars:");
-	BlockBase::Nodes nodes;
-
-	baseNode& params = *mod.getNodes()[0];
-
-
-	for (auto &block : blocks)
-		block->writeToModel(mod, nodes);
-
-	td::Variant v;
-	globals::model_settings->edit.getValue(v);
-
-	params.processCommands("t // time");
-	params.processCommands(v.strVal());
-
-	mod.attribs = std::move(params.attribs);
-	params.attribs.clear();
-
-	mod["domain"] = "real";
-	mod["type"] = "DAE";
-	mod["name"] = globals::model_settings->name.getValue().strVal();
-
-	mod.printNode(w);
-
-	w.endDocument();
-	w.close();
-
-	return true;
 }
 
 

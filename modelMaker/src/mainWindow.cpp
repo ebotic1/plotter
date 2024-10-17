@@ -177,7 +177,7 @@ bool MainWindow::onActionItem(gui::ActionItemDescriptor& aiDesc)
 
 
     if(action == menuBarActionIDs::OpenFromFile){
-        auto &o = *new gui::OpenFileDialog(this, tr("openModel"), {{"Text model", "*.txt"}, {"XML model", "*.xml"} }, tr("open"));
+        auto &o = *new gui::OpenFileDialog(this, tr("openModel"), {{"Text model", "*.txt"}, {"XML model", "*.xml"}, {"TFeditor save file", "*.tfstate"} }, tr("open"));
         if(menuID == subMenuIDs::subMenuModel){
            if(_tabView.getNumberOfViews() == 0)
                 return true;
@@ -241,17 +241,30 @@ bool MainWindow::onActionItem(gui::ActionItemDescriptor& aiDesc)
 
 void MainWindow::openFile(const td::String& path)
 {
-    td::String settings;
-
-    if (path.endsWith(".txt") || path.endsWith(".xml")) {
-        auto ptr = new TextEditorView;
+   
+    const auto openF = [this, &path](auto ptr) {
+        td::String settings;
         if (ptr->openFile(path, settings)) {
             addTab(ptr, settings, path);
             return;
         }
         else
             delete ptr;
+    };
+
+    if (path.endsWith(".txt") || path.endsWith(".xml")) {
+        auto ptr = new TextEditorView;
+        openF(ptr);
     }
+
+    if (path.endsWith(".tfstate")) {
+        auto ptr = new GraphicalEditorView;
+        openF(ptr);
+    }
+
+
+
+
 }
 
 void MainWindow::onInitialAppearance()
@@ -269,7 +282,7 @@ void MainWindow::onInitialAppearance()
 
 DataDraw* MainWindow::getDataDrawer(bool openWindow)
 {
-    if(!openWindow || plotEmbedded) //POPRAVITI!!!
+    if(!openWindow || plotEmbedded)
         return &dataDrawer;
 
     if (getAttachedWindow(DataDrawerWindow::dataDrawerWindowID) == nullptr)
