@@ -86,7 +86,7 @@ void squareBlock::setUpWires(bool refreshCanvas)
 	}
 
 	if (refreshCanvas)
-		globals::refreshCanvas();
+		canvasParent->reDraw();
 }
 
 

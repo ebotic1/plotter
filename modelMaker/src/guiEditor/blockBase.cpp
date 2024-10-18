@@ -1,4 +1,5 @@
 #include "blockBase.h"
+#include "canvas.h"
 
 
 const gui::Rect& BlockBase::getRect() const{

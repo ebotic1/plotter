@@ -47,7 +47,7 @@ private:
 
 	TFBlock(kanvas* parent);
 public:
-	TFBlock(const gui::Point &position, const td::String &inputName, const td::String& outputName);
+	TFBlock(const gui::Point &position, const td::String &inputName, const td::String& outputName, kanvas *parent);
 	TFBlock(const gui::Point& position, kanvas *parent);
 	virtual int& getCnt() override { return blockCnt; }
 

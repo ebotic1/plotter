@@ -109,10 +109,10 @@ TFBlock::TFBlock(kanvas *parent): BlockBase({0,0}, parent) {
 	blockCnt;
 }
 
-TFBlock::TFBlock(const gui::Point& position, const td::String& inputName, const td::String& outputName):
+TFBlock::TFBlock(const gui::Point& position, const td::String& inputName, const td::String& outputName, kanvas *parent):
 	squareBlockSI(inputName),
 	squareBlockSO(outputName),
-	BlockBase::BlockBase(position)
+	BlockBase::BlockBase(position, parent)
 {
 	setNumerator("1");
 	setDenominator("s");

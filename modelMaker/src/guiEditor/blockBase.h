@@ -11,10 +11,10 @@
 #include <arch/ArchiveIn.h>
 #include <arch/ArchiveOut.h>
 #include <gui/Font.h>
-#include "canvas.h"
 
 #define FONT_ID gui::Font::ID::SystemNormal
 
+class kanvas;
 
 class BlockBase {
 public:

@@ -8,9 +8,10 @@
 #include "./../../../EquationToXML/inc/nodes.h"
 #include "gui/Transformation.h"
 #include <gui/Transformation.h>
-#include "propertySwitcher.h"
+#include "blockBase.h"
 
 
+class properties;
 
 class kanvas : public gui::Canvas {
 	std::vector<BlockBase *> blocks;

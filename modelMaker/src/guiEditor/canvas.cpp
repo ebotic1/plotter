@@ -3,6 +3,7 @@
 #include "sumBlock.h"
 #include "nlBlock.h"
 #include "blockInterface.h"
+#include "propertySwitcher.h"
 #include <gui/Application.h>
 
 
