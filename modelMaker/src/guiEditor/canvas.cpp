@@ -353,6 +353,12 @@ inline bool kanvas::onKeyPressed(const gui::Key& key)
 		zoom(0.8);
 	}
 
+	if(key.getChar() == '+' && key.isCtrlPressed())
+		zoom(1.1);
+
+	if(key.getChar() == '-' && key.isCtrlPressed())
+		zoom(0.9);
+
 
 	return false;
 }
@@ -372,7 +378,7 @@ void kanvas::onSecondaryButtonReleased(const gui::InputDevice& inputDevice)
 void kanvas::onCursorMoved(const gui::InputDevice& inputDevice)
 {
 	if (lastAction == Actions::secondary) {
-		scroll({(- inputDevice.getFramePoint().x + lastMousePos.x) * scale, (- inputDevice.getFramePoint().y + lastMousePos.y) * scale});
+		scroll({(- inputDevice.getFramePoint().x + lastMousePos.x) / scale, (- inputDevice.getFramePoint().y + lastMousePos.y) / scale});
 		lastMousePos = inputDevice.getFramePoint();
 		reDraw();
 	}
