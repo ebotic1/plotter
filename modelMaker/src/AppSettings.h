@@ -22,6 +22,10 @@ class SettingsView: public gui::View{
     gui::Frame *mainWindow;
 
     gui::CheckBox _chBoxEmbed;
+
+    gui::Label _lblFont;
+    gui::ComboBox fontCombo;
+
     bool embededCurrent;
 
     double width = 270;
@@ -31,16 +35,17 @@ public:
     SettingsView(gui::Frame *MainWindow):
         mainWindow(MainWindow),
         _lblLang(tr("Laungage: ")),
-        layout(1,2),
+        layout(2,2),
         props(getAppProperties()),
         _vl(2),
         _chBoxEmbed(tr("embedGraph")),
-        embededCurrent(props->getKeyValue("EmbedGraph", "False").strVal().cCompare("False") != 0),
-        langs(getSupportedLanguages())
+        embededCurrent(GlobalEvents::settingsVars.embedPlot),
+        langs(getSupportedLanguages()),
+        _lblFont(tr("fontLabel"))
     {
         
         auto currentLang = props->getKeyValue("Laungage", "BA");
-
+        auto &settings = GlobalEvents::settingsVars;
 
         for(int i = 0; i<langs.size(); ++i){
             langCombo.addItem(langs[i].getDescription());
@@ -54,16 +59,28 @@ public:
         langCombo.setSizeLimits(w, gui::Control::Limit::Fixed);
 
         _chBoxEmbed.setChecked(embededCurrent, false);
-        _chBoxEmbed.onClick([this](){props->setKeyValue("EmbedGraph", _chBoxEmbed.isChecked());});
+        _chBoxEmbed.onClick([this](){settings.embedPlot = _chBoxEmbed.isChecked();});
 
-        props->setKeyValue("EmbedGraph", 5);
+        
+        auto fonts = gui::Font::getSystemFamilyNames();
+        fontCombo.addItem("Default");
+        fontCombo.addItems(fonts.begin(), fonts.size());
+        fontCombo.setSizeLimits(fontCombo.getWidthToFitLongestItem(), gui::Control::Limit::Fixed);
+        w = std::max(w, fontCombo.getWidthToFitLongestItem());
 
-        auto a = props->getKeyValue("EmbedGraph", "False").strVal(); //dodaj checkboy za step time
+        fontCombo.selectIndex(0);
+        for(int i = 0; i<fonts.size(); ++i)
+            if(fonts[i] == settings.font){
+                fontCombo.selectIndex(i+1);
+                break;
+            }
+
 
         width = std::max(width, w);
 
         gui::GridComposer gc(layout);
         gc.appendRow(_lblLang) << langCombo;
+        gc.appendRow(_lblFont) << fontCombo;
 
 
         _vl << layout << _chBoxEmbed;
@@ -73,6 +90,10 @@ public:
     }
 
     ~SettingsView(){
+        GlobalEvents::settingsVars.font = fontCombo.getSelectedText();
+
+
+        GlobalEvents::settingsVars.saveValues();
         bool restartRequired = false;
         int selectedLang = langCombo.getSelectedIndex();
         if(selectedLang != currentLangIndex){

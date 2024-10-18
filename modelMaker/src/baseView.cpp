@@ -67,6 +67,11 @@ void LogView::appendLog(const td::String text, LogType type, bool discardThisLog
 	textMain.setColor(range, color);
 }
 
+void LogView::measure(gui::CellInfo &c)
+{
+	gui::View::measure(c);
+	c.minVer = 127;
+}
 
 ViewForTab::ViewForTab(BaseClass* tabView, const td::String &settingsStr):
 	tabView(tabView),
@@ -111,7 +116,7 @@ bool ViewForTab::loadFile(const td::String &path)
 
 void ViewForTab::save(){
 	if(path.isNull()){
-		tabView->saveAs(settings.getString(), &path);
+		saveAs();
 		return;
 	}
 

@@ -47,5 +47,6 @@
 		<Res id="simulationFailed" tr="Neuspješno generisanje modela, simuliranje zautsavljeno" />
 		<Res id="saveTF" tr="Spasavanje modela prenosnih blokova" />
 		<Res id="tfFile" tr="Fajl za grafički editor" />
+		<Res id="fontLabel" tr="Font teksta: " />
 	</Translations>
 </DevRes>

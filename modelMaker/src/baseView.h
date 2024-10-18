@@ -26,6 +26,7 @@ public:
 	enum class LogType { info, warning, error };
 	LogView();
 	void appendLog(const td::String text, LogType type, bool discardThisLog = false) const;
+	void measure(gui::CellInfo &c) override;
 };
 
 

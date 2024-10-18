@@ -125,6 +125,7 @@ static inline void addAlias(td::String &line, const td::String& alias) { //doda 
 class singleEquation : public baseNode {
 	bool added = false;
 	bool consumeEnd = false;
+	bool addIf = false;
 public:
 	singleEquation() = default;
 	singleEquation(const singleEquation &n, const td::String &alias ):baseNode(n, alias)
@@ -177,6 +178,7 @@ public:
 
 
 	virtual bool nodeAction(const td::String& command, baseNode*& newChild) override {
+
 		if (command.beginsWithCI("then"))
 			return true;
 
@@ -194,10 +196,22 @@ public:
 			return false;
 
 		if (command.beginsWithCI("else")) {
-			nodes.push_back(new conditionNode(conditionNode::type::elsee));
+			auto elseN = new conditionNode(conditionNode::type::elsee);
+			nodes.push_back(elseN);
 			newChild = nodes.back();
 			added = true;
 			consumeEnd = true;
+			if(int poz = command.find("if"); poz != -1){
+				auto lastNode = new conditionNode(conditionNode::type::thenn);
+				auto equation = new singleEquation;
+				elseN->addChild(equation);
+				equation->setAttrib("cond", command.subStr(poz+2, -1).trimLeft());
+				equation->consumeEnd = true;
+				equation->addChild(lastNode);
+				newChild = lastNode;
+				consumeEnd = false;
+				return true;
+			}
 			return true;
 		}
 

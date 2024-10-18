@@ -1,5 +1,6 @@
 #include "blockBase.h"
 #include "canvas.h"
+#include "../globalEvents.h"
 
 
 const gui::Rect& BlockBase::getRect() const{
@@ -189,7 +190,10 @@ void BlockBase::setPosition(const gui::Point& position){
 {
 	_r.setOrigin(position);
 	if (!fontInit) {
-		blockFont.create("Times", 14, gui::Font::Style::Normal, gui::Font::Unit::LogicalPixel);
+		if(GlobalEvents::settingsVars.font.cCompareNoCase("default") == 0)
+			blockFont.create("Times", 14, gui::Font::Style::Normal, gui::Font::Unit::LogicalPixel);
+		else
+			blockFont.create(GlobalEvents::settingsVars.font, 14, gui::Font::Style::Normal, gui::Font::Unit::LogicalPixel);
 		fontInit = true;
 	}
 }

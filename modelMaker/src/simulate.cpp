@@ -352,6 +352,7 @@ void MainWindow::simulate(ViewForTab *tab)
 
 		bool useAutoFuncs = false;
 		std::vector<ModelSettings::FunctionDesc> autoFuncs;
+		int size = (equationType == EquationTypes::NR) ? 1 : 1 + std::abs(startTime - endTime) / stepTime;
 
 		if (funcs.empty()) {
 			useAutoFuncs = true;
@@ -361,14 +362,14 @@ void MainWindow::simulate(ViewForTab *tab)
 			
 			if (timeIndex < 0) 
 				for (const auto& symIndex : symbs)
-					autoFuncs.push_back(ModelSettings::FunctionDesc(ModelSettings::FunctionDesc::Type::points, s->getSymbolName(symIndex), s->getSymbolName(symIndex), ""));
+					autoFuncs.push_back(ModelSettings::FunctionDesc(ModelSettings::FunctionDesc::Type::points, s->getSymbolName(symIndex), s->getSymbolName(symIndex), "0"));
 			else 
 				for (const auto& symIndex : symbs)
 					autoFuncs.push_back(ModelSettings::FunctionDesc(ModelSettings::FunctionDesc::Type::graph, s->getSymbolName(symIndex), s->getSymbolName(symIndex), "t"));
 			
 		}
 
-		auto buffer = new SolutionBuffer(tab->getName(), &logView, useAutoFuncs ? autoFuncs : funcs, 1 + std::abs(startTime - endTime) / stepTime, s);
+		auto buffer = new SolutionBuffer(tab->getName(), &logView, useAutoFuncs ? autoFuncs : funcs, size, s);
 		s->solve(startTime, stepTime, endTime, buffer, 0);
 		err = s->getLastErrorStr();
 

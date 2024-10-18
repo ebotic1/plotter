@@ -47,5 +47,6 @@
 		<Res id="simulationFailed" tr="failed to extract model, simulation stopped" />
 		<Res id="saveTF" tr="Save transfer function block model" />
 		<Res id="tfFile" tr="Graphical editor save file" />
+		<Res id="fontLabel" tr="Text font: " />
 	</Translations>
 </DevRes>

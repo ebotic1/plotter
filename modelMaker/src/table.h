@@ -19,7 +19,7 @@
 
 class NumberColumn : public gui::Canvas{
 	gui::DrawableString numbersStr;
-	gui::Font::ID font = gui::Font::ID::SystemNormal;
+	gui::Font::ID font = gui::Font::ID::SystemLarger;
 	gui::Size sz;
 	bool textSet = false;
 public:
@@ -32,7 +32,7 @@ public:
 		numbersStr.measure(font, sz);
 		textSet = true;
 		setSizeLimits(sz.width, gui::Control::Limit::Fixed);
-		setBackgroundColor(td::ColorID::Black);
+		setBackgroundColor(td::ColorID::LightGray);
 	}
 
 	void setNumbers(double *numbers, unsigned int size){
@@ -48,7 +48,7 @@ public:
 
 	void onDraw(const gui::Rect& rect){
 		if(textSet)
-			numbersStr.draw({0,0}, font, td::ColorID::White);
+			numbersStr.draw({0,0}, font, td::ColorID::Black);
 	}
 
 	gui::Size getSize(){
@@ -239,7 +239,7 @@ public:
 
 	void measure(gui::CellInfo& c) override {
 		gui::ViewScroller::measure(c);
-		c.minHor = 300;
+		c.minHor = 0;
 		c.nResHor = 1;
 	}
 
