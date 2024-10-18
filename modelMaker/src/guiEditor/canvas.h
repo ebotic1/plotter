@@ -9,7 +9,7 @@
 #include "gui/Transformation.h"
 #include <gui/Transformation.h>
 #include "blockBase.h"
-
+#include "../baseView.h"
 
 class properties;
 
@@ -17,7 +17,7 @@ class kanvas : public gui::Canvas {
 	std::vector<BlockBase *> blocks;
 	gui::Point lastMousePos = { 0,0 };
 	double scale = 1;
-	gui::Point scroll = { 0,0 };
+	gui::Point totalScroll = { 0,0 };
 	gui::Transformation transformation;
 
 	enum class Actions{none, wiring, dragging, secondary, translate} lastAction = Actions::none;
@@ -31,9 +31,10 @@ class kanvas : public gui::Canvas {
 	td::String currentPath;
 
 	properties* props;
+	ViewForTab::BaseClass* tabCore;
 
 public:
-	kanvas(properties *props);
+	kanvas(properties *props, ViewForTab::BaseClass * tabCore);
 	properties* getProperties();
 	kanvas* getCanvas();
 
@@ -45,7 +46,9 @@ public:
 	void onPrimaryButtonDblClick(const gui::InputDevice& inputDevice);
 	void onSecondaryButtonReleased(const gui::InputDevice& inputDevice);
 	void onCursorMoved(const gui::InputDevice& inputDevice);
+	void zoom(double factor);
 	bool onZoom(const gui::InputDevice& inputDevice) override;
+	void scroll(gui::Point delta);
 	bool onScroll(const gui::InputDevice& inputDevice);
 
 	gui::Point getModelPoint(const gui::Point &framePoint);

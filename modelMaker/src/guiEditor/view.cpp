@@ -7,7 +7,7 @@
 
 GraphicalEditorView::GraphicalEditorView() : 
 	spliter(gui::SplitterLayout::Orientation::Horizontal),
-	_canvas(&props)
+	_canvas(&props, this)
 {
 	spliter.setContent(_canvas, props);
 	setLayout(&spliter);
@@ -39,7 +39,8 @@ void GraphicalEditorView::getModel(modelNode& model)
 
 void GraphicalEditorView::refreshVisuals()
 {
-
+	props.showView(0, false);
+	
 }
 
 bool GraphicalEditorView::openFile(const td::String& path, td::String& settingsString)

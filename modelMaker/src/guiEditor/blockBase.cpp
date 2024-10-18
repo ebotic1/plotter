@@ -159,7 +159,7 @@ void BlockBase::setPosition(const gui::Point& position){
 
 
 
- void BlockBase::populateNodes(const Nodes::name* id, int array_size, modelNode& model, Nodes& nodes)
+ void BlockBase::populateNodes(const Nodes::name* id, int array_size, modelNode& model, Nodes& nodes) //nez zasto samo ovo bas ovako odradio ali ideja je da se ova funkcija poziva da se dobiju pointeri na specificne tag-ove u modelu odnosno pointer na Vars: Params:...
 {
 	static constexpr const char* nazivi[] = { "TFs", "NLEqs", "Vars", "Params" }; //redom imena iz Node::enum class-a
 	static constexpr const char* naziviInit[] = { "TFs:", "NLEqs:", "Vars:", "Params:" };
@@ -189,7 +189,7 @@ void BlockBase::setPosition(const gui::Point& position){
 {
 	_r.setOrigin(position);
 	if (!fontInit) {
-		blockFont.create("Arial", 13, gui::Font::Style::Normal, gui::Font::Unit::LogicalPixel);
+		blockFont.create("Times", 14, gui::Font::Style::Normal, gui::Font::Unit::LogicalPixel);
 		fontInit = true;
 	}
 }
