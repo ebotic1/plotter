@@ -115,7 +115,7 @@ public:
 
     StartingView():
         gui::ViewScroller(gui::ViewScroller::Type::ScrollAndAutoHide, gui::ViewScroller::Type::ScrollAndAutoHide),
-        layoutMain(6), layoutHorizontal(2), layoutGraph(5), layoutText(5),
+        layoutMain(6), layoutHorizontal(2), layoutGraph(4), layoutText(6),
         buttons{
             {tr("openFromFile"), subMenuNewModel, menuBarActionIDs::OpenFromFile}, 
             {tr("emptyModel"), subMenuNewGraphical , menuBarActionIDs::EmptyModel}, 
@@ -134,11 +134,13 @@ public:
 
         layoutGraph << _labelGraphicalEditor;
         appendButton(buttons[1], layoutGraph);
+        layoutGraph.appendSpacer();
         
 
         layoutText << _labelTextEditor;
         appendButton(buttons[2], layoutText);
         appendButton(buttons[3], layoutText);
+        layoutText.appendSpacer();
 
        
 
