@@ -10,35 +10,33 @@
 #define BLOCK_COLOR_SELECTED td::ColorID::DeepSkyBlue
 
 
+kanvas::kanvas(properties* props): gui::Canvas({ gui::InputDevice::Event::PrimaryClicks, gui::InputDevice::Event::SecondaryClicks, \
+	gui::InputDevice::Event::PrimaryDblClick, gui::InputDevice::Event::Zoom, gui::InputDevice::Event::CursorDrag, \
+	gui::InputDevice::Event::Keyboard, gui::InputDevice::Event::CursorMove }),
+	props(props)
+{
+	this->registerForScrollEvents();
 
-inline bool kanvas::getModelSize(gui::Size& size) const {
-	size.height = 0;
-	size.width = 0;
-	int best = -1;
-	for (int i = 0; i < blocks.size(); ++i) {
-		if (blocks[i]->getRect().right > size.width)
-			size.width = blocks[i]->getRect().right;
-		if (blocks[i]->getRect().bottom > size.height)
-			size.height = blocks[i]->getRect().bottom;
-
-	}
-
-
-	size.height += 1500;
-	size.width += 1500;
-
-	return true;
 }
 
-kanvas::kanvas() : gui::Canvas({ gui::InputDevice::Event::PrimaryClicks, gui::InputDevice::Event::SecondaryClicks, gui::InputDevice::Event::PrimaryDblClick, gui::InputDevice::Event::Zoom, gui::InputDevice::Event::CursorDrag, gui::InputDevice::Event::Keyboard, gui::InputDevice::Event::CursorMove }) {
+properties* kanvas::getProperties()
+{
+	return props;
+}
 
-
-
-
+kanvas* kanvas::getCanvas()
+{
+	return this;
 }
 
 
 void kanvas::onDraw(const gui::Rect& rect) {
+
+	if (lastAction == Actions::wiring) {
+		gui::Shape::drawLine(getModelPoint(tempCurrentBlock.TFBlock->getOutput(tempCurrentBlock.outputPoz)), getFramePoint(lastMousePos), BLOCK_COLOR, 2, td::LinePattern::Dash);
+	}
+
+	transformation.appendToContext();
 
 	for (int i = 0; i < blocks.size(); ++i)
 		if (blocks[i] != tempCurrentBlock.TFBlock)
@@ -48,9 +46,7 @@ void kanvas::onDraw(const gui::Rect& rect) {
 
 
 
-	if (lastAction == Actions::wiring) {
-		gui::Shape::drawLine(tempCurrentBlock.TFBlock->getOutput(tempCurrentBlock.outputPoz), lastMousePos, BLOCK_COLOR, 2, td::LinePattern::Dash);
-	}
+
 
 
 }
@@ -59,44 +55,46 @@ void kanvas::onDraw(const gui::Rect& rect) {
 inline void kanvas::onPrimaryButtonPressed(const gui::InputDevice& inputDevice) {
 	this->setFocus(false);
 
+	auto point = getFramePoint(inputDevice.getFramePoint());
+
 	for (int i = 0; i < blocks.size(); ++i)
-		if (blocks[i]->intersectsBlock(inputDevice.getModelPoint())) {
-			lastMousePos = inputDevice.getModelPoint();
+		if (blocks[i]->intersectsBlock(point)) {
+			lastMousePos = point;
 			lastAction = Actions::dragging;
 			if (blocks[i] == tempCurrentBlock.TFBlock)
 				return;
 			tempCurrentBlock.TFBlock = blocks[i];
-			globals::switcher->showSettings(tempCurrentBlock.TFBlock);
+			props->showSettings(tempCurrentBlock.TFBlock);
 			reDraw();
 			return;
 		}
 
 	for (int i = 0; i < blocks.size(); ++i)
-		if (blocks[i]->intersectsOutput(inputDevice.getModelPoint()) != -1) {
+		if (blocks[i]->intersectsOutput(point) != -1) {
 			tempCurrentBlock.TFBlock = blocks[i];
-			tempCurrentBlock.outputPoz = blocks[i]->intersectsOutput(inputDevice.getModelPoint());
+			tempCurrentBlock.outputPoz = blocks[i]->intersectsOutput(point);
 			lastAction = Actions::wiring;
 			return;
 		}
 
 	tempCurrentBlock.TFBlock = nullptr;
-	globals::switcher->showSettings(nullptr);
+	props->showSettings(nullptr);
 	reDraw();
 
 }
 
 inline void kanvas::onCursorDragged(const gui::InputDevice& inputDevice) {
 	if (lastAction == Actions::wiring) {
-		lastMousePos = inputDevice.getModelPoint();
+		lastMousePos = getModelPoint(inputDevice.getFramePoint());
 		reDraw();
 		return;
 	}
 	if (lastAction == Actions::dragging) {
-		gui::CoordType deltaX = inputDevice.getModelPoint().x - lastMousePos.x;
-		gui::CoordType deltaY = inputDevice.getModelPoint().y - lastMousePos.y;
+		gui::CoordType deltaX = getModelPoint(inputDevice.getFramePoint()).x - lastMousePos.x;
+		gui::CoordType deltaY = getModelPoint(inputDevice.getFramePoint()).y - lastMousePos.y;
 
 		tempCurrentBlock.TFBlock->setPosition({ tempCurrentBlock.TFBlock->getRect().left + deltaX, tempCurrentBlock.TFBlock->getRect().top + deltaY });
-		lastMousePos = inputDevice.getModelPoint();
+		lastMousePos = getModelPoint(inputDevice.getFramePoint());
 		return;
 	}
 
@@ -105,8 +103,8 @@ inline void kanvas::onCursorDragged(const gui::InputDevice& inputDevice) {
 inline void kanvas::onPrimaryButtonReleased(const gui::InputDevice& inputDevice) {
 	if (lastAction == Actions::wiring) {
 		for (int i = 0; i < blocks.size(); ++i)
-			if (blocks[i]->intersectsInput(inputDevice.getModelPoint()) != -1) {
-				const int& poz = blocks[i]->intersectsInput(inputDevice.getModelPoint());
+			if (blocks[i]->intersectsInput(inputDevice.getFramePoint()) != -1) {
+				const int& poz = blocks[i]->intersectsInput(inputDevice.getFramePoint());
 				tempCurrentBlock.TFBlock->connectTo(blocks[i], tempCurrentBlock.outputPoz, poz);
 				break;
 			}
@@ -124,10 +122,39 @@ inline void kanvas::onPrimaryButtonDblClick(const gui::InputDevice& inputDevice)
 
 
 inline bool kanvas::onZoom(const gui::InputDevice& inputDevice) {
-	scale *= inputDevice.getScale() > 1 ? 1.5 : 0.66667;
-	this->scaleToPoint(inputDevice.getScale() , inputDevice.getModelPoint());
+	auto s = inputDevice.getScale() > 1 ? 1.5 : 0.66667;
+	scale *= s;
+	transformation.scale(s);
+	scroll.x /= s;
+	scroll.y /= s;
+	reDraw();
 	return true;
 }
+
+bool kanvas::onScroll(const gui::InputDevice& inputDevice)
+{
+	
+	auto delta = inputDevice.getScrollDelta();
+	bool shift = inputDevice.getKey().isShiftPressed();
+	delta.y = delta.y * 10;
+	delta.x = -delta.y * shift;
+	delta.y *= -1 * !shift;
+	transformation.translate(delta);
+	scroll += delta;
+	reDraw();
+	return true;
+}
+
+gui::Point kanvas::getModelPoint(const gui::Point& framePoint)
+{
+	return { (framePoint.x + scroll.x) * scale, (framePoint.y + scroll.y) * scale };
+}
+
+gui::Point kanvas::getFramePoint(const gui::Point& framePoint)
+{
+	return { framePoint.x / scale - scroll.x, (framePoint.y) / scale - scroll.y };
+}
+
 
 
 
@@ -145,7 +172,7 @@ void kanvas::getModel(modelNode& mod)
 		block->writeToModel(mod, nodes);
 
 	td::Variant v;
-	globals::model_settings->edit.getValue(v);
+	props->getModelSettings()->edit.getValue(v);
 
 	params.processCommands("t // time");
 	params.processCommands(v.strVal());
@@ -155,7 +182,7 @@ void kanvas::getModel(modelNode& mod)
 
 	mod["domain"] = "real";
 	mod["type"] = "DAE";
-	mod["name"] = globals::model_settings->name.getValue().strVal();
+	mod["name"] = props->getModelSettings()->name.getValue().strVal();
 
 }
 
@@ -185,9 +212,9 @@ bool kanvas::saveState(const td::String& file, const td::String& settingsString)
 			}
 		}
 
-		out << globals::model_settings->name.getValue().strVal();
+		out << props->getModelSettings()->name.getValue().strVal();
 		td::Variant v;
-		globals::model_settings->edit.getValue(v);
+		props->getModelSettings()->edit.getValue(v);
 
 		out << v.strVal();
 
@@ -225,11 +252,11 @@ bool kanvas::restoreState(const td::String& file, td::String& settingsString)
 		for (int i = 0; i < size; ++i) {
 			in >> ID;
 			if (ID == TFBlock::getID())
-				kopija[i] = TFBlock::restoreFromFile(in);
+				kopija[i] = TFBlock::restoreFromFile(in, this);
 			else if (ID == sumBlock::getID())
-				kopija[i] = sumBlock::restoreFromFile(in);
+				kopija[i] = sumBlock::restoreFromFile(in, this);
 			else if (ID == NLBlock::getID())
-				kopija[i] = NLBlock::restoreFromFile(in);
+				kopija[i] = NLBlock::restoreFromFile(in, this);
 			else
 				throw std::logic_error("unknown block");
 
@@ -278,8 +305,8 @@ bool kanvas::restoreState(const td::String& file, td::String& settingsString)
 
 
 	blocks = std::move(kopija);
-	globals::model_settings->edit.setValue(param_v, false);
-	globals::model_settings->name.setValue(titl_v);
+	props->getModelSettings()->edit.setValue(param_v, false);
+	props->getModelSettings()->name.setValue(titl_v);
 
 	currentPath = file;
 
@@ -293,7 +320,7 @@ inline bool kanvas::onKeyPressed(const gui::Key& key)
 		if (tempCurrentBlock.TFBlock != nullptr) {
 			tempCurrentBlock.TFBlock->removeConnections();
 			blocks.erase(std::find(blocks.begin(), blocks.end(), tempCurrentBlock.TFBlock));
-			globals::switcher->showSettings(nullptr);
+			props->showSettings(nullptr);
 			tempCurrentBlock.TFBlock = nullptr;
 			lastAction = Actions::none;
 			reDraw();
@@ -307,7 +334,7 @@ inline bool kanvas::onKeyPressed(const gui::Key& key)
 
 void kanvas::onSecondaryButtonPressed(const gui::InputDevice& inputDevice) {
 	lastAction = Actions::secondary;
-	lastMousePos = inputDevice.getModelPoint();	
+	lastMousePos = getModelPoint(inputDevice.getModelPoint());	
 }
 
 
@@ -344,13 +371,18 @@ void kanvas::resetModel(bool resetCnt)
 	for (int i = 0; i < blocks.size(); ++i)
 		delete blocks[i];
 	blocks.clear();
-	globals::switcher->showView(0);
+	props->showView(0);
 	if (resetCnt) {
 		TFBlock::resetCnt();
 		sumBlock::resetCnt();
 		NLBlock::resetCnt();
 	}
-	globals::model_settings->edit.clean();
+	props->getModelSettings()->edit.clean();
+}
+
+void kanvas::reDraw()
+{
+	gui::Frame::reDraw();
 }
 
 inline bool kanvas::onContextMenuUpdate(td::BYTE menuID, gui::ContextMenu* pMenu)
@@ -363,15 +395,15 @@ inline bool kanvas::onActionItem(gui::ActionItemDescriptor& aiDesc) {
 
 	if (aiDesc._menuID == 100) {
 		if (aiDesc._actionItemID == 10) {
-			blocks.push_back(new TFBlock(lastMousePos));
+			blocks.push_back(new TFBlock(lastMousePos, this));
 			return true;
 		}
 		if (aiDesc._actionItemID == 11) {
-			blocks.push_back(new sumBlock(lastMousePos, true));
+			blocks.push_back(new sumBlock(lastMousePos, this, true));
 			return true;
 		}
 		if (aiDesc._actionItemID == 12) {
-			blocks.push_back(new NLBlock(lastMousePos));
+			blocks.push_back(new NLBlock(lastMousePos, this));
 			return true;
 		}
 	}

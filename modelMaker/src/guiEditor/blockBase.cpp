@@ -1,5 +1,4 @@
 #include "blockBase.h"
-#include "globals.h"
 
 
 const gui::Rect& BlockBase::getRect() const{
@@ -184,7 +183,8 @@ void BlockBase::setPosition(const gui::Point& position){
  gui::Font BlockBase::blockFont;
  bool BlockBase::fontInit = false;
 
-BlockBase::BlockBase(const gui::Point& position)
+ BlockBase::BlockBase(const gui::Point& position, kanvas* parent):
+	 canvasParent(parent)
 {
 	_r.setOrigin(position);
 	if (!fontInit) {

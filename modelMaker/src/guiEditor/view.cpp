@@ -1,12 +1,14 @@
 #include "view.h"
-#include "globals.h"
 #include <gui/FileDialog.h>
 
 
-kanvas* ptr;
 
-GraphicalEditorView::GraphicalEditorView() : spliter(gui::SplitterLayout::Orientation::Horizontal){
-	ptr = &_canvas;
+
+
+GraphicalEditorView::GraphicalEditorView() : 
+	spliter(gui::SplitterLayout::Orientation::Horizontal),
+	_canvas(&props)
+{
 	spliter.setContent(_canvas, props);
 	setLayout(&spliter);
 }
@@ -37,7 +39,7 @@ void GraphicalEditorView::getModel(modelNode& model)
 
 void GraphicalEditorView::refreshVisuals()
 {
-	globals::refreshCanvas();
+
 }
 
 bool GraphicalEditorView::openFile(const td::String& path, td::String& settingsString)
@@ -46,7 +48,4 @@ bool GraphicalEditorView::openFile(const td::String& path, td::String& settingsS
 }
 
 
-void globals::refreshCanvas() {
-	ptr->reDraw();
-}
 

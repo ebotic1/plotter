@@ -3,14 +3,15 @@
 #include <gui/View.h>
 #include "../../../EquationToXML/inc/nodes.h"
 #include <utility>
-#include "gui/CheckBox.h"
-#include "gui/Button.h"
-#include "gui/Label.h"
+#include <gui/CheckBox.h>
+#include <gui/Button.h>
+#include <gui/Label.h>
 #include "./../../../common/property.h"
-#include "gui/VerticalLayout.h"
-#include "arch/ArchiveIn.h"
-#include "arch/ArchiveOut.h"
-#include "gui/Font.h"
+#include <gui/VerticalLayout.h>
+#include <arch/ArchiveIn.h>
+#include <arch/ArchiveOut.h>
+#include <gui/Font.h>
+#include "canvas.h"
 
 #define FONT_ID gui::Font::ID::SystemNormal
 
@@ -59,9 +60,11 @@ protected:
 	static gui::Font blockFont;
 	static bool fontInit;
 
+	kanvas* canvasParent;
+
 
 public:
-	BlockBase(const gui::Point& position);
+	BlockBase(const gui::Point& position, kanvas *parent);
 	virtual int& getCnt() = 0;
 
 	const gui::Rect& getRect() const;

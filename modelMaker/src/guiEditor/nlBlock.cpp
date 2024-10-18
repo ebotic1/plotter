@@ -3,8 +3,8 @@
 
 int NLBlock::blockCnt = 0;
 
-NLBlock::NLBlock(const gui::Point& position):
-	BlockBase(position),
+NLBlock::NLBlock(const gui::Point& position, kanvas* parent):
+	BlockBase(position, parent),
 	squareBlockMI(1)
 {
 	squareBlockMI::setUp();
@@ -85,11 +85,11 @@ void NLBlock::saveToFile(arch::ArchiveOut& f)
 	
 }
 
-NLBlock* NLBlock::restoreFromFile(arch::ArchiveIn& f)
+NLBlock* NLBlock::restoreFromFile(arch::ArchiveIn& f, kanvas* parent)
 {
 	gui::Point p;
 	f >> p.x >> p.y;
-	auto pok = new NLBlock(p);
+	auto pok = new NLBlock(p, parent);
 	pok->disableSetUp = true;
 
 	td::String name;

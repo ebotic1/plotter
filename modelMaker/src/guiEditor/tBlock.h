@@ -45,10 +45,10 @@ private:
 	bool hasLaplaceOperator(const td::String& s);
 	static int blockCnt;
 
-	TFBlock();
+	TFBlock(kanvas* parent);
 public:
 	TFBlock(const gui::Point &position, const td::String &inputName, const td::String& outputName);
-	TFBlock(const gui::Point& position);
+	TFBlock(const gui::Point& position, kanvas *parent);
 	virtual int& getCnt() override { return blockCnt; }
 
 	void setUpBlock();
@@ -69,7 +69,7 @@ public:
 	static void resetCnt() { blockCnt = 0; }
 
 	void saveToFile(arch::ArchiveOut& f) override;
-	static TFBlock *restoreFromFile(arch::ArchiveIn& f);
+	static TFBlock *restoreFromFile(arch::ArchiveIn& f, kanvas* parent);
 
 	friend class blockInterface;
 };

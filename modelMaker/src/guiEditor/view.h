@@ -2,9 +2,13 @@
 #include "gui/SplitterLayout.h"
 #include "gui/View.h"
 #include "canvas.h"
-#include "gui/ViewScroller.h"
+#include <gui/ViewScroller.h>
 #include "propertySwitcher.h"
 #include "../baseView.h"
+
+
+
+
 
 class GraphicalEditorView: public ViewForTab::BaseClass {
 	gui::SplitterLayout spliter;
@@ -18,9 +22,6 @@ public:
 		props.showView(number, true);
 	}
 
-	gui::Consumer* getCanvas() {
-		return &_canvas;
-	}
 
 	bool save(const td::String& path, const td::String& settingsString);
 	void saveAs(const td::String& settingsString, td::String* newPath);

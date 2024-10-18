@@ -1,5 +1,4 @@
 #include "tBlock.h"
-#include "globals.h"
 
 int TFBlock::blockCnt = 0;
 
@@ -105,7 +104,7 @@ bool TFBlock::hasLaplaceOperator(const td::String& s)
 	return false;
 }
 
-TFBlock::TFBlock(): BlockBase({0,0}) {
+TFBlock::TFBlock(kanvas *parent): BlockBase({0,0}, parent) {
 	disableSetUp = true;
 	blockCnt;
 }
@@ -122,11 +121,11 @@ TFBlock::TFBlock(const gui::Point& position, const td::String& inputName, const 
 	setOutputName(outputName);
 
 	setUpAll();
-	globals::refreshCanvas();
+	canvasParent->reDraw();
 }
 
-TFBlock::TFBlock(const gui::Point& position):
-	BlockBase::BlockBase(position)
+TFBlock::TFBlock(const gui::Point& position, kanvas *parent):
+	BlockBase::BlockBase(position, parent)
 {
 	td::String ul, izl;
 	ul.format("tf%d_in", blockCnt);
@@ -141,7 +140,7 @@ TFBlock::TFBlock(const gui::Point& position):
 	setNumerator("1");
 	setDenominator("s");
 	setUpAll();
-	globals::refreshCanvas();
+	canvasParent->reDraw();
 }
 
 
@@ -159,9 +158,9 @@ void TFBlock::saveToFile(arch::ArchiveOut& f)
 	f << TFBlock::getID() << getLocation().x << getLocation().y << getInputName(0) << getOutputName(0) << nom << dem << switchOutput;
 }
 
-TFBlock* TFBlock::restoreFromFile(arch::ArchiveIn& f)
+TFBlock* TFBlock::restoreFromFile(arch::ArchiveIn& f, kanvas* parent)
 {
-	TFBlock* block = new TFBlock();
+	TFBlock* block = new TFBlock(parent);
 	f >> block->_r.left >> block->_r.top >> block->ulazName >> block->izlazName;
 	f >> block->nom >> block->dem >> block->switchOutput;
 	return block;

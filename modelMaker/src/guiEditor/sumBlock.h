@@ -4,6 +4,7 @@
 #include "blockInterface.h"
 #include "gui/ComboBox.h"
 #include "gui/DrawableString.h"
+#include "canvas.h"
 
 
 class sumBlock : public squareBlockMInameless, public squareBlockSO, public squareBlock 
@@ -42,14 +43,14 @@ private:
 	
 
 public:
-	sumBlock(gui::Point position, bool addition_operator, int cnt = 2);
+	sumBlock(gui::Point position, kanvas *parent, bool addition_operator, int cnt = 2);
 	virtual int& getCnt() override { return blockCnt; }
 
 	void setUpBlock() override;
 	void drawBlock(td::ColorID color) override;
 	void writeToModel(modelNode& model, Nodes& nodes) override;
 	void saveToFile(arch::ArchiveOut& f) override;
-	static sumBlock* restoreFromFile(arch::ArchiveIn& f);
+	static sumBlock* restoreFromFile(arch::ArchiveIn& f, kanvas* parent);
 	void updateSettingsView(BlockBase::settingsView* view);
 
 	void changeSign(bool addition);

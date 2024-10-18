@@ -1,6 +1,8 @@
+#pragma once
 #include "squareBlock.h"
 #include "blockInterface.h"
-#pragma once
+#include "canvas.h"
+
 
 class NLBlock : public squareBlock, public squareBlockSO, public squareBlockMI
 {
@@ -37,14 +39,14 @@ private:
 
 public:
 
-	NLBlock(const gui::Point &position);
+	NLBlock(const gui::Point &position, kanvas *parent);
 	virtual int& getCnt() override { return blockCnt; }
 
 	void setUpBlock() override;
 	void drawBlock(td::ColorID color) override;
 	void writeToModel(modelNode& model, Nodes& nodes) override;
 	void saveToFile(arch::ArchiveOut& f) override;
-	static NLBlock* restoreFromFile(arch::ArchiveIn& f);
+	static NLBlock* restoreFromFile(arch::ArchiveIn& f, kanvas* parent);
 	void updateSettingsView(BlockBase::settingsView* view);
 
 	void setEquation(td::String eq);

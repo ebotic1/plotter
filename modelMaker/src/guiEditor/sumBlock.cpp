@@ -1,11 +1,10 @@
 #include "sumBlock.h"
-#include "globals.h"
 
 int	sumBlock::blockCnt = 0;
 
-sumBlock::sumBlock(gui::Point position, bool addition_operator, int cnt):
+sumBlock::sumBlock(gui::Point position, kanvas* parent, bool addition_operator, int cnt):
 	squareBlockMInameless(cnt),
-	BlockBase(position)
+	BlockBase(position, parent)
 {
 	changeSign(addition_operator);
 	td::String name;
@@ -88,13 +87,13 @@ void sumBlock::saveToFile(arch::ArchiveOut& f)
 	f << sumBlock::getID() << getLocation().x << getLocation().y << sumOperator << getInputCnt() << switchOutput << izlazName;
 }
 
-sumBlock* sumBlock::restoreFromFile(arch::ArchiveIn& f)
+sumBlock* sumBlock::restoreFromFile(arch::ArchiveIn& f, kanvas *parent)
 {
 	gui::Point p;
 	bool opr;
 	int cnt;
 	f >> p.x >> p.y >> opr >> cnt;
-	auto pok = new sumBlock(p, opr, cnt);
+	auto pok = new sumBlock(p, parent, opr, cnt);
 	f >> opr;
 	if(opr)
 		pok->switchInput();
@@ -119,7 +118,7 @@ void sumBlock::changeSign(bool addition)
 	sumOperator = addition;
 	znak = sumOperator ? "+" : "-";
 	setUpBlock();
-	globals::refreshCanvas();
+	canvasParent->reDraw();
 }
 
 sumBlock::~sumBlock()

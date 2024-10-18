@@ -1,5 +1,4 @@
 #include "squareBlock.h"
-#include "globals.h"
 
 inline void setUpTextRect(gui::DrawableString &string, gui::Rect &areaRect, const bool &switchOutput, const gui::Point &origin, const gui::Rect _r) {
 	gui::Size sz;

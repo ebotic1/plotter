@@ -1,10 +1,11 @@
+#pragma once
 #include "modelSettings.h"
 #include "blockBase.h"
 #include "tBlock.h"
 #include "gui/ViewSwitcher.h"
 #include "sumBlock.h"
 #include "nlBlock.h"
-#pragma once
+
 
 class properties : public gui::ViewSwitcher {
 	modelSettings modSettings;
@@ -22,6 +23,7 @@ public:
 			delete pok;
 	}
 
+	modelSettings* getModelSettings();
 	void showSettings(BlockBase *block);
 
 };

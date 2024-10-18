@@ -1,21 +1,18 @@
 #include "propertySwitcher.h"
-#include "globals.h"
 
-properties* globals::switcher = nullptr;
-modelSettings* globals::model_settings = nullptr;
 
 properties::properties() :
 	gui::ViewSwitcher(settingsCnt+1)
 {
 
-	globals::switcher = this;
-	globals::model_settings = &modSettings;
-
-
 	addView(&modSettings, true);
 	for(const auto&pok : pogledi)
 		addView(pok);
+}
 
+modelSettings* properties::getModelSettings()
+{
+	return &modSettings;
 }
 
 void properties::showSettings(BlockBase* block)

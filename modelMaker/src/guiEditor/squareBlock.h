@@ -5,6 +5,7 @@
 #include "gui/Shape.h"
 #include "td/String.h"
 #include "gui/DrawableString.h"
+#include "canvas.h"
 
 class squareBlock : virtual public BlockBase {
 
