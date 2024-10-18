@@ -48,5 +48,6 @@
 		<Res id="saveTF" tr="Save transfer function block model" />
 		<Res id="tfFile" tr="Graphical editor save file" />
 		<Res id="fontLabel" tr="Text font: " />
+		<Res id="odeModel" tr="ODE model" />
 	</Translations>
 </DevRes>

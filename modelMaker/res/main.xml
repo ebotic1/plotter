@@ -6,4 +6,10 @@
 		<Res id="guiIcon" path=":images/graphEditor.png"/>
 	</Images>
 
+	<FileNames>
+		<Res id="ODE" path=":models/ode.txt"/>
+		<Res id="NL" path=":models/nl.txt"/>
+		<Res id="DAE" path=":models/dae.txt"/>
+	</FileNames>
+
 </DevRes>

@@ -158,6 +158,12 @@ bool MainWindow::onActionItem(gui::ActionItemDescriptor& aiDesc)
         return true;
     }
 
+    if(action == menuBarActionIDs::ODE){
+        openFile(gui::getResFileName(":ODE"));
+        ViewForTab *view = (ViewForTab*)_tabView.getView(_tabView.getNumberOfViews() - 1);
+        view->setPath("");
+    }
+
 
     ViewForTab *currentView = (ViewForTab*)this->_tabView.getCurrentView();
 
@@ -226,7 +232,7 @@ bool MainWindow::onActionItem(gui::ActionItemDescriptor& aiDesc)
 
 void MainWindow::openFile(const td::String& path)
 {
-   
+   const char *ok = path.c_str();
     const auto openF = [this, &path](auto ptr) {
         td::String settings;
         if (ptr->openFile(path, settings)) {

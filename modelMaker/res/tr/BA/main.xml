@@ -48,5 +48,6 @@
 		<Res id="saveTF" tr="Spasavanje modela prenosnih blokova" />
 		<Res id="tfFile" tr="Fajl za grafički editor" />
 		<Res id="fontLabel" tr="Font teksta: " />
+		<Res id="odeModel" tr="ODE model" />
 	</Translations>
 </DevRes>

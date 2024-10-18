@@ -97,7 +97,7 @@ class StartingView: public gui::ViewScroller
     TextEdit _labelStartExplain;
     TextEdit _labelTextEditor, _labelGraphicalEditor;
 
-    NiceButton buttons[5];
+    NiceButton buttons[4];
     gui::HorizontalLayout layoutHorizontal;
     gui::VerticalLayout layoutMain, layoutGraph, layoutText;
     gui::View helperView;
@@ -119,9 +119,8 @@ public:
         buttons{
             {tr("openFromFile"), subMenuNewModel, menuBarActionIDs::OpenFromFile}, 
             {tr("emptyModel"), subMenuNewGraphical , menuBarActionIDs::EmptyModel}, 
-            {"\tDAE\t", subMenuNewGraphical, 0},
             {tr("emptyModel"), subMenuNewText, menuBarActionIDs::EmptyModel},
-            {"Damped sine", subMenuNewText, 0} }
+            {tr("odeModel"), subMenuNewText, menuBarActionIDs::ODE} }
     {   
         setUpTextEdit(_labelStartExplain, tr("startingExplanation"));
         setUpTextEdit(_labelGraphicalEditor, tr("graphicalEditorLabel"));
@@ -135,12 +134,11 @@ public:
 
         layoutGraph << _labelGraphicalEditor;
         appendButton(buttons[1], layoutGraph);
-        appendButton(buttons[2], layoutGraph);
         
 
         layoutText << _labelTextEditor;
+        appendButton(buttons[2], layoutText);
         appendButton(buttons[3], layoutText);
-        appendButton(buttons[4], layoutText);
 
        
 
