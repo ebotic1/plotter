@@ -22,5 +22,5 @@ target_link_libraries(${GRAPH_NAME} 		debug ${MU_LIB_DEBUG} 		optimized ${MU_LIB
 
 target_compile_definitions(${GRAPH_NAME} PRIVATE GRAPH_EXPORTS)
 
-setIDEPropertiesForLib(${GRAPH_NAME})
+#setIDEPropertiesForLib(${GRAPH_NAME})
 

@@ -17,5 +17,5 @@ source_group("inc"        FILES ${EQ2XML_INCLUDE})
 source_group("src"        FILES ${EQ2XML_MAIN})
 source_group("src\\lib"   FILES ${EQ2XML_SOURCES})
 
-setIDEPropertiesForLib(${EqToXML_LIB_NAME})
+#setIDEPropertiesForLib(${EqToXML_LIB_NAME})
 

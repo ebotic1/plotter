@@ -439,6 +439,7 @@ int MainWindow::simulate(ViewForTab *tab)
 #ifdef MU_MACOS
 	model.printNode("/Volumes/RAMDisk/modelForSimulator.xml"); //u slucaju problema da se moze pogledati finalni generisani model koji je poslan solveru
 #endif
+	model.printNode("./modelForSimulator.xml");
 #endif
 
 
