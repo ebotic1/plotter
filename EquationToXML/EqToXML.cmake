@@ -1,34 +1,21 @@
-set(EqToXML_lib EquationToXML_library)
-set(EqToXML_standalone XMLmodelMaker)
+set(EqToXML_LIB_NAME Eq2ToXMLLib)
+set(EqToXML_EXE_NAME XMLModelMakerExe)
 
-file(GLOB SOURCES  ${CMAKE_CURRENT_LIST_DIR}/src/lib/*.cpp)
-file(GLOB INCLUDE  ${CMAKE_CURRENT_LIST_DIR}/inc/*.h)
-file(GLOB MAIN  ${CMAKE_CURRENT_LIST_DIR}/src/*.cpp)
+file(GLOB EQ2XML_SOURCES  ${CMAKE_CURRENT_LIST_DIR}/src/library/*.cpp)
+file(GLOB EQ2XML_INCLUDE  ${CMAKE_CURRENT_LIST_DIR}/inc/*.h)
+file(GLOB EQ2XML_MAIN  ${CMAKE_CURRENT_LIST_DIR}/src/*.cpp)
 
-source_group("inc"        FILES ${INCLUDE})
-source_group("src_lib"        FILES ${SOURCES})
-source_group("src"        FILES ${MAIN})
+add_library(${EqToXML_LIB_NAME} STATIC ${EQ2XML_INCLUDE} ${EQ2XML_SOURCES})
 
-add_library(${EqToXML_lib} STATIC ${INCLUDE} ${SOURCES})
+add_executable(${EqToXML_EXE_NAME} ${EQ2XML_MAIN})
 
-add_executable(${EqToXML_standalone} ${MAIN})
+target_link_libraries(${EqToXML_LIB_NAME}	debug ${MU_LIB_DEBUG} optimized ${MU_LIB_RELEASE})
 
-target_link_libraries(${EqToXML_lib}	debug ${MU_LIB_DEBUG}   	optimized ${MU_LIB_RELEASE})
+target_link_libraries(${EqToXML_EXE_NAME}	debug ${MU_LIB_DEBUG} optimized ${MU_LIB_RELEASE}  ${EqToXML_LIB_NAME})
 
-target_link_libraries(${EqToXML_standalone}	debug ${MU_LIB_DEBUG}   	optimized ${MU_LIB_RELEASE}  ${EqToXML_lib})
+source_group("inc"        FILES ${EQ2XML_INCLUDE})
+source_group("src"        FILES ${EQ2XML_MAIN})
+source_group("src\\lib"   FILES ${EQ2XML_SOURCES})
 
+setIDEPropertiesForLib(${EqToXML_LIB_NAME})
 
-#MU_DEBUG, MU_RELEASE, MU_64BIT, MU_32BIT
-addMUCompileDefinitions(${EqToXML_lib})
-
-message(INFO "EqToXML is included")
-
-target_compile_definitions(${EqToXML_lib} PRIVATE EXPORT)
-
-if (WIN32)
-    target_compile_definitions(${EqToXML_lib} PUBLIC   MU_WINDOWS)
-elseif(APPLE)                                             
-    target_compile_definitions(${EqToXML_lib} PUBLIC   MU_MACOS)
-else()                                                    
-    target_compile_definitions(${EqToXML_lib} PUBLIC   MU_LINUX)
-endif()

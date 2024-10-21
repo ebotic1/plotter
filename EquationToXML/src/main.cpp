@@ -16,9 +16,6 @@ int main(int argc, char* argv[]) {
 
 	td::String inputPath, outputPath;
 
-
-
-
 	for (int i = 1; i < argc; ++i){
 
 		if (*argv[i] == '-') {
