@@ -15,7 +15,7 @@ unsigned int baseNode::_processingLine = 0;
 
 const std::regex baseNode::varPatten = std::regex(R"((base\.|^|[^A-Za-z_\.])([a-zA-Z_](?:[\w0-9.]+?)?)(?:$|[^\w.]))");
 const std::regex baseNode::_lineExtract = std::regex(R"(\s*([^;\n]*?):?[ \t]*(?:(?:$|;|\n)|(?:(?://|#)([^\n]*))))");
-const std::regex baseNode::_attribsExtract(R"((?:,|\[)\s*(\w+?)\s*=\s*(\w+))");
+const std::regex baseNode::_attribsExtract(R"((?:,|\[|^)\s*([^=,\s]+?)\s*=\s*([^=,]+?)\s*(?=\]|,|$))");
 
 std::cmatch baseNode::match;
 std::cmatch baseNode::match2;
@@ -51,7 +51,7 @@ void baseNode::printNode(xml::Writer& w) const
 {
 	w.startNode(this->getName());
 	for (auto & at : this->_attribs)
-		w.attribute(at.first.c_str(), at.second);
+		w.attributeC(at.first.c_str(), at.second);
 
 	if (nodes.size() == 0)
 		w.endNode();

@@ -1,5 +1,5 @@
 #pragma once
-#include<unordered_map>
+#include <unordered_map>
 #include<map>
 #include <utility>
 #include "xml/Writer.h"
@@ -134,6 +134,7 @@ public:
 	modelNode &operator =(const modelNode &model);
 	modelNode(td::String command);
 	bool nodeAction(const char* cmndStart, const char* cmndEnd, baseNode*& newChild) override;
+	void prettyPrintClosing(cnt::StringBuilder<>& str, td::String &indent) const;
 	modelNode& addWtih(const modelNode &model, const td::String &alias);
 	void clear();
 	bool readFromFile(const td::String &path);

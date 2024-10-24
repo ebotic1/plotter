@@ -46,6 +46,13 @@ static inline const char* skipWhiteSpace(const char* str) {
 	return str;
 }
 
+static inline const char* returnToNonWhiteSpace(const char * const begin, const char* endPos) {
+	while (*endPos == ' ' || *endPos == '\t')
+		if(--endPos == begin)
+			break;
+	return endPos;
+}
+
 static inline td::String getStringFromPtr(const char* start, const char* end) {
 	return td::String(start, end - start);
 }
@@ -68,20 +75,22 @@ public:
 		if(getName()[0] != 'T'){ //not Then
 			indent.reduceSize(1);
 			str << indent << "Else";
+
+			if (auto itFx = _attribs.find("fx"); itFx != _attribs.end())
+				str << indent << itFx->second;
+
 			prettyPrintAttribs<"fx">(str);
 			str << ":";
 			indent += INDENT_CHAR;
+			return true;
 		}
 
-		if (auto itFx = _attribs.find("fx"); itFx != _attribs.end()) {
+		if (auto itFx = _attribs.find("fx"); itFx != _attribs.end()){
 			str << indent << itFx->second;
-			return false;
-		}
-		
-		if (getName()[0] != 'T')
-			return false;
-		else
 			return true;
+		}
+
+		return false;
 
 	}
 
@@ -165,7 +174,7 @@ public:
 			prettyPrintAttribs<"fx", "cond">(str);
 			str << ":";
 			indent += INDENT_CHAR;
-			return false;
+			return true;
 		}
 
 		if (auto itFx = _attribs.find("fx"); itFx != _attribs.end())
@@ -357,7 +366,7 @@ public:
 			return true;
 		}
 
-		setAttrib("name", getStringFromPtr(cmndStart, pozEq));
+		setAttrib("name", getStringFromPtr(cmndStart, returnToNonWhiteSpace(cmndStart, pozEq-1)+1));
 		setAttrib("val", getStringFromPtr(skipWhiteSpace(pozEq + 1), cmndEnd));
 		
 		return true;
@@ -432,14 +441,28 @@ public:
 	}
 	virtual bool nodeAction(const char* cmndStart, const char* cmndEnd, baseNode*& newChild) override {
 
+		if(_done)
+			return false;
+
 		if (compareUpperCase(cmndStart, "MODEL")) {
-			nodes.push_back(new modelNode());
+			addChild(new modelNode);
 			newChild = nodes.back();
 			return true;
 		}
-		_done = true;
+
+		if (compareUpperCase(cmndStart, "END")) {
+			_done = true;
+			return true;
+		}
+
 		return false;
 	}
+
+	void prettyPrintClosing(cnt::StringBuilder<>& str, td::String &indent) const override{
+		indent.reduceSize(1);
+		str << indent << "end\n";
+	}
+
 	inline const char* getName() const override {
 		return "Init";
 	}
@@ -509,6 +532,12 @@ bool modelNode::nodeAction(const char* cmndStart, const char* cmndEnd, baseNode*
 	return true;
 }
 
+void modelNode::prettyPrintClosing(cnt::StringBuilder<> &str, td::String &indent) const
+{
+	if (getParent() != nullptr)
+		indent.reduceSize(1);
+	str << indent << "end\n";
+}
 
 modelNode &modelNode::addWtih(const modelNode &model, const td::String &alias)
 {

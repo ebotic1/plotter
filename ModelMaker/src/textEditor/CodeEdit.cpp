@@ -4,7 +4,7 @@
 #include "../GlobalEvents.h"
 
 
-const std::regex CodeEdit::varPattern = std::regex(R"((^|[^A-Za-z_\.])([a-zA-Z_](?:[\w.]+?)?)(?:$|[^0-9A-Za-z_\.]))");
+const std::regex CodeEdit::varPattern = std::regex(R"((^|[^A-Za-z_\.])([a-zA-Z_](?:[\w.]*?))(?:$|[^0-9A-Za-z_\.]))");
 const std::regex CodeEdit::attribPattern = std::regex(R"(([a-zA-Z_]+?)(?:\s+)?=)");
 const std::regex CodeEdit::expPattern = std::regex(R"(\^(?:(\([^;\n]+\))|((?:[0-9]+?)?(?:[\w_.]+)?)))");
 

@@ -103,7 +103,7 @@ class SolutionBuffer : public sc::ISolutionBuffer {
 	}
 
 public:
-	SolutionBuffer(const td::String &modelName, const LogView *logger, const std::vector<ModelSettings::FunctionDesc> &functions, int maxPoints, solverType *solver):
+	SolutionBuffer(const td::String &modelName, const LogView *logger, bool initSucess, const std::vector<ModelSettings::FunctionDesc> &functions, int maxPoints, solverType *solver):
 		functions(functions),
 		logger(logger),
 		solver(solver),
@@ -111,6 +111,10 @@ public:
 		modelName(modelName),
 		startTime(std::chrono::steady_clock::now())
 	{
+
+		if(!initSucess)
+			return;
+
 		constexpr bool isComplex = std::is_same<resultType, td::cmplx>::value;
 		cnt::SafeFullVector<td::INT4> symbs;
 		solver->getOutSymbols(symbs);
@@ -295,8 +299,8 @@ public:
 };
 
 
-SolutionBuffer(const td::String &, const LogView *, const std::vector<ModelSettings::FunctionDesc> &, int, sc::IDblSolver *) -> SolutionBuffer<sc::IDblSolver, double>;
-SolutionBuffer(const td::String &, const LogView *, const std::vector<ModelSettings::FunctionDesc> &, int, sc::ICmplxSolver *) -> SolutionBuffer<sc::ICmplxSolver, td::cmplx>;
+SolutionBuffer(const td::String &, const LogView *, bool, const std::vector<ModelSettings::FunctionDesc> &, int, sc::IDblSolver *) -> SolutionBuffer<sc::IDblSolver, double>;
+SolutionBuffer(const td::String &, const LogView *, bool, const std::vector<ModelSettings::FunctionDesc> &, int, sc::ICmplxSolver *) -> SolutionBuffer<sc::ICmplxSolver, td::cmplx>;
 
 
 enum class EquationTypes { NR, DAE, ODE, WLS };
@@ -447,76 +451,45 @@ int MainWindow::simulate(ViewForTab *tab)
 	auto initSimulation = [&](auto s)
     {
 		td::String err;
+		bool initSucess = false;
 		if constexpr (std::is_same<decltype(s), sc::IDblSolver*>::value)
         {
 			switch (equationType) {
 			case EquationTypes::NR:
-                {
-                    s = sc::createDblNRSolver(maxIter);
-                    return solveNR(s, modelStr);
-                }
+                s = sc::createDblNRSolver(maxIter);
 				break;
 			case EquationTypes::ODE:
 				s = sc::createDblODESolver();
 				break;
 			case EquationTypes::DAE:
-                {
-#ifdef TEST_SIMULATION
-                    modelStr = getRealXMLData("ACGenWith1Load_WithLimit_Comp_DAE_RK4.xml");
-#endif
-                    s = sc::createDblDAESolver(maxIter);
-                }
+				s = sc::createDblDAESolver(maxIter);
 				break;
 			case EquationTypes::WLS:
-                {
-                    s = sc::createDblWLSSolver(maxIter);
-                    return solveNR(s, modelStr);
-                }
+                s = sc::createDblWLSSolver(maxIter);
 				break;
 			}
-            if (!s->init(modelStr, sc::IDblSolver::SourceType::Memory))
-            {
-                std::cout << "Error! Solver Init FAILED" << std::endl;
-                std::cout << s->getLastErrorStr() << std::endl;
-                return -10;
-            }
-            
+            initSucess = s->init(modelStr, sc::IDblSolver::SourceType::Memory);
 		}
 		else if constexpr (std::is_same<decltype(s), sc::ICmplxSolver*>::value)
         {
-			switch (equationType)
-            {
-                case EquationTypes::NR:
-                {
-                    s = sc::createCmplxNRSolver(maxIter);
-#ifdef TEST_SIMULATION
-                    modelStr = getCmplxXMLData("PF_WLimitsDot.xml");
-#endif
-                    return solveNR(s, modelStr);
-                }
-                    
+			switch (equationType){
+            case EquationTypes::NR:
+                s = sc::createCmplxNRSolver(maxIter);
 				break;
 			case EquationTypes::ODE:
-                    assert(false); //IDz: Complex ODE solver is not implemented
+                    logView.appendLog("Complex ODE solver will be implemented in the future", LogType::error);
                     return -1;
-				//s = sc::createCmplxODESolver();
+					//s = sc::createCmplxODESolver();
 				break;
 			case EquationTypes::DAE:
 				//s = sc::createCmplxDAESolver(maxIter);
-                    assert(false); //IDz: Complex DAE solver is not implemented
-                    return -1;
-				break;
+                logView.appendLog("Complex DAE solver will be implemented in the future", LogType::error);
+                return -1;
 			case EquationTypes::WLS:
-                {
-                    s = sc::createCmplxWLSSolver(maxIter);
-#ifdef TEST_SIMULATION
-                    modelStr = getCmplxXMLData("SE_EC_My3.xml");
-#endif
-                    return solveNR(s, modelStr);
-                }
+                s = sc::createCmplxWLSSolver(maxIter);
 				break;
 			}
-			s->init(modelStr, sc::ICmplxSolver::SourceType::Memory);
+			initSucess = s->init(modelStr, sc::ICmplxSolver::SourceType::Memory);
 		}
 	else
 		static_assert(false, "wrong pointer type for initSimulation");
@@ -525,9 +498,10 @@ int MainWindow::simulate(ViewForTab *tab)
 		std::vector<ModelSettings::FunctionDesc> autoFuncs;
 		int size = (equationType == EquationTypes::NR) ? 1 : 1 + std::abs(startTime - endTime) / stepTime;
 
-		if (funcs.empty()) {
+		if (funcs.empty() && initSucess) {
 			useAutoFuncs = true;
 			cnt::SafeFullVector<td::INT4> symbs;
+
 			s->getOutSymbols(symbs);
 			int timeIndex = s->getParamIndex("t");
 			
@@ -540,17 +514,23 @@ int MainWindow::simulate(ViewForTab *tab)
 			
 		}
 
-		auto buffer = new SolutionBuffer(tab->getName(), &logView, useAutoFuncs ? autoFuncs : funcs, size, s);
-		s->solve(startTime, stepTime, endTime, buffer, 0);
-		err = s->getLastErrorStr();
+		auto buffer = new SolutionBuffer(tab->getName(), &logView, initSucess, useAutoFuncs ? autoFuncs : funcs, size, s);
 
-
-		if (equationType == EquationTypes::NR) {
-			buffer->put();
-			buffer->finalize(err.isNull() ? sc::ISolutionBuffer::Status::SuccessfullyCompleted : sc::ISolutionBuffer::Status::Error);
+		if(initSucess){
+			if(equationType == EquationTypes::DAE || equationType == EquationTypes::ODE)
+				s->solve(startTime, stepTime, endTime, buffer, 0);
+			if(equationType == EquationTypes::NR || equationType == EquationTypes::WLS){
+				s->solve();
+				buffer->put();
+				err = s->getLastErrorStr();
+				buffer->finalize(err.isNull() ? sc::ISolutionBuffer::Status::SuccessfullyCompleted : sc::ISolutionBuffer::Status::Error);
+			}
+			return 0;
 		}
 
-		return 0;
+		buffer->finalize(sc::ISolutionBuffer::Status::Error);
+
+		return -1;
 
 	};
 

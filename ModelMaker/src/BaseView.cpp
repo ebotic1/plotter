@@ -187,6 +187,7 @@ const modelNode& ViewForTab::getModelNode(bool &error, bool supressLogs)
 		td::String m;
 		str.getString(m);
 		error = true;
+		includeGuard = false;
 		logView.appendLog(m, LogType::error, supressLogs);
 		return emptyModel;
 	};
@@ -197,6 +198,7 @@ const modelNode& ViewForTab::getModelNode(bool &error, bool supressLogs)
 		td::String m;
 		str.getString(m);
 		error = true;
+		includeGuard = false;
 		logView.appendLog(m, LogType::error, supressLogs);
 		return emptyModel;
 		};
