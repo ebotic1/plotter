@@ -34,7 +34,7 @@ void TextEditorView::saveAs(const td::String &settingsString, td::String *newPat
 {
 
 	td::String *settingsStringPtr = new td::String(settingsString);
-	auto &s = *new gui::SaveFileDialog (this, tr("saveFile"), ".txt");
+	auto &s = *new gui::SaveFileDialog (this, tr("saveFile"), ".modl");
 	s.openModal([newPath, this, settingsStringPtr](gui::FileDialog *dialog){
 		auto path = dialog->getFileName();
 		if(!path.isNull())
@@ -48,7 +48,7 @@ void TextEditorView::saveAs(const td::String &settingsString, td::String *newPat
 bool TextEditorView::openFile(const td::String &path, td::String &settingsString)
 {
 	modelChanged();
-    if(path.endsWith(".txt"))
+    if(path.endsWith(".modl"))
     {
 		std::ifstream in(path.c_str());
 		cnt::StringBuilder s;
@@ -58,14 +58,14 @@ bool TextEditorView::openFile(const td::String &path, td::String &settingsString
 			return false;
 
 		const char *found;
-		const int len = std::strlen("Model:");
+		const int len = std::strlen("Model");
 		settingsString = "";
 		bool firstLoop = true;
 		while(in)
         {
             //pronalazenje "model:" tag-a i stavljanje svog sadrzaja prije njega u settingsString
 			in.read(buffer + len, sizeof(buffer) - len);
-			found = std::strstr(buffer + len, "Model:");
+			found = std::strstr(buffer + len, "Model");
 			if(found)
             {
 				if(firstLoop)
@@ -129,7 +129,7 @@ bool TextEditorView::openFile(const td::String &path, td::String &settingsString
 		}
 		catch (modelNode::exceptionInvalidBlockName& name) {
 			cnt::StringBuilderSmall s;
-			s << "Unrecognized block \"" << name.message << "Cant load model";
+			s << "Unrecognized block \"" << name.message << "\" on line " << name.line << ", cant load model";
 			td::String msg;
 			s.getString(msg);
 			showAlert(tr("error"), msg);

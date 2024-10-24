@@ -194,8 +194,8 @@ void kanvas::getModel(modelNode& mod)
 	params.processCommands("t // time");
 	params.processCommands(v.strVal());
 
-	mod.attribs = std::move(params.attribs);
-	params.attribs.clear();
+	mod._attribs = std::move(params._attribs);
+	params._attribs.clear();
 
 	mod["domain"] = "real";
 	mod["type"] = "DAE";

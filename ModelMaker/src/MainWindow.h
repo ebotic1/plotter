@@ -41,11 +41,8 @@ private:
     ToolBar _toolBar;
     gui::TabView _tabView;
     gui::ViewSwitcher _switcherView;
-    gui::View* mainView = nullptr;
-    gui::SplitterLayout* splitterView = nullptr;
     DataDraw dataDrawer;
     bool plotEmbedded = false;
-    gui::HorizontalLayout _hLayout;
 
     StartingView startingView;
     ContextMenus _contextMenu;

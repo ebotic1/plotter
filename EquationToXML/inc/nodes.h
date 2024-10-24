@@ -10,28 +10,76 @@
 #include <regex>
 #include <unordered_set>
 #include <td/StringConverter.h>
+#include <array>
+
+#include <array>
+#include <algorithm>
+#include <cstddef>
+
 
 
 class baseNode {
+public:
+
+
+
+
+	template <std::size_t N>
+	struct ConstExprString {
+		char data[N];
+		constexpr ConstExprString(const char(&str)[N]) {
+			for (std::size_t i = 0; i < N; ++i)
+				data[i] = str[i];
+		}
+
+		constexpr const char*get() const {
+			return data;
+		}
+	};
+
+private:
+
 	baseNode* parent = nullptr;
 	baseNode* lastChlid = this;
 
+	static std::cmatch match;
+	const static std::regex _lineExtract;
+	static std::cmatch match2;
+	static const std::regex _attribsExtract;
+
 protected:
-	
+
+	bool _done = false;
+
+	static unsigned int _processingLine;
 	std::vector<baseNode*> nodes;
-	virtual bool nodeAction(const td::String& command, baseNode*& newChild) = 0;
-	td::String comment;
-	size_t addLine(std::vector<std::pair<td::String, td::String>>& lines, size_t startLine = 0);
-	virtual void prettyPrint(cnt::StringBuilder<>& str, td::String &indent) const;
-	void prettyPrintComment(cnt::StringBuilder<>& str) const;
+	td::String _comment;
+	virtual bool nodeAction(const char* cmndStart, const char* cmndEnd, baseNode*& newChild) = 0;
+	/*
+	
+	nodeAction prestavlja glavnu funkciju koju node koristi da procesira svoje komande.
+	return false -> node ne moze da procesira ovu komandu, prosljedi je parrent-u
+	return true -> node je procesirao datu komandu
+
+	_done = true oznacava da je node zatvoren, nece vise primati komandi i ako je vratio true. Naredni komentari se nece ispisivati u ovom elementu
+
+	ukoliko node stvori novo dijete onda njegov pointer stavlja u newChild argument.
+	Time se komande nastavljaju slati njemu.
+
+	*/
+	
+	void addLine(const char* start, const char *end, const char*comment, int commentLen);
+	virtual bool prettyPrint(cnt::StringBuilder<>& str, td::String &indent) const;
 	virtual void prettyPrintClosing(cnt::StringBuilder<>& str, td::String &indent) const;
+	template<ConstExprString... excludeAttribs>
+	void prettyPrintAttribs(cnt::StringBuilder<>& str) const;
 	void clear();
 	baseNode(const baseNode& node, const td::String &alias);
 
 public:
 	
 	static const std::unordered_set<td::String> attributeKeywords, functionKeywords;
-	std::map<td::String, td::String> attribs;
+	std::map<td::String, td::String> _attribs;
 	static const std::regex varPatten;
 	const std::vector<baseNode*> &getNodes();
 	baseNode *getParent() const;
@@ -47,17 +95,17 @@ public:
 
 	void prettyPrint(td::String& text) const;
 	inline td::String& operator[](td::String attrib) {
-		return attribs[attrib];
+		return _attribs[attrib];
 	}
-	void addComment(const td::String& comment);
-	void addComment(td::String&& comment);
+	void addComment(const td::String& comment, bool forceNewline = false, bool exitComment = false);
 	void addChild(baseNode *childNode);
+	void setAsDone();
 
 	void processCommands(const td::String& text);
 	virtual inline const char* getName() const = 0;
 
 	virtual void setAttrib(const td::String& name, const td::String& val) {
-		attribs[name] = val;
+		_attribs[name] = val;
 	}
 
 	virtual ~baseNode() {
@@ -65,6 +113,10 @@ public:
 			delete var;
 		}
 	}
+
+
+
+
 
 };
 
@@ -74,12 +126,14 @@ class modelNode : public baseNode {
 	modelNode(const modelNode& model, const td::String &alias);
 public:
 
-	struct exceptionInvalidBlockName { td::String message; };
+	struct exceptionInvalidBlockName { td::String message; int line; };
+	struct exceptionInvalidCommand { td::String message; int line;};
+	struct exceptionInvalidAttribute { td::String message; int line; };
 	modelNode() {};
 	modelNode(const modelNode& model) = default;
 	modelNode &operator =(const modelNode &model);
 	modelNode(td::String command);
-	bool nodeAction(const td::String& command, baseNode*& newChild) override;
+	bool nodeAction(const char* cmndStart, const char* cmndEnd, baseNode*& newChild) override;
 	modelNode& addWtih(const modelNode &model, const td::String &alias);
 	void clear();
 	bool readFromFile(const td::String &path);
@@ -89,5 +143,4 @@ public:
 	}
 
 };
-
 

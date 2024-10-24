@@ -54,7 +54,7 @@ void sumBlock::writeToModel(modelNode& model, Nodes& nodes)
 
 	var.processCommands(outputName);
 	if (!getIsConnectedTo())
-		var.getNodes().back()->attribs["out"] = "true";
+		var.getNodes().back()->_attribs["out"] = "true";
 
 	outputName = outputName.subStr(0, outputName.find("=") - 1);
 

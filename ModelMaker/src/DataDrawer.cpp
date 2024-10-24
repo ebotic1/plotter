@@ -15,16 +15,16 @@ DataDraw::FunctionDesc::FunctionDesc(const td::String& name, double* x, double* 
 
 
 
-DataDraw::DataDraw():
+DataDraw::DataDraw(gui::TabView* tabView):
 	imgGraph(":txtIcon"),
 	_hl(1),
-	tabView(gui::TabHeader::Type::Dynamic, 10, 50)
+	_tabViewOwnership(tabView == nullptr),
+	_tabView((tabView == nullptr) ? new gui::TabView(gui::TabHeader::Type::Dynamic, 10, 50) : tabView)
 {
-	_hl << tabView;
-	setLayout(&_hl);
-
-
-
+	if (_tabViewOwnership) {
+		_hl << *_tabView;
+		setLayout(&_hl);
+	}
 }
 
 void DataDraw::measure(gui::CellInfo& cell)
@@ -84,27 +84,30 @@ void DataDraw::addData(const td::String& name, const std::vector<FunctionDesc>& 
 		tab = table;
 	}
 	
-
-	for (int i = 0; i < tabView.getNumberOfViews(); ++i) 
-		if (((Tab*)tabView.getView(i))->name == name) {
-			tabView.removeView(i);
-			break;
+		Tab* searchTab;
+		for (int i = 0; i < _tabView->getNumberOfViews(); ++i){
+			searchTab = dynamic_cast<Tab*>(_tabView->getView(i));
+			if (searchTab != nullptr && searchTab->name == name) {
+				_tabView->removeView(i);
+				break;
+			}
 		}
 	
 
-	tabView.addView(new Tab(name, tab), name, &imgGraph);
+	_tabView->addView(new Tab(name, tab), name, &imgGraph);
 	
 }
 
 void DataDraw::removeTabs()
 {
-	for (int i = 0; i < tabView.getNumberOfViews(); ++i) 
-		tabView.removeAll();
+	for (int i = 0; i < _tabView->getNumberOfViews(); ++i) 
+		_tabView->removeAll();
 }
 
 DataDraw::~DataDraw()
 {
-	int x = 0;
+	if(_tabViewOwnership)
+		delete _tabView;
 }
 
 DataDraw::Tab::Tab(const td::String& name, gui::BaseView* view):

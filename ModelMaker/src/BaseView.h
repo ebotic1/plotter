@@ -38,6 +38,8 @@ public:
 		unsigned int version = 1;
 		std::unordered_set<td::String> vars, params;
 		void setVariabesAndParams(std::unordered_set<td::String>&& vars, std::unordered_set<td::String>&& params);
+		void handleInvalidAttribException(modelNode::exceptionInvalidAttribute& atr);
+		void handleInvalidCommandException(modelNode::exceptionInvalidCommand& cmnd);
 		friend class ViewForTab;
 	protected:
 		void modelRolledBack() {--version; }

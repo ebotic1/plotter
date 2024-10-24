@@ -13,10 +13,10 @@
 
 
 class DataDraw : public gui::View {
-	gui::TabView tabView;
+	gui::TabView *_tabView;
 	gui::HorizontalLayout _hl;
 	gui::Image imgGraph;
-
+	bool _tabViewOwnership;
 
 	struct Tab : public gui::View {
 		td::String name;
@@ -36,7 +36,7 @@ public:
 
 	enum class Type{table, graph};
 
-	DataDraw();
+	DataDraw(gui::TabView* tabView = nullptr);
 	void measure(gui::CellInfo& cell) override;
 	void addData(const td::String &name, const std::vector<FunctionDesc>& functions, Type tip);
 	void removeTabs();

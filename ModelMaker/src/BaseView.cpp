@@ -174,9 +174,34 @@ void ViewForTab::updateSettings()
 
 }
 
+
+
 const modelNode& ViewForTab::getModelNode(bool &error, bool supressLogs)
 {
 	error = false;
+
+
+	const auto& handleInvalidAttribException = [this, &error, supressLogs](modelNode::exceptionInvalidAttribute& atr) {
+		cnt::StringBuilderSmall str;
+		str << "Invalid attribute \"" << atr.message << "\" on line " << atr.line;
+		td::String m;
+		str.getString(m);
+		error = true;
+		logView.appendLog(m, LogType::error, supressLogs);
+		return emptyModel;
+	};
+
+	const auto& handleInvalidCommandException = [this, &error, supressLogs](modelNode::exceptionInvalidCommand& cmnd) {
+		cnt::StringBuilderSmall str;
+		str << "Cant process command on line " << cmnd.line << ":\n\t" << cmnd.message;
+		td::String m;
+		str.getString(m);
+		error = true;
+		logView.appendLog(m, LogType::error, supressLogs);
+		return emptyModel;
+		};
+
+
 	if (includeGuard) {
 		logView.appendLog("Circular dependency detected, this model includes itself", LogType::error, supressLogs);
 		error = true;
@@ -196,6 +221,14 @@ const modelNode& ViewForTab::getModelNode(bool &error, bool supressLogs)
 		logView.appendLog(log, LogType::error, supressLogs);
 		error = true;
 		includeGuard = false;
+		return emptyModel;
+	}
+	catch (modelNode::exceptionInvalidAttribute& atr) {
+		handleInvalidAttribException(atr);
+		return emptyModel;
+	}
+	catch (modelNode::exceptionInvalidCommand& cmnd) {
+		handleInvalidCommandException(cmnd);
 		return emptyModel;
 	}
 
@@ -235,6 +268,14 @@ const modelNode& ViewForTab::getModelNode(bool &error, bool supressLogs)
 			logView.appendLog(log, LogType::error, supressLogs);
 			error = true;
 		}
+		catch (modelNode::exceptionInvalidAttribute& atr) {
+			handleInvalidAttribException(atr);
+			return emptyModel;
+		}
+		catch (modelNode::exceptionInvalidCommand& cmnd) {
+			handleInvalidCommandException(cmnd);
+			return emptyModel;
+		}
 		catch (...) {
 			logView.appendLog("Unknown error occured, discarding model", LogType::error, supressLogs);
 			error = true;
@@ -242,7 +283,7 @@ const modelNode& ViewForTab::getModelNode(bool &error, bool supressLogs)
 
 	}
 	
-	if (auto it = model.attribs.find("name"); it != model.attribs.end())
+	if (auto it = model._attribs.find("name"); it != model._attribs.end())
 		GlobalEvents::getMainWindowPtr()->changeTabName(it->second, this);
 	
 	std::unordered_set<td::String> vars, params;
@@ -250,10 +291,10 @@ const modelNode& ViewForTab::getModelNode(bool &error, bool supressLogs)
 	for(const auto &node : model.getNodes()){
 		if(std::strcmp(node->getName(), "Params") == 0)
 			for(const auto &param : node->getNodes())
-				params.insert(param->attribs["name"]);
+				params.insert(param->_attribs["name"]);
 		if(std::strcmp(node->getName(), "Vars") == 0)
 			for(const auto &param : node->getNodes())
-				vars.insert(param->attribs["name"]);
+				vars.insert(param->_attribs["name"]);
 	}
 
 	tabView->setVariabesAndParams(std::move(vars), std::move(params));

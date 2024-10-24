@@ -9,30 +9,46 @@
 #include <xml/DOMParser.h> 
 #include <xml/SAXParser.h> 
 
+
 #define INDENT_CHAR "\t"
-#define IMPLICIT_MULTIPLY true
+#define IMPLICIT_MULTIPLY false
 
-class nameNode : public baseNode {
-	td::String name;
-public:
-	nameNode(const td::String &name) : name(name) {}
-	nameNode(td::String &&name) : name(name) {}
-	nameNode(const nameNode& node, const td::String &alias ) :
-		baseNode(node, alias) {
-		name = node.name;
-	}
-	baseNode* createCopy(const td::String& alias) override {
-		return new nameNode(*this, alias);
-	}
-	bool nodeAction(const td::String& command, baseNode*& newChild) override {
-		return false;
-	}
+template <int N>
+using ConstExprString = baseNode::ConstExprString<N>;
 
-	inline const char* getName() const override{
-		return name.c_str();
-	}
-};
 
+static bool beginsWith(const char* string, const char *what) {
+	while (*string != '\0' && *string++ == *what++)
+		if (*what == '\0')
+			return true;
+	return false;
+}
+
+static inline bool compareUpperCase(const char* string, const char* uppercaseStringToCompareWith) {
+
+	while (*string != '\0' && std::toupper(*string++) == *uppercaseStringToCompareWith++) {
+
+#ifdef MU_DEBUG
+		if (std::toupper(*uppercaseStringToCompareWith) != *uppercaseStringToCompareWith)
+			assert("compareUpperCase compared string with something not written in upper case");
+#endif // MU_DEBUG
+
+		if (*uppercaseStringToCompareWith == '\0')
+			return true;
+	}
+	return false;
+}
+
+
+static inline const char* skipWhiteSpace(const char* str) {
+	while (*str == ' ' || *str == '\t')
+		++str;
+	return str;
+}
+
+static inline td::String getStringFromPtr(const char* start, const char* end) {
+	return td::String(start, end - start);
+}
 
 class conditionNode : public baseNode {
 public:
@@ -48,42 +64,41 @@ public:
 	baseNode* createCopy(const td::String& alias) override {
 		return new conditionNode(*this, alias);
 	}
-	void prettyPrint(cnt::StringBuilder<>& str, td::String& indent) const override{
+	bool prettyPrint(cnt::StringBuilder<>& str, td::String& indent) const override{
 		if(getName()[0] != 'T'){ //not Then
 			indent.reduceSize(1);
-			str << indent << conditionNode::getName();
-			prettyPrintComment(str);
-			str << "\n";
+			str << indent << "Else";
+			prettyPrintAttribs<"fx">(str);
+			str << ":";
 			indent += INDENT_CHAR;
 		}
 
-		if (auto itFx = attribs.find("fx"); itFx != attribs.end())
-			str  << indent << itFx->second << "\n";
-		for (const auto& attrib : attribs)
-			if(attrib.first.cCompare("fx") != 0)
-				str  << indent << attrib.first << " = " << attrib.second << "\n";
+		if (auto itFx = _attribs.find("fx"); itFx != _attribs.end()) {
+			str << indent << itFx->second;
+			return false;
+		}
+		
+		if (getName()[0] != 'T')
+			return false;
+		else
+			return true;
+
 	}
 
 	void prettyPrintClosing(cnt::StringBuilder<>& str, td::String &indent) const override{
-		const auto &nodes = getParent()->getNodes();
-		for(int i = 0; i < nodes.size(); ++i)
-			if(nodes[i] == this){
-				if(i != nodes.size()-1)
-					if(auto ptr = dynamic_cast<conditionNode *>(nodes[i+1]);  ptr != nullptr && ptr->tip == type::elsee)
-						return;
-				indent.reduceSize(1);
-				str << indent << "end if\n";
-				indent += INDENT_CHAR;
-			}
+		str << "\n";
 	}
 
-	virtual bool nodeAction(const td::String& command, baseNode*& newChild) override;
+	bool nodeAction(const char* cmndStart, const char* cmndEnd, baseNode*& newChild) override;
 	inline const char* getName() const override {
 		return (tip == type::thenn) ? "Then" : "Else";
 	}
 };
 
 conditionNode::conditionNode(type t) : tip(t) {}
+
+
+
 
 
 
@@ -123,117 +138,105 @@ static inline void addAlias(td::String &line, const td::String& alias) { //doda 
 }
 
 class singleEquation : public baseNode {
-	bool added = false;
 	bool consumeEnd = false;
 	bool addIf = false;
 public:
 	singleEquation() = default;
 	singleEquation(const singleEquation &n, const td::String &alias ):baseNode(n, alias)
 	{
-		added = n.added;
 		consumeEnd = n.consumeEnd;
 	}
 	baseNode* createCopy(const td::String& alias) override {
 		singleEquation &equation = *new singleEquation(*this, alias);
 		
-		if (auto itFx = equation.attribs.find("fx"); itFx != equation.attribs.end())
+		if (auto itFx = equation._attribs.find("fx"); itFx != equation._attribs.end())
 			addAlias(itFx->second, alias);
-		if (auto itW = equation.attribs.find("w"); itW != equation.attribs.end())
+		if (auto itW = equation._attribs.find("w"); itW != equation._attribs.end())
 			addAlias(itW->second, alias);
-		if (auto it = equation.attribs.find("cond"); it != equation.attribs.end())
+		if (auto it = equation._attribs.find("cond"); it != equation._attribs.end())
 			addAlias(it->second, alias);
 		
 		return &equation;
 	}
 
-	void prettyPrint(cnt::StringBuilder<>& str, td::String& indent) const override{
-		if (auto it = attribs.find("cond"); it != attribs.end()){
+	bool prettyPrint(cnt::StringBuilder<>& str, td::String& indent) const override{
+		if (auto it = _attribs.find("cond"); it != _attribs.end()){
 			str << indent << "if " << it->second;
+			prettyPrintAttribs<"fx", "cond">(str);
+			str << ":";
 			indent += INDENT_CHAR;
+			return false;
 		}
 
-		if (auto itFx = attribs.find("fx"); itFx != attribs.end())
+		if (auto itFx = _attribs.find("fx"); itFx != _attribs.end())
 			str << indent << itFx->second;
-		if (auto itW = attribs.find("w"); itW != attribs.end())
-			str << indent << " [ " << itW->second << " ]";
-		
-		prettyPrintComment(str);
-		str << "\n";
 
-		for (const auto& attrib : attribs) {
-			if (attrib.first.cCompare("fx") == 0)
-				continue;
-			else if (attrib.first.cCompare("w") == 0)
-				continue;
-			else if (attrib.first.cCompare("cond") == 0)
-				continue;
-			str << indent << attrib.first << " = " << attrib.second << "\n";
-		}
+		prettyPrintAttribs<"fx">(str);
+		
+		return false;
+
 	}
 
 	void prettyPrintClosing(cnt::StringBuilder<>& str, td::String &indent) const override{
-		if (auto it = attribs.find("cond"); it != attribs.end())
+		if (auto it = _attribs.find("cond"); it != _attribs.end()) {
 			indent.reduceSize(1);
+			str << indent << "end";
+		}
+		str << "\n";
 	}
 
 
-	virtual bool nodeAction(const td::String& command, baseNode*& newChild) override {
+	virtual bool nodeAction(const char* cmndStart, const char* cmndEnd, baseNode*& newChild) override {
 
-		if (command.beginsWithCI("then"))
+		if (compareUpperCase(cmndStart, "THEN"))
 			return true;
 
 
-		if (command.beginsWithCI("end")) {
+		if (compareUpperCase(cmndStart, "END")) {
 			if (consumeEnd) {
-				added = true;
+				_done = true;
 				consumeEnd = false;
 				return true;
 			}
 			return false;
 		}
 
-		if (added)
+		if (_done)
 			return false;
 
-		if (command.beginsWithCI("else")) {
+		if (compareUpperCase(cmndStart, "ELSE")) {
 			auto elseN = new conditionNode(conditionNode::type::elsee);
-			nodes.push_back(elseN);
+			addChild(elseN);
 			newChild = nodes.back();
-			added = true;
+			_done = true;
 			consumeEnd = true;
-			if(int poz = command.find("if"); poz != -1){
+			static const char* ifPtr = "if";
+			if(const char *poz = std::search(cmndStart, cmndEnd, ifPtr, ifPtr+2); poz != cmndEnd) {
 				auto lastNode = new conditionNode(conditionNode::type::thenn);
 				auto equation = new singleEquation;
 				elseN->addChild(equation);
-				equation->setAttrib("cond", command.subStr(poz+2, -1).trimLeft());
+				equation->setAttrib("cond", getStringFromPtr(poz+2, cmndEnd));
 				equation->consumeEnd = true;
 				equation->addChild(lastNode);
 				newChild = lastNode;
-				consumeEnd = false;
+				consumeEnd = true;
 				return true;
 			}
+			
 			return true;
 		}
-
-		if (command.beginsWithCI("if")) {
-			setAttrib("cond", command.subStr(2, -1).trimLeft());
-			nodes.push_back(new conditionNode(conditionNode::type::thenn));
+		
+		if (beginsWith(cmndStart, "if")) {
+			setAttrib("cond", getStringFromPtr(skipWhiteSpace(cmndStart+2), cmndEnd));
+			addChild(new conditionNode(conditionNode::type::thenn));
 			newChild = nodes.back();
 			consumeEnd = true;
 			return true;
 		}
 
-		added = true;
-		int wPoz = command.find("[");
+		_done = true;
 
-		if (wPoz != -1 && command.getLastChar() == ']') {
-			setAttrib("fx", command.subStr(0, wPoz - 1).trimRight());
-			setAttrib("w", command.subStr(wPoz + 1, command.length() - 2));
-		}
-		else
-			setAttrib("fx", command);
-
-
+		setAttrib("fx", getStringFromPtr(cmndStart, cmndEnd));
 
 		return true;
 	}
@@ -243,123 +246,21 @@ public:
 };
 
 
-struct GroupName { static const char* val; };
-const char* GroupName::val = "Group";
-
-template<typename containerName, typename nodeType>
-class containerNode : public baseNode {
-	bool done = false;
-public:
-	containerNode() = default;
-	containerNode(const containerNode<containerName, nodeType>& node) = default;
-	containerNode(const containerNode<containerName, nodeType>& node, const td::String &alias):
-	baseNode(node,alias){}
-	baseNode* createCopy(const td::String &alias) override {
-		return new containerNode<containerName, nodeType>(*this, alias);
-	}
-	bool nodeAction(const td::String& command, baseNode*& newChild) override{
-		if (done) return false;
-
-		if (command.cCompareNoCase("Group:") == 0) {
-			typedef containerNode<GroupName, singleEquation> GroupNode;
-			nodes.push_back(new GroupNode);
-			newChild = nodes.back();
-			return true;
-		}
-		if (command.getLastChar() == ':') return false;
-		if (command.beginsWithCI("end")) {
-			done = true;
-			return true;
-		}
 
 
-
-		newChild = new nodeType;
-		nodes.push_back(newChild);
-
+bool conditionNode::nodeAction(const char* cmndStart, const char* cmndEnd, baseNode*& newChild)
+{
+	if (compareUpperCase(cmndStart, "END")) {
+		_done = true;
 		return false;
-
-	}
-	
-	inline const char* getName() const override {
-		return containerName::val;
 	}
 
-};
-
-template<typename variableName>
-class variableNode : public baseNode {
-	bool added = false;
-public:
-	variableNode() = default;
-	variableNode(const variableNode &n) = default;
-	variableNode(const variableNode &n, const td::String &alias):
-		baseNode(n,alias){}
-	virtual baseNode* createCopy(const td::String &alias) override{
-		auto &var = *new variableNode(*this, alias);
-		if (auto it = var.attribs.find("name"); it != var.attribs.end())
-			addAlias(it->second, alias);
-		if (auto it = var.attribs.find("val"); it != var.attribs.end())
-			addAlias(it->second, alias);
-		return &var;
-	}
-	void prettyPrint(cnt::StringBuilder<>& str, td::String& indent) const override {
-		if (auto it = attribs.find("name"); it != attribs.end())
-			str << indent << it->second;
-		if (auto it = attribs.find("val"); it != attribs.end())
-			str << " = " << it->second;
-		prettyPrintComment(str);
-		str << "\n";
-		for (const auto& attrib : attribs) {
-			if (attrib.first.cCompare("name") == 0)
-				continue;
-			else if (attrib.first.cCompare("val") == 0)
-				continue;
-			str << indent << INDENT_CHAR << attrib.first << " = " << attrib.second << "\n";
-		}
-	}
-
-	void prettyPrintClosing(cnt::StringBuilder<>& str, td::String &indent) const override{
-		
-	}
-
-	bool nodeAction(const td::String& command, baseNode*& newChild) override {
-		if (added) return false;
-		added = true;
-
-		int pozEq = command.find("=");
-		if (pozEq == -1) {
-			setAttrib("name", command);
-			return true;
-		}
-
-		setAttrib("name", command.subStr(0, pozEq - 1).trimRight());
-		setAttrib("val", command.subStr(pozEq + 1, -1).trimLeft());
-		
-		return true;
-	}
-
-	inline const char* getName() const override {
-		return variableName::val;
-	}
-};
-
-
-
-
-
-
-
-bool conditionNode::nodeAction(const td::String& command, baseNode*& newChild){
-
-	if (command.beginsWithCI("end"))
+	if (compareUpperCase(cmndStart, "ELSE")) {
+		_done = true;
 		return false;
-	
-	
-	if (command.findCI("else") != -1)
-		return false;
-	
-	nodes.push_back(new singleEquation);
+	}
+
+	addChild(new singleEquation());
 	newChild = nodes.back();
 
 	return false;
@@ -367,49 +268,156 @@ bool conditionNode::nodeAction(const td::String& command, baseNode*& newChild){
 
 
 
-struct varsName { static const char* val; };
-const char* varsName::val = "Vars";
 
-struct varName { static const char* val; };
-const char* varName::val = "Var";
+template<ConstExprString containerName, typename nodeType>
+class containerNode : public baseNode {
+public:
+	containerNode() = default;
+	containerNode(const containerNode<containerName, nodeType>& node, const td::String &alias):
+	baseNode(node,alias){}
+	baseNode* createCopy(const td::String &alias) override {
+		return new containerNode<containerName, nodeType>(*this, alias);
+	}
+	bool nodeAction(const char* cmndStart, const char* cmndEnd, baseNode*& newChild) override {
+		if (_done) return false;
 
-struct paramsName { static const char* val; };
-const char* paramsName::val = "Params";
+		if (compareUpperCase(cmndStart, "GROUP")) {
+			typedef containerNode<"Group", singleEquation> GroupNode;
+			addChild(new GroupNode);
+			newChild = nodes.back();
+			return true;
+		}
 
-struct paramName { static const char* val; };
-const char* paramName::val = "Param";
 
-struct NLEName { static const char* val; };
-const char* NLEName::val = "NLEqs";
+		if (compareUpperCase(cmndStart, "END")) {
+			_done = true;
+			return true;
+		}
 
-struct ODEName { static const char* val; };
-const char* ODEName::val = "ODEqs";
+		while (*cmndEnd != ';' && *cmndEnd != '\n' && *cmndEnd != '\0') {
+			if (*cmndEnd == ':')
+				if (!compareUpperCase(cmndStart, "IF") && !compareUpperCase(cmndStart, "ELSE"))
+					return false;
+			++cmndEnd;
+		}
 
-struct postProcName { static const char* val; };
-const char* postProcName::val = "PostProc";
+		newChild = new nodeType;
+		addChild(newChild);
 
-struct MeasEqName { static const char* val; };
-const char* MeasEqName::val = "MeasEqs";
+		return false;
 
-struct LimitName { static const char* val; };
-const char* LimitName::val = "Limits";
+	}
+	void prettyPrintClosing(cnt::StringBuilder<>& str, td::String& indent) const override {
+		indent.reduceSize(1);
+	}
+	
+	inline const char* getName() const override {
+		return containerName.get();
+	}
 
-struct ECsName { static const char* val; };
-const char* ECsName::val = "ECs";
+};
 
-struct TfName { static const char* val; };
-const char* TfName::val = "TFs";
+template<ConstExprString variableName>
+class variableNode : public baseNode {
+public:
+	variableNode() = default;
+	variableNode(const variableNode &n) = default;
+	variableNode(const variableNode &n, const td::String &alias):
+		baseNode(n,alias){}
+	virtual baseNode* createCopy(const td::String &alias) override{
+		auto &var = *new variableNode(*this, alias);
+		if (auto it = var._attribs.find("name"); it != var._attribs.end())
+			addAlias(it->second, alias);
+		if (auto it = var._attribs.find("val"); it != var._attribs.end())
+			addAlias(it->second, alias);
+		return &var;
+	}
+	bool prettyPrint(cnt::StringBuilder<>& str, td::String& indent) const override {
+		if (auto it = _attribs.find("name"); it != _attribs.end())
+			str << indent << it->second;
+		if (auto it = _attribs.find("val"); it != _attribs.end())
+			str << " = " << it->second;
 
-typedef containerNode<varsName, variableNode<varName>> varsNode;
-typedef containerNode<paramsName, variableNode<paramName>> paramsNode;
-typedef containerNode<NLEName, singleEquation> NLEquationsNode;
-typedef containerNode<ODEName, singleEquation> ODEquationsNode;
-typedef containerNode<postProcName, singleEquation> postProcNode;
-typedef containerNode<MeasEqName, singleEquation> MeasEqNode;
+		prettyPrintAttribs<"name", "val">(str);
+		return false;
+	}
 
-typedef containerNode<LimitName, singleEquation> LimitNode;
-typedef containerNode<ECsName, singleEquation> ECsNode;
-typedef containerNode<TfName, singleEquation> TFsNode;
+	void prettyPrintClosing(cnt::StringBuilder<>& str, td::String &indent) const override{
+		str << "\n";
+	}
+
+	bool nodeAction(const char* cmndStart, const char* cmndEnd, baseNode*& newChild) override {
+		if (_done) 
+			return false;
+		_done = true;
+
+		const char *pozEq = std::find(cmndStart, cmndEnd, '=');
+		if (pozEq == cmndEnd) {
+			setAttrib("name", getStringFromPtr(cmndStart, cmndEnd));
+			return true;
+		}
+
+		setAttrib("name", getStringFromPtr(cmndStart, pozEq));
+		setAttrib("val", getStringFromPtr(skipWhiteSpace(pozEq + 1), cmndEnd));
+		
+		return true;
+	}
+
+	inline const char* getName() const override {
+		return variableName.get();
+	}
+};
+
+
+
+
+class SingleExpression : public baseNode {
+public:
+	SingleExpression() = default;
+	SingleExpression(const SingleExpression& n) = default;
+	SingleExpression(const SingleExpression& n, const td::String& alias) :
+		baseNode(n, alias) {}
+	virtual baseNode* createCopy(const td::String& alias) override {
+		return new SingleExpression(*this, alias);
+	}
+	bool prettyPrint(cnt::StringBuilder<>& str, td::String& indent) const override {
+		if (auto it = _attribs.find("fx"); it != _attribs.end())
+			str << indent << it->second;
+		prettyPrintAttribs<"fx">(str);
+		return false;
+	}
+
+	void prettyPrintClosing(cnt::StringBuilder<>& str, td::String& indent) const override {
+		str << "\n";
+	}
+
+	bool nodeAction(const char* cmndStart, const char* cmndEnd, baseNode*& newChild) override {
+		if (_done) 
+			return false;
+		_done = true;
+
+		setAttrib("fx", getStringFromPtr(cmndStart, cmndEnd));
+
+		return true;
+	}
+
+	inline const char* getName() const override {
+		return "Expression";
+	}
+};
+
+
+typedef containerNode<"Vars", variableNode<"Var">> varsNode;
+typedef containerNode<"Params", variableNode<"Param">> paramsNode;
+typedef containerNode<"NLEqs", singleEquation> NLEquationsNode;
+typedef containerNode<"ODEqs", singleEquation> ODEquationsNode;
+typedef containerNode<"PostProc", singleEquation> postProcNode;
+typedef containerNode<"MeasEqs", singleEquation> MeasEqNode;
+
+typedef containerNode<"Limits", singleEquation> LimitNode;
+typedef containerNode<"ECs", singleEquation> ECsNode;
+typedef containerNode<"TFs", singleEquation> TFsNode;
+typedef containerNode<"Expressions", SingleExpression> ExpressionsNode;
 
 
 class initNode : public baseNode {
@@ -422,14 +430,14 @@ public:
 	baseNode* createCopy(const td::String &alias) override {
 		return new initNode(*this, alias);
 	}
-	virtual bool nodeAction(const td::String& command, baseNode*& newChild) override {
+	virtual bool nodeAction(const char* cmndStart, const char* cmndEnd, baseNode*& newChild) override {
 
-		if (command.cCompareNoCase("model:") == 0) {
+		if (compareUpperCase(cmndStart, "MODEL")) {
 			nodes.push_back(new modelNode());
 			newChild = nodes.back();
 			return true;
 		}
-		
+		_done = true;
 		return false;
 	}
 	inline const char* getName() const override {
@@ -441,7 +449,7 @@ public:
 modelNode::modelNode(const modelNode& model, const td::String &alias):
 	baseNode(model, alias)
 {
-	done = model.done;
+
 }
 
 modelNode &modelNode::operator=(const modelNode &model)
@@ -456,66 +464,70 @@ modelNode::modelNode(td::String text)
     processCommands(text);
 }
 
-bool modelNode::nodeAction(const td::String& command, baseNode*& newChild){
-	if (done) return false;
 
-	if (command.beginsWithCI("end")) {
-		done = true;
+bool modelNode::nodeAction(const char* cmndStart, const char* cmndEnd, baseNode*& newChild)
+{
+	if (_done) 
+		return false;
+
+	if (compareUpperCase(cmndStart, "END")) {
+		_done = true;
 		return true;
 	}
 
-
-	if (command.getLastChar() == ':' || true) { //radi se o novom elementu // uvijek true jer treba da baci exception jer ako je doslo do ove funkcije onda nije rijec o atributu tako da nek baci exception jer neka je greska
-		if (command.cCompareNoCase("Vars:") == 0)
-			nodes.push_back(new varsNode());
-		else if (command.cCompareNoCase("Params:") == 0)
-			nodes.push_back(new paramsNode());
-		else if (command.cCompareNoCase("model:") == 0)
-			return true;
-		else if (command.cCompareNoCase("NLEqs:") == 0 || command.cCompareNoCase("NL:") == 0)
-			nodes.push_back(new NLEquationsNode());
-		else if (command.cCompareNoCase("ODEqs:") == 0 || command.cCompareNoCase("ODE:") == 0)
-			nodes.push_back(new ODEquationsNode());
-		else if (command.cCompareNoCase("Init:") == 0)
-			nodes.push_back(new initNode);
-		else if (command.cCompareNoCase("PostProc:") == 0)
-			nodes.push_back(new postProcNode);
-		else if (command.cCompareNoCase("MeasEqs:") == 0 || command.cCompareNoCase("Meas:") == 0)
-			nodes.push_back(new MeasEqNode);
-		else if (command.cCompareNoCase("Limits:") == 0)
-			nodes.push_back(new LimitNode);
-		else if (command.cCompareNoCase("ECs:") == 0 || command.cCompareNoCase("EC:") == 0)
-			nodes.push_back(new ECsNode);
-		else if (command.cCompareNoCase("TFs:") == 0 || command.cCompareNoCase("TF:") == 0)
-			nodes.push_back(new TFsNode);
-		else
-			throw exceptionInvalidBlockName(command);
-
-		newChild = nodes.back();
+	if (compareUpperCase(cmndStart, "VARS"))
+		addChild(new varsNode());
+	else if (compareUpperCase(cmndStart, "PARAMS"))
+		addChild(new paramsNode());
+	else if (compareUpperCase(cmndStart, "MODEL")) {
+		newChild = this;
 		return true;
 	}
+	else if (compareUpperCase(cmndStart, "NLEQS") || compareUpperCase(cmndStart, "NL"))
+		addChild(new NLEquationsNode());
+	else if (compareUpperCase(cmndStart, "ODEQS") || compareUpperCase(cmndStart, "ODE"))
+		addChild(new ODEquationsNode());
+	else if (compareUpperCase(cmndStart, "INIT"))
+		addChild(new initNode);
+	else if (compareUpperCase(cmndStart, "POSTPROC"))
+		addChild(new postProcNode);
+	else if (compareUpperCase(cmndStart, "MEASEQS") || compareUpperCase(cmndStart, "MEAS"))
+		addChild(new MeasEqNode);
+	else if (compareUpperCase(cmndStart, "LIMITS"))
+		addChild(new LimitNode);
+	else if (compareUpperCase(cmndStart, "ECS") || compareUpperCase(cmndStart, "EC"))
+		addChild(new ECsNode);
+	else if (compareUpperCase(cmndStart, "TFS") || compareUpperCase(cmndStart, "TF"))
+		addChild(new TFsNode);
+	else if (compareUpperCase(cmndStart, "EXPRESSIONS"))
+		addChild(new ExpressionsNode);
+	else
+		throw exceptionInvalidBlockName(td::String(cmndStart, cmndEnd-cmndStart), _processingLine);
 
-	return false;
+	
+	newChild = nodes.back();
+	return true;
 }
+
 
 modelNode &modelNode::addWtih(const modelNode &model, const td::String &alias)
 {
 
-	for (const auto& a : model.attribs) {
+	for (const auto& a : model._attribs) {
 		if (a.first.cCompareNoCase("domain") == 0) {
-			if (!attribs.contains("domain"))
-				attribs["domain"] = a.second;
-			else if(attribs["domain"].cCompareNoCase("real") == 0)
-				attribs["domain"] = a.second;
+			if (!_attribs.contains("domain"))
+				_attribs["domain"] = a.second;
+			else if(_attribs["domain"].cCompareNoCase("real") == 0)
+				_attribs["domain"] = a.second;
 		}
 
 		if (a.first.cCompareNoCase("type") == 0) {
-			if (!attribs.contains("type"))
-				attribs["type"] = a.second;
-			else if (attribs["type"].cCompareNoCase("NR") == 0)
-				attribs["type"] = a.second;
-			else if (attribs["type"].cCompareNoCase("ODE") == 0 && a.second.cCompareNoCase("DAE") == 0)
-				attribs["type"] = "DAE";
+			if (!_attribs.contains("type"))
+				_attribs["type"] = a.second;
+			else if (_attribs["type"].cCompareNoCase("NR") == 0)
+				_attribs["type"] = a.second;
+			else if (_attribs["type"].cCompareNoCase("ODE") == 0 && a.second.cCompareNoCase("DAE") == 0)
+				_attribs["type"] = "DAE";
 
 		}
 
@@ -539,225 +551,11 @@ modelNode &modelNode::addWtih(const modelNode &model, const td::String &alias)
 
 void modelNode::clear(){
 	baseNode::clear();
-	done = false;
+	_done = false;
 }
 
 
 
-static bool getComment(td::String& comment, bool& alone, const char* path = nullptr) {
-	static std::ifstream file;
-	static std::string line;
-
-	if (path != nullptr) {
-		file.close();
-		file.open(path);
-#undef max
-		file.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-#define max ((() > ()) ? () : ())
-		std::getline(file, line);
-		return file.is_open();
-	}
-	if (!file.is_open() || file.eof()) {
-		alone = false;
-		return false;
-	}
-
-	comment.clean();
-
-	//check if multiple elements are on the same line, only the last one registers as having a comment
-	int pozComment, pozStart, pozEnd;
-	static int poz = 0;
-	while (true) {
-		if (file.eof()) {
-			pozComment = int(line.find("<!--", poz));
-			if (pozComment != -1)
-				break;
-			return true;
-		}
-
-		pozComment = int(line.find("<!--", poz));
-		pozStart = int(line.find("<", poz));
-		if (pozStart == pozComment && pozComment != -1) pozStart = int(line.find("<", pozComment + 1));
-		pozEnd = int(line.find(">", poz));
-
-		if (pozStart != -1 && line[pozStart + 1] == '/') {//element is closing tag (comment is independent, ignore)
-
-			if (pozComment != -1) {
-				poz = pozComment;
-				bool getSucces = getComment(comment, alone);
-				alone = false;
-				return getSucces;
-			}
-
-			//komentara nema, samo nadi kraj elementa i zapocni ponovo
-			while (poz = line.find(">", poz), (poz == -1 && !file.eof()))
-				std::getline(file, line);
-
-
-			if (file.eof()) {
-				alone = false;
-				comment.clean();
-				return false;
-			}
-
-			poz += 1;
-			continue;
-		}
-
-		if (pozComment == -1) { //nema komentara
-			if (pozEnd == -1) { //nema elementa
-				std::getline(file, line);
-				poz = 0;
-				continue;
-			}
-			else {//ima elementa
-				poz = pozEnd + 1;
-				alone = false;
-				return true;
-			}
-
-		}
-
-		if (pozComment < pozStart || pozStart == -1) { //komenatar prije pocetka elementa
-			alone = true;
-			break;
-		}
-		//komentar iza elementa
-
-		alone = false;
-		break;
-
-	}
-
-
-	pozComment += 4;
-	int poz2;
-
-
-	while ((poz2 = line.find("-->", poz)), poz2 == -1) {
-		comment += line.substr(pozComment);
-		//if (line.size() != 0) 
-		comment += "\n//";
-		pozComment = 0;
-		if (!std::getline(file, line))
-			return false;
-	}
-	comment += line.substr(pozComment, poz2 - pozComment);
-
-	poz = poz2 + 3;
-
-	return true;
-}
-
-
-
-
-static void addNodeFromXML(xml::FileParser::node_iterator &it, baseNode &node){
-	td::String name;
-	td::String comment;
-	bool alone;
-
-	while(!it.end()){
-
-
-		getComment(comment, alone);
-
-		if (alone) {
-			baseNode* lastNode = &node;
-			while (!lastNode->getNodes().empty())
-				lastNode = lastNode->getNodes().back();
-			comment += " ";
-			lastNode->addComment(comment);
-			continue;
-		}
-
-		name = it->getName();
-		if(name.cCompare("Model") == 0)
-			node.addChild(new modelNode);
-		else if(name.cCompare("Vars") == 0)
-			node.addChild(new varsNode);
-		else if(name.cCompare("Var") == 0)
-			node.addChild(new variableNode<varName>);
-		else if(name.cCompare("Params") == 0)
-			node.addChild(new paramsNode);
-		else if(name.cCompare("Param") == 0)
-			node.addChild(new variableNode<paramName>);
-		else if(name.cCompare("NLEqs") == 0)
-			node.addChild(new NLEquationsNode);
-		else if(name.cCompare("Eq") == 0)
-			node.addChild(new singleEquation);
-		else if(name.cCompare("Then") == 0)
-			node.addChild(new conditionNode(conditionNode::type::thenn));
-		else if(name.cCompare("Else") == 0)
-			node.addChild(new conditionNode(conditionNode::type::elsee));
-		else if(name.cCompare("Group") == 0)
-			node.addChild(new containerNode<GroupName, singleEquation>);
-		else if(name.cCompare("ODEqs") == 0)
-			node.addChild(new ODEquationsNode);
-		else if(name.cCompare("Init") == 0)
-			node.addChild(new initNode);
-		else if(name.cCompare("PostProc") == 0)
-			node.addChild(new postProcNode);
-		else if(name.cCompare("MeasEqs") == 0)
-			node.addChild(new MeasEqNode);
-		else if(name.cCompare("Limits") == 0)
-			node.addChild(new LimitNode);
-		else if(name.cCompare("ECs") == 0)
-			node.addChild(new ECsNode);
-		else if(name.cCompare("TFs") == 0)
-			node.addChild(new TFsNode);
-		else{
-			node.addChild(new nameNode(name));
-			throw (modelNode::exceptionInvalidBlockName) name;
-		}
-
-		for(const auto &at : it->attribs)
-			node.getNodes().back()->attribs[at.getName()] = at.getValue();
-
-		if (!comment.isNull()) {
-			comment += " ";
-			node.getNodes().back()->addComment(comment);
-		}
-
-
-		auto childIter = it.getChildNode();
-		addNodeFromXML(childIter, *node.getNodes().back());
-
-		++it;
-	}
-
-}
-
-
-
-
-
-
-bool modelNode::readFromFile(const td::String &path)
-{
-    clear();
-	xml::FileParser par;
-	par.parseFile(path);
-	if(!par.isOk())
-		return false;
-
-	td::String comment;
-	bool alone;
-	getComment(comment, alone, path.c_str());
-	getComment(comment, alone);
-
-	auto root = par.getRootNode();
-	if(root->getName().cCompareNoCase("Model") != 0)
-		return false;
-
-	for(const auto &at : root->attribs)
-		attribs[at.getName()] = at.getValue();
-
-	auto ch = root.getChildNode();
-	addNodeFromXML(ch, *this);
-	return true;
-
-}
 
 baseNode *modelNode::createCopy(const td::String& alias)
 {
@@ -777,3 +575,177 @@ void generateXML(const td::String& equations, const td::String& output_path) {
 	w.close();
 }
 
+
+
+
+class TextParser : public xml::SAXParser<TextParser, FileBuffer4k, 1023U, false, false>
+{
+private:
+	modelNode::exceptionInvalidBlockName _exception;
+	modelNode& _model;
+	baseNode* _lastNode, *_closedNode;
+	mem::StringMemoryManager<> _stringPool;
+	bool _skipNode = true, _commentAlone = true;
+protected:
+	typedef xml::SAXParser<TextParser, FileBuffer4k, 1023U, false, false> TSAX;
+protected:
+
+public:
+
+	inline td::StringExt* allocStringObject(td::UINT4 len, const char* pStr)
+	{
+		return _stringPool.allocObject(len, pStr); //????????
+	}
+
+	bool onOpenNode()
+	{
+		if (_skipNode) {
+			_skipNode = false;
+			return true;
+		}
+		
+		_commentAlone = false;
+
+		td::StringExt* name = TSAX::_pLastNode->pName;
+	
+		if (name->cCompare("Model") == 0)
+			_lastNode->addChild(new modelNode);
+		else if (name->cCompare("Vars") == 0)
+			_lastNode->addChild(new varsNode);
+		else if (name->cCompare("Var") == 0)
+			_lastNode->addChild(new variableNode<"Var">);
+		else if (name->cCompare("Params") == 0)
+			_lastNode->addChild(new paramsNode);
+		else if (name->cCompare("Param") == 0)
+			_lastNode->addChild(new variableNode<"Param">);
+		else if (name->cCompare("NLEqs") == 0)
+			_lastNode->addChild(new NLEquationsNode);
+		else if (name->cCompare("Eq") == 0)
+			_lastNode->addChild(new singleEquation);
+		else if (name->cCompare("Then") == 0)
+			_lastNode->addChild(new conditionNode(conditionNode::type::thenn));
+		else if (name->cCompare("Else") == 0)
+			_lastNode->addChild(new conditionNode(conditionNode::type::elsee));
+		else if (name->cCompare("Group") == 0)
+			_lastNode->addChild(new containerNode<"Group", singleEquation>);
+		else if (name->cCompare("ODEqs") == 0)
+			_lastNode->addChild(new ODEquationsNode);
+		else if (name->cCompare("Init") == 0)
+			_lastNode->addChild(new initNode);
+		else if (name->cCompare("PostProc") == 0)
+			_lastNode->addChild(new postProcNode);
+		else if (name->cCompare("MeasEqs") == 0)
+			_lastNode->addChild(new MeasEqNode);
+		else if (name->cCompare("Limits") == 0)
+			_lastNode->addChild(new LimitNode);
+		else if (name->cCompare("ECs") == 0)
+			_lastNode->addChild(new ECsNode);
+		else if (name->cCompare("TFs") == 0)
+			_lastNode->addChild(new TFsNode);
+		else if (name->cCompare("Expressions") == 0)
+			_lastNode->addChild(new ExpressionsNode);
+		else if (name->cCompare("Expression") == 0)
+			_lastNode->addChild(new SingleExpression);
+		else {
+			_exception.message = name->c_str();
+			_exception.line = TSAX::_nLines;
+			TSAX::reload(); //prekini parsiranje
+		}
+		
+		_lastNode = _lastNode->getNodes().back();
+
+		return true;
+		
+	}
+
+	void onDummyNode()
+	{
+		//        mu::dbgLog("Dummy node:%s", TSAX::_pLastNode->pName->c_str());
+	}
+
+	void onCloseNode()
+	{
+		_closedNode = _lastNode;
+		_lastNode->setAsDone();
+		if (_lastNode->getParent() != nullptr)
+			_lastNode = _lastNode->getParent();
+		_commentAlone = false;
+	}
+
+
+
+	void onCDATA()
+	{
+
+	}
+
+	void onDocType()
+	{
+
+	}
+
+	void onAttrib()
+	{
+		_lastNode->_attribs[TSAX::_pLastAttrib->pName->c_str()] = TSAX::_outBuffer.c_str();
+	}
+
+	void onNodeText()
+	{
+		const char* p = (const td::UTF8*)TSAX::_outBuffer.begin();
+		const char* k = TSAX::_outBuffer.size() + p;
+		_commentAlone = std::find(p, k, '\n') != k;
+	}
+
+	void onNodeComment() {
+		auto str = TSAX::_outBuffer.c_str();
+
+
+		if (!_commentAlone) {
+			if (_lastNode->getNodes().empty())
+				_lastNode->addComment(str);
+			else
+				_closedNode->addComment(str);
+			return;
+		}
+
+
+		if (_lastNode->getNodes().empty()) 
+			_lastNode->addComment(str, true);
+		else
+			_lastNode->getNodes().back()->addComment(str, false, true);
+		
+
+	}
+
+
+public:
+	TextParser(modelNode& model) :
+		_model(model),
+		_lastNode(&model),
+		_closedNode(&model)
+	{
+		_callOnNodeTextForWhitespace = true;
+	}
+	~TextParser()
+	{
+
+	}
+
+	bool parseFile(const td::String& fileName, const mu::ILogger* pLog = nullptr)
+	{
+		_model.clear();
+		bool bRet = TSAX::parseFile(fileName, pLog);
+		if (!_exception.message.isNull())
+			throw _exception;
+		return true;
+	}
+};
+
+
+
+bool modelNode::readFromFile(const td::String& path)
+{
+	TextParser par(*this);
+	return par.parseFile(path);
+
+}

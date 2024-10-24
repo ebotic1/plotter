@@ -4,11 +4,12 @@
 #include "../GlobalEvents.h"
 
 
-const std::regex CodeEdit::varPattern = std::regex(R"((^|[^A-Za-z_\.])([a-zA-Z_](?:[\w.]+?)?)(?:$|[^A-Za-z_\.]))");
+const std::regex CodeEdit::varPattern = std::regex(R"((^|[^A-Za-z_\.])([a-zA-Z_](?:[\w.]+?)?)(?:$|[^0-9A-Za-z_\.]))");
 const std::regex CodeEdit::attribPattern = std::regex(R"(([a-zA-Z_]+?)(?:\s+)?=)");
 const std::regex CodeEdit::expPattern = std::regex(R"(\^(?:(\([^;\n]+\))|((?:[0-9]+?)?(?:[\w_.]+)?)))");
 
 void CodeEdit::onPaste(){
+	parent->modelChanged();
 	processText();
 }
 
@@ -146,7 +147,6 @@ bool CodeEdit::onKeyPressed(const gui::Key& key)
 
 bool CodeEdit::onKeyReleased(const gui::Key& key)
 {
-	int x = 3;
 	return false;
 }
 

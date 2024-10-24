@@ -190,7 +190,7 @@ void BlockBase::setPosition(const gui::Point& position){
 {
 	_r.setOrigin(position);
 	if (!fontInit) {
-		if(GlobalEvents::settingsVars.font.cCompareNoCase("default") == 0)
+		if(GlobalEvents::settingsVars.font.cCompareNoCase("Default") == 0)
 			blockFont.create("Times", 14, gui::Font::Style::Normal, gui::Font::Unit::LogicalPixel);
 		else
 			blockFont.create(GlobalEvents::settingsVars.font, 14, gui::Font::Style::Normal, gui::Font::Unit::LogicalPixel);

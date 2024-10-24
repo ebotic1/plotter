@@ -15,16 +15,18 @@ void MainWindow::simulate()
     if(_tabView.getNumberOfViews() == 0)
         return;
 
-    simulate((ViewForTab*)_tabView.getCurrentView());
+    auto view = dynamic_cast<ViewForTab*>(_tabView.getCurrentView());
+    if(view != nullptr)
+        simulate(view);
 }
 
 MainWindow::MainWindow()
     : gui::Window(gui::Geometry(100, 10, 1500, 1000)),
       _tabView(gui::TabHeader::Type::Dynamic, 5, 25),
-      _hLayout(2),
       textEditorIcon(":txtIcon"),
       guiEditorIcon(":guiIcon"),
-      _switcherView(2)
+      _switcherView(2),
+      dataDrawer(&_tabView)
 {
     setTitle("Model Maker");
     _mainMenuBar.setAsMain(this);
@@ -35,17 +37,7 @@ MainWindow::MainWindow()
 
     GlobalEvents::settingsVars.loadSettingsVars(getApplication());
     if (GlobalEvents::settingsVars.embedPlot) {
-        _hLayout << _switcherView << dataDrawer;
-        mainView = new gui::View;
-        splitterView = new gui::SplitterLayout(gui::SplitterLayout::Orientation::Horizontal);
-        splitterView->setContent(_switcherView, dataDrawer);
-        mainView->setLayout(splitterView);
-        setCentralView(mainView);
         plotEmbedded = true;
-    }
-    else {
-
-        setCentralView(&_switcherView);
     }
 
     _tabView.onClosedView([this](int) {
@@ -54,7 +46,7 @@ MainWindow::MainWindow()
     });
 
     _switcherView.addView(&_tabView);
-
+    setCentralView(&_switcherView);
 
 }
 
@@ -100,7 +92,7 @@ void MainWindow::addTab(ViewForTab::BaseClass *tab, const td::String &settingsSt
         wholeTab = new ViewForTab(ptr, settingsStr);
         _tabView.addView(wholeTab, "", &textEditorIcon);
         changeTabName(wholeTab->getName().isNull()  ? tr("newTextTab") : wholeTab->getName(), wholeTab);
-        if (path.endsWith(".txt"))
+        if (path.endsWith(".modl"))
             wholeTab->setPath(path);
     }
 
@@ -160,17 +152,22 @@ bool MainWindow::onActionItem(gui::ActionItemDescriptor& aiDesc)
 
     if(action == menuBarActionIDs::ODE){
         openFile(gui::getResFileName(":ODE"));
-        ViewForTab *view = (ViewForTab*)_tabView.getView(_tabView.getNumberOfViews() - 1);
+#ifndef MU_DEBUG
+        ViewForTab *view = dynamic_cast<ViewForTab*>(_tabView.getView(_tabView.getNumberOfViews() - 1));
+        if (view == nullptr)
+            return;
+
         view->setPath("");
+#endif // !MU_DEBUG
+        
     }
-
-
-    ViewForTab *currentView = (ViewForTab*)this->_tabView.getCurrentView();
+    
+    ViewForTab *currentView = dynamic_cast<ViewForTab*>(this->_tabView.getCurrentView());
 
     if(action == menuBarActionIDs::OpenFromFile){
-        auto &o = *new gui::OpenFileDialog(this, tr("openModel"), {{"Text model", "*.txt"}, {"XML model", "*.xml"}, {tr("tfFile"), "*.tfstate"} }, tr("open"));
+        auto &o = *new gui::OpenFileDialog(this, tr("openModel"), {{"Text model editor", "*.modl"}, {"XML model", "*.xml"}, {tr("tfFile"), "*.tfstate"} }, tr("open"));
         if(menuID == subMenuIDs::subMenuModel){
-           if(_tabView.getNumberOfViews() == 0)
+           if(currentView == nullptr)
                 return true;
             o.openModal([currentView](gui::FileDialog* d){
                 auto path = d->getFileName();
@@ -193,7 +190,7 @@ bool MainWindow::onActionItem(gui::ActionItemDescriptor& aiDesc)
     }
 
 
-   if(_tabView.getNumberOfViews() == 0) //ostale akcije nemaju smisla ako nema ni jedan tab otvoren
+   if(currentView == nullptr) //ostale akcije nemaju smisla ako nema ni jedan tab otvoren
         return true;
 
 
@@ -243,7 +240,7 @@ void MainWindow::openFile(const td::String& path)
             delete ptr;
     };
 
-    if (path.endsWith(".txt") || path.endsWith(".xml")) {
+    if (path.endsWith(".modl") || path.endsWith(".xml")) {
         auto ptr = new TextEditorView;
         openF(ptr);
     }
@@ -282,7 +279,9 @@ DataDraw* MainWindow::getDataDrawer(bool openWindow)
 
     if (getAttachedWindow(DataDrawerWindow::dataDrawerWindowID) == nullptr){
         dataDrawerPtr = new DataDraw; //workaround, view koji se nalazi u gui::Window prestaje biti validan nakon njegovog gasenja
-        (new DataDrawerWindow(this, dataDrawerPtr))->open();
+        auto ptr = new DataDrawerWindow(this, dataDrawerPtr);
+        ptr->setTitle("Simulation results");
+        ptr->open();
     }
 
 
@@ -324,11 +323,12 @@ const modelNode &MainWindow::getModelFromTabOrFile(const td::String &modelNameOr
         
 	
     }else{ //tab
-
-        for(int i = 0; i<_tabView.getNumberOfViews(); ++i)
-            if(((ViewForTab *)_tabView.getView(i))->getName() == modelNameOrPath){
+        ViewForTab* tab;
+        for (int i = 0; i < _tabView.getNumberOfViews(); ++i)
+            tab = dynamic_cast<ViewForTab*>(_tabView.getView(i));
+            if(tab != nullptr && tab->getName() == modelNameOrPath){
                 sucess = true;
-                return ((ViewForTab *)_tabView.getView(i))->getModelNode(sucess);
+                return tab->getModelNode(sucess);
             }        
         throw (exceptionCantFindTab) modelNameOrPath;
     }
@@ -346,8 +346,7 @@ bool MainWindow::shouldClose()
 
 MainWindow::~MainWindow()
 {
-    delete mainView;
-    delete splitterView;
+
     
 }
 

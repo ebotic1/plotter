@@ -4,14 +4,25 @@
 #include "td/String.h"
 #include <stack>
 
-#define BACK_COMMENT_CHAR "ˇ"
+#define BACK_COMMENT_CHAR "`"
 #define INDENT_CHAR "\t"
 
 const std::unordered_set<td::String> baseNode::attributeKeywords{"type", "domain", "name", "eps", "dT", "signal", "out", "desc", "method"};
-//const td::String baseNode::attributeKeywords[] = { "type", "domain", "name", "eps", "dT", "signal", "out", "desc", "method"};
+const std::unordered_set<td::String> baseNode::functionKeywords{ "abs","acos","asin","atg","cos","exp","sqrt","ln","log",\
+"sin","tg", "sqr", "atan2", "sign", "sinh", "cosh", "tgh", "asnh", "acsh", "atgh", "disc","conj", "real", "imag" };
+
+unsigned int baseNode::_processingLine = 0;
+
 const std::regex baseNode::varPatten = std::regex(R"((base\.|^|[^A-Za-z_\.])([a-zA-Z_](?:[\w0-9.]+?)?)(?:$|[^\w.]))");
-const std::unordered_set<td::String> baseNode::functionKeywords{"abs","acos","asin","atg","cos","exp","sqrt","ln","log",\
-"sin","tg", "sqr", "atan2", "sign", "sinh", "cosh", "tgh", "asnh", "acsh", "atgh", "disc","conj", "real", "imag"};
+const std::regex baseNode::_lineExtract = std::regex(R"(\s*([^;\n]*?):?[ \t]*(?:(?:$|;|\n)|(?:(?://|#)([^\n]*))))");
+const std::regex baseNode::_attribsExtract(R"((?:,|\[)\s*(\w+?)\s*=\s*(\w+))");
+
+std::cmatch baseNode::match;
+std::cmatch baseNode::match2;
+
+
+
+
 
 
 void baseNode::printNodeToString(td::String& string) const
@@ -39,26 +50,41 @@ bool baseNode::printNode(const td::String& path) const
 void baseNode::printNode(xml::Writer& w) const
 {
 	w.startNode(this->getName());
-	for (auto & at : this->attribs)
+	for (auto & at : this->_attribs)
 		w.attribute(at.first.c_str(), at.second);
-
-
 
 	if (nodes.size() == 0)
 		w.endNode();
 
 	cnt::PushBackVector<td::String> comSides;
 
-	if (!comment.isNull()) {
-		cnt::PushBackVector<td::String> coms;
-		comment.split(BACK_COMMENT_CHAR, comSides, true, true);
+	const char* backCommentStart = _comment.end();
 
-		comSides[0].split("\n", coms, true, true);
-		if (!coms[0].isNull())
-			w.comment(coms[0].c_str());
-		for (int i = 1; i < coms.size(); ++i)
-			if (!coms[i].isNull())
-				w.comment(coms[i].c_str()); //treba commentInNewLine ali kad se popravi funkcija
+	if (!_comment.isNull()) {
+		const char* debug = _comment.c_str();
+
+		int poz = _comment.find(BACK_COMMENT_CHAR);
+		if (poz != -1)
+			backCommentStart = _comment.begin() + poz;
+
+		if (poz != 0) {
+
+			const char* ptr = nullptr, * begin = _comment.begin();
+
+			ptr = std::find(begin, backCommentStart, '\n');
+			if (ptr != begin)
+				w.comment(td::String(begin, ptr - begin).c_str());
+			begin = ptr + 1;
+
+			while (ptr != backCommentStart) {
+				ptr = std::find(begin, backCommentStart, '\n');
+				if (ptr == begin)
+					w.comment("\n");
+				else
+					w.commentInNewLine(td::String(begin, ptr - begin).c_str());
+				begin = ptr + 1;
+			}
+		}
 
 	}
 
@@ -69,16 +95,55 @@ void baseNode::printNode(xml::Writer& w) const
 		w.endNode();
 	}
 
+	
 
 	//'BACK_COMMENT_CHAR' oznacava da se komentar printa na kraju elementa
-	cnt::PushBackVector<td::String> coms;
-	for (int i = 1; i < comSides.size(); ++i)
-		comSides[i].split("\n", coms, true, false);
-	for (int i = 0; i < coms.size(); ++i)
-		if (!coms[i].isNull())
-			w.commentInNewLine(coms[i].c_str());
+
+
+if (backCommentStart != _comment.end()) {
+	const char* ptr = nullptr;
+
+	++backCommentStart;
+
+		while (ptr != _comment.end()) {
+			ptr = std::find(backCommentStart, _comment.end(), BACK_COMMENT_CHAR[0]);
+			if (ptr == backCommentStart)
+				w.comment("\n");
+			else
+				w.commentInNewLine(td::String(backCommentStart, ptr - backCommentStart).c_str());
+			backCommentStart = ptr + 1;
+		}
+	}
+	
 
 }
+
+
+template<baseNode::ConstExprString ...excludeAttribs>
+void baseNode::prettyPrintAttribs(cnt::StringBuilder<>& str) const
+{
+	bool firstAttrib = true;
+	for (const auto& a : _attribs) {
+		if (((a.first.cCompare(excludeAttribs.get()) == 0) || ...))
+			continue;
+		if (firstAttrib) {
+			str << " [ ";
+			firstAttrib = false;
+		}
+		else
+			str << ", ";
+		str << a.first << " = " << a.second;
+	}
+	if (!firstAttrib)
+		str << " ]";
+
+
+}
+
+template void baseNode::prettyPrintAttribs<"fx">(cnt::StringBuilder<>&) const;
+template void baseNode::prettyPrintAttribs<"fx", "cond">(cnt::StringBuilder<>&) const;
+template void baseNode::prettyPrintAttribs<"name", "val">(cnt::StringBuilder<>&) const;
+
 
 
 
@@ -89,33 +154,79 @@ void baseNode::prettyPrint(td::String& text) const
 	
 	std::stack<const baseNode*> stack;
 	stack.push(this);
-	const baseNode* current;
+	const baseNode* current=nullptr;
+	bool newline;
+
+	const auto closeNode = [&current, &str, &indent](const baseNode *node) {
+		node->prettyPrintClosing(str, indent);
+
+		if (node->_comment.isNull())
+			return;
+	
+		const char* ptr;
+		const char* begin = std::find(node->_comment.begin(), node->_comment.end(), BACK_COMMENT_CHAR[0]);
+
+		if (begin == node->_comment.end())
+			return;
+
+		++begin;
+		while (true) {
+			ptr = std::find(begin, node->_comment.end(), BACK_COMMENT_CHAR[0]);
+			if (ptr != node->_comment.end()) {
+				str << indent << "//";
+				str.appendString(begin, ptr - begin);
+				str << "\n";
+				begin = ptr + 1;
+			}
+			else
+				break;
+		}
+		str << indent << "//";
+		str.appendString(begin, node->_comment.end() - begin);
+		str << "\n";
+		
+	};
 
 	while (!stack.empty()) {
 		current = stack.top();
 		
 		if (current == nullptr) {
 			stack.pop();
-			stack.top()->prettyPrintClosing(str, indent);
+			closeNode(stack.top());
 			stack.pop();
 			continue;
 		}
+		
+		newline = current->prettyPrint(str, indent);
 
+		if (!current->_comment.isNull()) {
+			const char* bc = std::find(current->_comment.begin(), current->_comment.end(), BACK_COMMENT_CHAR[0]);
+			const char* ptr, * begin = current->_comment.begin();
+			
+			while (true) {
+				ptr = std::find(begin, bc, '\n');
+				if (ptr != bc) {
+					if (begin != ptr) {
+						str << "//";
+						str.appendString(begin, ptr - begin);
+						
+					}
+					str << "\n" << indent;
+					begin = ptr + 1;
+				}
+				else
+					break;
+			}
 
-		if (!current->comment.isNull()) {
-			int bc = comment.find(BACK_COMMENT_CHAR);
-			if(bc != -1)
-				str << indent << "//" << td::String(current->comment.begin() + bc + 1, current->comment.length() - bc - 1) << "\n";
+			if (bc != begin) {
+				str << "//";
+				str.appendString(begin, bc - begin);
+			}
 		}
 
+		if (newline)
+			str << "\n";
 		
-		current->prettyPrint(str, indent);
-
-
-		
-
-
-
 		if (!current->nodes.empty()) {
 			stack.push(nullptr);
 
@@ -124,7 +235,7 @@ void baseNode::prettyPrint(td::String& text) const
 
 		}else{
 			stack.pop();
-			current->prettyPrintClosing(str, indent);
+			closeNode(current);
 		}
 
 		
@@ -135,159 +246,181 @@ void baseNode::prettyPrint(td::String& text) const
 
 
 
-size_t baseNode::addLine(std::vector<std::pair<td::String, td::String>> &lines, size_t startLine) {
-	while (startLine < lines.size()) {
-		if (lines[startLine].first.isNull() && !lines[startLine].second.isNull()) {
-			if (lastChlid->nodes.size() != 0) {
-				lastChlid->nodes.back()->addComment(BACK_COMMENT_CHAR);
-				lastChlid->nodes.back()->addComment(lines[startLine].second);
-			}
-			else {
-				lastChlid->addComment("\n");
-				lastChlid->addComment(lines[startLine].second);
-			}
-			++startLine;
-			continue;
+
+void baseNode::addLine(const char* start, const char* end, const char* comment, int commentLen)
+{
+
+	td::String attrib;
+	baseNode* child = nullptr;
+	bool childAdded = false;
+
+	const char* poz1 = std::find(start, end, '[');
+	const char *poz2 = std::find(start, end, ']'); // oznacavanje pocetka i kraja atributa
+
+	if(!(poz1 == end && poz2 == end))
+		if (poz1 > poz2 || (poz1 != end && poz2 == end) || (poz1 == end && poz2 != end) || (poz1 != start && poz2 != end-1)) //ako nisu ispravno postavljenje zagrade []
+		{
+			throw(modelNode::exceptionInvalidCommand(td::String(start, end-start), _processingLine));
 		}
 
-		int pozEq = lines[startLine].first.find("=");
 
-		bool found = false;
-		if (pozEq != -1) {
-			td::String keyword = lines[startLine].first.subStr(0, pozEq - 1).trimRight();
-			if(attributeKeywords.contains(keyword))
-            {
-                lastChlid->setAttrib(lines[startLine].first.subStr(0, pozEq - 1).trimRight(), lines[startLine].first.subStr(pozEq + 1, -1).trimLeft());
-                lastChlid->addComment(lines[startLine].second);
-                found = true;
-            }
-		}
-		if (found) {
-			++startLine;
-			continue;
-		}
-		baseNode* child = nullptr;
-		if (lastChlid->nodeAction(lines[startLine].first, child)) {
+	const char* cmndStart = (poz1 == start) ? poz2 + 1 : start;
+	const char* cmndEnd = (poz2 == end-1) ? poz1 : end;
+
+
+
+	if(!(poz1 == start && poz2 == end)) { //procesiranje komande ako postoji
+		// ovdje bi se mogao dodati check da ako je je current node model ili single equation koji posjeduje atribut cond ili condition node tipa 'else', onda *end mora biti ':'
+
+		while (*cmndStart == ' ' || *cmndStart == '\t')
+			++cmndStart;
+
+		--cmndEnd;
+		while (*cmndEnd == ' ' || *cmndEnd == '\t')
+			--cmndEnd;
+		++cmndEnd;
+
+		while (!lastChlid->nodeAction(cmndStart, cmndEnd, child)) {
 			if (child != nullptr) {
-				child->parent = lastChlid;
-				child->addComment(lines[startLine].second);
 				lastChlid = child;
-				startLine = child->addLine(lines, startLine + 1);
+				child = nullptr;
+				childAdded = true;
 				continue;
 			}
-			lastChlid->addComment(lines[startLine].second);
- 			++startLine;
-			continue;
+			lastChlid = lastChlid->parent;
+			if(lastChlid == nullptr)//nema se vise kome proslijediti komanda svi node-ovi su je odbili. Ovo se moze desit ako se stavi previse puta 'end'
+				throw(modelNode::exceptionInvalidCommand(td::String(cmndStart, cmndEnd - cmndStart), _processingLine));
+			}
+
+
+		if (childAdded == true || child != nullptr) {
+			if(child != nullptr)
+				lastChlid = child;
+			lastChlid->_comment.fromKnownString(comment, commentLen);
+		}
+		else {
+			lastChlid->addComment(td::String(comment, commentLen), false, true);
+
+			if (child == nullptr && poz1 != end) //komanda ne stvara novi node ali postavlja atribute
+				throw(modelNode::exceptionInvalidCommand(td::String(match[1].first, match[1].length()), _processingLine));
 		}
 
-		if (child != nullptr) {
-			child->parent = lastChlid;
-			lastChlid = child;
-			startLine = child->addLine(lines, startLine);
-			continue;
+		
+		if (poz1 != end) { //pocesiranje atributa ako postoje
+			while (std::regex_search(poz1, poz2, match2, _attribsExtract)) {
+				attrib.fromKnownString(match2[1].first, match2[1].length());
+
+				if (!attributeKeywords.contains(attrib))
+					throw(modelNode::exceptionInvalidAttribute(std::move(attrib), _processingLine));
+
+				lastChlid->_attribs[attrib].fromKnownString(match2[2].first, match2[2].length());
+
+				poz1 = match2.suffix().first;
+			}
 		}
 
-		break;
+	}else
+		throw(modelNode::exceptionInvalidCommand(td::String(start, end - start), _processingLine));
+
+}
+
+
+
+void baseNode::processCommands(const td::String& text)
+{
+	parent = nullptr;
+	_processingLine = 0;
+	const char* start = text.begin();
+	while (std::regex_search(start, text.end(), match, _lineExtract)) {
+		if (match[1].length() == 0) {
+			if (match[2].matched) {
+				if (lastChlid != nullptr) {
+					if(lastChlid->_done)
+						lastChlid->addComment(td::String(match[2].first, match[2].length()), false, true);
+					else
+						lastChlid->addComment(td::String(match[2].first, match[2].length()), true, false);
+				}
+			}
+			else
+				break;
+		}
+		else {
+			addLine(match[1].first, match[1].first + match[1].length(), match[2].first, match[2].length());
+		}
+		++_processingLine;
+		start = match.suffix().first;
 	}
 
+}
+
+bool baseNode::prettyPrint(cnt::StringBuilder<>& str, td::String& indent) const
+{
+	str << indent << getName();
+	prettyPrintAttribs<>(str);
+	str << ":";
 	if (parent != nullptr)
-		parent->lastChlid = parent;
-
-	return startLine;
+		indent += INDENT_CHAR;
+	return true;
 }
 
-void baseNode::prettyPrint(cnt::StringBuilder<>& str, td::String& indent) const
-{
-	if(parent != nullptr && !parent->attribs.empty())
-		str << indent << "\n";
-	str << indent << getName() << ":";
-	prettyPrintComment(str);
-	str << "\n";
-	indent += INDENT_CHAR;
-	for (const auto& attrib : attribs)
-		str << indent << attrib.first << " = " << attrib.second << "\n";
 
-}
-
-void baseNode::prettyPrintComment(cnt::StringBuilder<>& str) const
-{
-	if (comment.isNull())
-		return;
-	
-	str << " //";
-	if (int poz = comment.find(BACK_COMMENT_CHAR); poz == -1)
-		str << comment;
-	else
-		str << td::String(comment.begin(), poz-1);
-
-}
 
 void baseNode::prettyPrintClosing(cnt::StringBuilder<> &str, td::String &indent) const
 {
-	indent.reduceSize(1);
+	str << "\n";
+	if (parent != nullptr)
+		indent.reduceSize(1);
 }
-void baseNode::addComment(const td::String &comment)
+void baseNode::addComment(const td::String &comment,bool forceNewline, bool exitComment)
 {
     if (comment.isNull())
 		return;
-	this->comment += comment;
+	if (!exitComment) {
+		if (!this->_comment.isNull() || forceNewline) {
+			this->_comment += "\n";
+			this->_comment += comment;
+		}
+		else
+			this->_comment = comment;
+	}
+	else {
+		this->_comment += BACK_COMMENT_CHAR;
+		this->_comment += comment;
+	}
+
 }
 
-void baseNode::addComment(td::String&& comment) {
-	if (comment.isNull())
-		return;
-	if (this->comment.isNull())
-		this->comment = comment;
-	else {
-		this->comment += comment;
-	}
-}
 
 void baseNode::addChild(baseNode *childNode)
 {
 	nodes.emplace_back(childNode);
 	nodes.back()->parent = this;
 }
-void baseNode::processCommands(const td::String &text)
-{
-    std::vector<std::pair<td::String, td::String>> lines;
-	cnt::PushBackVector<td::String> l;
-	parent = nullptr;
-	text.split("\n;", l, true, true);
-	int poz;
-	for (int i = 0; i < l.size(); ++i) {
-		l[i] = l[i].trim();
-		if(l[i].isNull())
-			continue;
-		poz = l[i].find("//");
 
-		if (poz == -1)
-			lines.emplace_back<std::pair<td::String, td::String>>({ l[i], "" });
-		else if (poz != 0)
-			lines.emplace_back<std::pair<td::String, td::String>>({ l[i].subStr(0,poz - 1).trimRight(), l[i].subStr(poz + 2, -1).trimLeft()});
-		else
-			lines.emplace_back<std::pair<td::String, td::String>>({ "", l[i].subStr(poz + 2, -1).trimLeft()});
-	}
-	addLine(lines);
+void baseNode::setAsDone()
+{
+	_done = true;
 }
+
 
 void baseNode::clear()
 {
 	for (const auto& node : nodes)
 		delete node;
 	nodes.clear();
-	attribs.clear();
-	comment.clean();
+	_attribs.clear();
+	_comment.clean();
 	lastChlid = this;
 	parent = nullptr;
 }
 
 baseNode::baseNode(const baseNode &node, const td::String &alias)
 {
-	comment = node.comment;
+	_comment = node._comment;
 	lastChlid = node.lastChlid;
 	parent = node.parent;
-	attribs = node.attribs;
+	_attribs = node._attribs;
+	_done = node._done;
 	for (const auto& n : node.nodes)
 		nodes.emplace_back(n->createCopy(alias));
 }
@@ -306,10 +439,10 @@ baseNode::baseNode()
 
 baseNode::baseNode(const baseNode& node)
 {
-	comment = node.comment;
+	_comment = node._comment;
 	lastChlid = node.lastChlid;
 	parent = node.parent;
-	attribs = node.attribs;
+	_attribs = node._attribs;
 	for (const auto& n : node.nodes)
 		nodes.emplace_back(n->createCopy(""));
 }

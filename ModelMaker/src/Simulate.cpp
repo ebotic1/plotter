@@ -389,7 +389,7 @@ int MainWindow::simulate(ViewForTab *tab)
 	}
 	
 	bool isComplex;
-	if(auto it = model.attribs.find("domain"); it == model.attribs.end())
+	if(auto it = model._attribs.find("domain"); it == model._attribs.end())
 		isComplex = false;
 	else{
 		isComplex = (it->second.cCompareNoCase("cmplx") == 0 || it->second.cCompareNoCase("complex") == 0) ? true : false;
@@ -401,7 +401,7 @@ int MainWindow::simulate(ViewForTab *tab)
     const char* testFileName = nullptr;
     
 	EquationTypes equationType;
-	if(auto it = model.attribs.find("type"); it == model.attribs.end()){
+	if(auto it = model._attribs.find("type"); it == model._attribs.end()){
 		logView.appendLog("model does not have attribute 'type', assuming 'NR'(nonlinear equations)", LogType::warning);
 		equationType = EquationTypes::NR;
 	}else{
