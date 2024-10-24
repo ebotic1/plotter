@@ -110,8 +110,7 @@ conditionNode::conditionNode(type t) : tip(t) {}
 
 
 
-
-static inline void addAlias(td::String &line, const td::String& alias) { //doda ime ispred varijable npr import.x, takoder dodaje "*" ispred varijable npr 3x pretvara u 3*x
+static inline void addAlias(td::String& line, const td::String& alias) { //doda ime ispred varijable npr import.x, takoder dodaje "*" ispred varijable npr 3x pretvara u 3*x
 
 	std::cmatch match;
 	cnt::StringBuilderSmall str;
@@ -124,13 +123,15 @@ static inline void addAlias(td::String &line, const td::String& alias) { //doda 
 		td::String var(match[2].first, match[2].length());
 		if constexpr (IMPLICIT_MULTIPLY) {
 			if (match[2].first != line.begin() && std::isdigit(*(match[2].first - 1))) {
-				str << td::String(previousEnd, match[2].first - previousEnd) << "*";
+				str.appendString(previousEnd, match[2].first - previousEnd);
+				str << "*";
 				previousEnd = match[2].first;
 			}
 		}
 		if (!alias.isNull()) {
 			if (!modelNode::functionKeywords.contains(var)) {
-				str << td::String(previousEnd, match[2].first - previousEnd) << alias << ".";
+				str.appendString(previousEnd, match[2].first - previousEnd);
+				str << alias << ".";
 				previousEnd = match[2].first;
 			}
 		}
@@ -138,13 +139,15 @@ static inline void addAlias(td::String &line, const td::String& alias) { //doda 
 
 		start = match.suffix().first;
 	}
-	
+
 	if (start != line.begin()) {
-		str << td::String(previousEnd, line.end() - previousEnd);
+		str.appendString(previousEnd, line.end() - previousEnd);
 		str.getString(line);
 	}
 
 }
+
+
 
 class singleEquation : public baseNode {
 	bool consumeEnd = false;
