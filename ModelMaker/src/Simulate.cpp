@@ -511,7 +511,9 @@ int MainWindow::simulate(ViewForTab *tab)
 			else 
 				for (const auto& symIndex : symbs)
 					autoFuncs.push_back(ModelSettings::FunctionDesc(ModelSettings::FunctionDesc::Type::graph, s->getSymbolName(symIndex), s->getSymbolName(symIndex), "t"));
-			
+
+			if (autoFuncs.empty())
+				logView.appendLog("No out variables found. You must add 'out=true' attribute to a single variable or the variable declaration tag for them to be visible to the plotter", LogType::warning);
 		}
 
 		auto buffer = new SolutionBuffer(tab->getName(), &logView, initSucess, useAutoFuncs ? autoFuncs : funcs, size, s);

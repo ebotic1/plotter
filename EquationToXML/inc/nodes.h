@@ -72,7 +72,7 @@ protected:
 	virtual bool prettyPrint(cnt::StringBuilder<>& str, td::String &indent) const;
 	virtual void prettyPrintClosing(cnt::StringBuilder<>& str, td::String &indent) const;
 	template<ConstExprString... excludeAttribs>
-	void prettyPrintAttribs(cnt::StringBuilder<>& str) const;
+	static void prettyPrintAttribs(cnt::StringBuilder<>& str, const baseNode *nodeAtribs);
 	void clear();
 	baseNode(const baseNode& node, const td::String &alias);
 
@@ -81,7 +81,7 @@ public:
 	static const std::unordered_set<td::String> attributeKeywords, functionKeywords;
 	std::map<td::String, td::String> _attribs;
 	static const std::regex varPatten;
-	const std::vector<baseNode*> &getNodes();
+	const std::vector<baseNode*> &getNodes() const;
 	baseNode *getParent() const;
 	baseNode();
 	baseNode(baseNode&&) = delete;

@@ -58,6 +58,9 @@ public:
         colors.emplace_back(f.getColor());
     };
 
+    gui::CoordType getLength() {
+        return length + offset + rectSize;
+    }
    
 };
 
@@ -610,31 +613,22 @@ void Graph::setUpDrawingWindow(){
     drawingWindow.point.x = 0;
 
     if (drawMargins) {
-        gui::Point center;
-        center.x = drawingWindow.point.x + drawingWindow.size.width / 2;
-        center.y = drawingWindow.point.y + drawingWindow.size.height / 2;
+        //gui::Point center;
+        //center.x = drawingWindow.point.x + drawingWindow.size.width / 2;
+        //center.y = drawingWindow.point.y + drawingWindow.size.height / 2;
 
-        drawingWindow.size.width /= marginsFactor;
-        drawingWindow.size.height /= marginsFactor;
-        drawingWindow.point.x = center.x - drawingWindow.size.width / 2;
-        drawingWindow.point.y = center.y - drawingWindow.size.height / 2;
+        drawingWindow.size.width -= _margins.marginLeft + _margins.marginRight;
+        drawingWindow.size.height -= _margins.marginTop + _margins.marginBottom;
+        drawingWindow.point.x = _margins.marginLeft;
+        drawingWindow.point.y = _margins.marginTop;
     }
 
     ZoomToWindow(past);
     drawingRect.setOriginAndSize({ drawingWindow.point.x, drawingWindow.point.y }, drawingWindow.size);
 
-
 }
 
 
-
-void Graph::showMargins(double reductionFactor){
-    drawMargins = (reductionFactor >= 1) ? true : false;
-    if (drawMargins)
-        marginsFactor = reductionFactor;
-    setUpDrawingWindow();
-    reDraw();
-}
 
 void Graph::reset(){
     pastColors.clear();
@@ -657,6 +651,16 @@ void Graph::setBackgroundColor(td::ColorID color){
 
 void Graph::setAxisColor(td::ColorID boja){
     axisColor = boja;
+    reDraw();
+}
+
+void Graph::setMargins(double top, double left, double right, double bottom)
+{
+    double _marginTop = top;
+    double _marginRight = right;
+    double _marginBottom = bottom;
+    double _marginLeft = left;
+    setUpDrawingWindow();
     reDraw();
 }
 
@@ -835,11 +839,12 @@ void Graph::onDraw(const gui::Rect& rect){
 
     drawAxis();
 
+
     if (funkcije.size() == 0)
         return;
 
     if (_drawLegend)
-        legenda->draw({ rect.right - 20, rect.top + 20 });
+        legenda->draw({ (_legendLocation.x < 0) ? rect.right + _legendLocation.x : _legendLocation.x, (_legendLocation.y < 0) ? rect.bottom + _legendLocation.x : _legendLocation.y });
 
     for (size_t i = 0; i < verticals.size(); ++i) {
         gui::CoordType xVal = funkcije[0].realToTransformedX(verticals[i]);
@@ -914,6 +919,12 @@ void Graph::changeColor(td::ColorID color, size_t function){ // todo: modifokova
     reDraw();
 }
 
+void Graph::setLegendLocation(const gui::Point& location)
+{
+    _legendPositionChanged = true;
+    _legendLocation = location;
+}
+
 
 
 
@@ -962,18 +973,19 @@ void Graph::drawAxis(){
     if (funkcije.size() == 0)
         return;
 
-    gui::Point zero(funkcije[0].realToTransformedX(0), funkcije[0].realToTransformedY(0)); //drawing x and y axis
-    if (drawingRect.left <= zero.x && zero.x <= drawingRect.right) 
-        gui::Shape::drawLine({ zero.x, drawingRect.bottom }, { zero.x, drawingRect.top }, axisColor, 1.8);
-    if (drawingRect.top <= zero.y && zero.y <= drawingRect.bottom)
-        gui::Shape::drawLine({ drawingRect.left, zero.y }, { drawingRect.right, zero.y }, axisColor, 1.8);
 
+        gui::Point zero(funkcije[0].realToTransformedX(0), funkcije[0].realToTransformedY(0)); //drawing x and y axis
+        if (drawingRect.left <= zero.x && zero.x <= drawingRect.right)
+            gui::Shape::drawLine({ zero.x, drawingRect.bottom }, { zero.x, drawingRect.top }, axisColor, 1.8);
+        if (drawingRect.top <= zero.y && zero.y <= drawingRect.bottom)
+            gui::Shape::drawLine({ drawingRect.left, zero.y }, { drawingRect.right, zero.y }, axisColor, 1.8);
+   
 
 
     gui::CoordType scaleX, scaleY;
     funkcije[0].getScale(scaleX, scaleY);
 
-    static double gridLineSpaceX = std::log(5000.0 / gui::Display::getDefaultLogicalPixelToMmVRatio());  //200 mm za svaku grid liniju
+    static double gridLineSpaceX = std::log(7000.0 / gui::Display::getDefaultLogicalPixelToMmVRatio());  //200 mm za svaku grid liniju
     static double gridLineSpaceY = std::log(5000.0 / gui::Display::getDefaultLogicalPixelToMmHRatio());
 
     gui::CoordType len = drawingWindow.size.width / scaleX;
@@ -997,8 +1009,8 @@ void Graph::drawAxis(){
 
    
 
-    const gui::CoordType xAxisHeight = drawMargins ? drawingRect.bottom : funkcije[0].realToTransformedY(0);
-    const gui::CoordType yAxisWidth = drawMargins ? drawingWindow.point.x : funkcije[0].realToTransformedX(0);
+    const gui::CoordType xAxisHeight = _drawNumbersOutside ? drawingRect.bottom : funkcije[0].realToTransformedY(0);
+    const gui::CoordType yAxisWidth = _drawNumbersOutside ? drawingWindow.point.x : funkcije[0].realToTransformedX(0);
     while (line < drawingWindow.point.x + drawingWindow.size.width || lineY >= drawingWindow.point.y){
 
         constexpr double markLen = 7;
@@ -1007,7 +1019,7 @@ void Graph::drawAxis(){
 
             gui::DrawableString broj(to_string(startValY));
      
-            if (drawMargins) {
+            if (_drawNumbersOutside) {
                 gui::Size sz;
                 broj.measure(FONT, sz);
                 broj.draw({ yAxisWidth - markLen - 10 - sz.width,  lineY - numberHeight / 2 }, FONT, axisColor);
@@ -1027,7 +1039,7 @@ void Graph::drawAxis(){
             gui::Size sz;
             broj.measure(FONT, sz);
 
-            if (drawMargins) 
+            if (_drawNumbersOutside)
                 broj.draw({ line - sz.width / 2, xAxisHeight + numberHeight + 5 }, FONT, axisColor);
             else 
                 broj.draw({ line - sz.width / 2 + 9, xAxisHeight - numberHeight - 22 }, FONT, axisColor);
@@ -1050,26 +1062,25 @@ void Graph::drawAxis(){
     gui::Rect r({ 0, 0}, gui::Size({ drawingWindow.size.width, 100 }));
     //axis names
     {
-        //TO Fix
-        gui::Transformation::saveContext();
         gui::Transformation tr;
-        
-        
-        tr.translate(drawingRect.left, drawingRect.bottom + 100);
+           
+        constexpr double yAxisNameSeperation = 150;
+        constexpr double xAxisNameSeperation = 86;
+
+        tr.saveContext();
+        tr.translate(drawingRect.left, drawingRect.bottom + xAxisNameSeperation);
         tr.setToContext();
         this->xAxisName.draw(r, FONT, axisColor, td::TextAlignment::Center);
-        gui::Transformation::restoreContext();
-    }
-    {
-        gui::Transformation::saveContext();
-        gui::Transformation tr;
-        r.setWidth(drawingWindow.size.height);
+        tr.restoreContext();
+        tr.saveContext();
 
-        tr.translate(drawingRect.left - 135, drawingRect.bottom);
+        r.setWidth(drawingWindow.size.height);
+        tr.identity();
+        tr.translate(drawingRect.left - yAxisNameSeperation, drawingRect.bottom);
         tr.rotateDeg(-90);
         tr.setToContext();
         this->yAxisName.draw(r, FONT, axisColor, td::TextAlignment::Center);
-        gui::Transformation::restoreContext();
+        tr.restoreContext();
         
     }
 
@@ -1098,7 +1109,24 @@ void Graph::onPrimaryButtonPressed(const gui::InputDevice& inputDevice) {
     }
 
     if (slike[0].rect.contains(inputDevice.getFramePoint())) {
-        showMargins(0);
+        if (!_drawNumbersOutside) {
+            _drawNumbersOutside = true;
+            _margins = _marginsOld;
+        }
+        else {
+            _marginsOld = _margins;
+            _margins.marginBottom = 0;
+            _margins.marginTop = 47; // slika je visine 32, a odvaja se od vrha 5 tako da 37 ukupno
+            _margins.marginLeft = 0;
+            if (_legendPositionChanged)
+                _margins.marginRight = 0;
+            else
+                _margins.marginRight = legenda->getLength() + 20 + 10; //legenda se za 20 odvaja od desnog coska po default-u
+
+            _drawNumbersOutside = false;
+        }
+        setUpDrawingWindow();
+        reDraw();
     }
 
     if (slike[1].rect.contains(inputDevice.getFramePoint())) {
@@ -1316,10 +1344,9 @@ bool Graph::onKeyPressed(const gui::Key& key) {
 
 
     if (key.getVirtual() == gui::Key::Virtual::F11) {
-        if (drawMargins)
-            showMargins(0);
-        else
-            showMargins(marginsFactor);
+        drawMargins = !drawMargins;
+        setUpDrawingWindow();
+        reDraw();
         return true;
     }
 

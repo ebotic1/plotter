@@ -14,7 +14,7 @@ const std::unordered_set<td::String> baseNode::functionKeywords{ "abs","acos","a
 unsigned int baseNode::_processingLine = 0;
 
 const std::regex baseNode::varPatten = std::regex(R"((base\.|^|[^A-Za-z_\.])([a-zA-Z_](?:[\w0-9.]+?)?)(?:$|[^\w.]))");
-const std::regex baseNode::_lineExtract = std::regex(R"(\s*([^;\n]*?):?[ \t]*(?:(?:$|;|\n)|(?:(?://|#)([^\n]*))))");
+const std::regex baseNode::_lineExtract = std::regex(R"(\s*([^;\n]*?)[ \t]*:?[ \t]*(?:(?:$|;|\n)|(?:(?://|#)([^\n]*))))");
 const std::regex baseNode::_attribsExtract(R"((?:,|\[|^)\s*([^=,\s]+?)\s*=\s*([^=,]+?)\s*(?=\]|,|$))");
 
 std::cmatch baseNode::match;
@@ -119,11 +119,13 @@ if (backCommentStart != _comment.end()) {
 }
 
 
+
+
 template<baseNode::ConstExprString ...excludeAttribs>
-void baseNode::prettyPrintAttribs(cnt::StringBuilder<>& str) const
+void baseNode::prettyPrintAttribs(cnt::StringBuilder<>& str, const baseNode* nodeAtribs)
 {
 	bool firstAttrib = true;
-	for (const auto& a : _attribs) {
+	for (const auto& a : nodeAtribs->_attribs) {
 		if (((a.first.cCompare(excludeAttribs.get()) == 0) || ...))
 			continue;
 		if (firstAttrib) {
@@ -136,15 +138,14 @@ void baseNode::prettyPrintAttribs(cnt::StringBuilder<>& str) const
 	}
 	if (!firstAttrib)
 		str << " ]";
-
-
 }
 
-template void baseNode::prettyPrintAttribs<"fx">(cnt::StringBuilder<>&) const;
-template void baseNode::prettyPrintAttribs<"fx", "cond">(cnt::StringBuilder<>&) const;
-template void baseNode::prettyPrintAttribs<"name", "val">(cnt::StringBuilder<>&) const;
 
 
+
+template void baseNode::prettyPrintAttribs<"fx">(cnt::StringBuilder<>&, const baseNode* nodeAtribs);
+template void baseNode::prettyPrintAttribs<"fx", "cond">(cnt::StringBuilder<>&, const baseNode* nodeAtribs);
+template void baseNode::prettyPrintAttribs<"name", "val">(cnt::StringBuilder<>&, const baseNode* nodeAtribs);
 
 
 void baseNode::prettyPrint(td::String& text) const
@@ -356,7 +357,7 @@ void baseNode::processCommands(const td::String& text)
 bool baseNode::prettyPrint(cnt::StringBuilder<>& str, td::String& indent) const
 {
 	str << indent << getName();
-	prettyPrintAttribs<>(str);
+	prettyPrintAttribs<>(str, this);
 	str << ":";
 	if (parent != nullptr)
 		indent += INDENT_CHAR;
@@ -424,7 +425,7 @@ baseNode::baseNode(const baseNode &node, const td::String &alias)
 	for (const auto& n : node.nodes)
 		nodes.emplace_back(n->createCopy(alias));
 }
-const std::vector<baseNode *> &baseNode::getNodes()
+const std::vector<baseNode *> &baseNode::getNodes() const
 {
     return nodes;
 }

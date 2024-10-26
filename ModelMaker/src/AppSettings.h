@@ -21,7 +21,7 @@ class SettingsView: public gui::View{
     int currentLangIndex = -1;
     gui::Frame *mainWindow;
 
-    gui::CheckBox _chBoxEmbed;
+    gui::CheckBox _chBoxEmbed, _chBoxRestoreTabs;
 
     gui::Label _lblFont;
     gui::ComboBox fontCombo;
@@ -39,6 +39,7 @@ public:
         props(getAppProperties()),
         _vl(2),
         _chBoxEmbed(tr("embedGraph")),
+        _chBoxRestoreTabs()
         embededCurrent(GlobalEvents::settingsVars.embedPlot),
         langs(getSupportedLanguages()),
         _lblFont(tr("fontLabel"))

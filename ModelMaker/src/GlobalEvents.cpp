@@ -26,6 +26,7 @@ void SettingsVars::loadSettingsVars(gui::Application* app)
     textSize = props.getValue<float>("textSizeEmir", 14.0);
     font = props.getValue<td::String>("editorFontEmir", "Default");
     embedPlot = (props.getValue<int>("embedPlotEmir", 1) == 1);
+    restoreTabs = (props.getValue<int>("restoreTabsEmir", 1) == 1);
 
 }
 
@@ -65,6 +66,7 @@ void SettingsVars::saveValues()
     props.setValue<float>("textSizeEmir", textSize);
     props.setValue<td::String>("editorFontEmir", font);
     props.setValue<int>("embedPlotEmir", (int)(embedPlot ? 1 : 0));
+    props.setValue<int>("restoreTabsEmir", (int)(restoreTabs ? 1 : 0));
 
 
 }

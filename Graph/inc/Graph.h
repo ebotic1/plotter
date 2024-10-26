@@ -21,7 +21,16 @@ class GRAPH_API Graph : public gui::Canvas {
 	gui::Geometry drawingWindow;
 	gui::Rect drawingRect;
 	bool drawMargins;
-	double marginsFactor = 1.55;
+	bool _drawNumbersOutside = true;
+
+	struct Margins {
+		double marginTop = 80;
+		double marginRight = 200;
+		double marginBottom = 180;
+		double marginLeft = 200;
+	}_margins, _marginsOld;
+
+	gui::Point _legendLocation = { -20.0, 20.0 };
 
 	bool active = false;
 	bool drawGrid = false;
@@ -46,6 +55,7 @@ class GRAPH_API Graph : public gui::Canvas {
 	gui::Point lastMousePos;
 
 	bool _drawLegend = false;
+	bool _legendPositionChanged = false;
 
 	class legend;
 	legend* legenda = nullptr;
@@ -105,7 +115,7 @@ public:
 	const td::String getxAxisName() { return xAxisName.toString(); }
 	const td::String getyAxisName() { return yAxisName.toString(); }
 	td::ColorID getBackgroundColor() { return backgroundColor; }
-	void showMargins(double reductionFactor);
+	void setMargins(double top, double left, double right, double bottom);
 	void showLegend(bool draw) { _drawLegend = draw; reDraw(); }
 	void showGrid(bool draw) { drawGrid = draw; reDraw(); }
 
@@ -122,7 +132,7 @@ public:
 	void changeName(const td::String& name, size_t function);
 	void changePattern(td::LinePattern pattern, size_t function);
 	void changeColor(td::ColorID color, size_t function);
-
+	void setLegendLocation(const gui::Point& location);
 
 	void Zoom(const gui::CoordType& scale);
 	void ZoomToArea(gui::CoordType *minX, gui::CoordType *maxX, gui::CoordType *minY, gui::CoordType *maxY);

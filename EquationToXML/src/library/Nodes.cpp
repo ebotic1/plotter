@@ -79,7 +79,7 @@ public:
 			if (auto itFx = _attribs.find("fx"); itFx != _attribs.end())
 				str << indent << itFx->second;
 
-			prettyPrintAttribs<"fx">(str);
+			prettyPrintAttribs<"fx">(str, this);
 			str << ":";
 			indent += INDENT_CHAR;
 			return true;
@@ -90,12 +90,12 @@ public:
 			return true;
 		}
 
-		return false;
+		return true;
 
 	}
 
 	void prettyPrintClosing(cnt::StringBuilder<>& str, td::String &indent) const override{
-		str << "\n";
+		//str << "\n";
 	}
 
 	bool nodeAction(const char* cmndStart, const char* cmndEnd, baseNode*& newChild) override;
@@ -174,16 +174,17 @@ public:
 	bool prettyPrint(cnt::StringBuilder<>& str, td::String& indent) const override{
 		if (auto it = _attribs.find("cond"); it != _attribs.end()){
 			str << indent << "if " << it->second;
-			prettyPrintAttribs<"fx", "cond">(str);
+			if(getNodes().size() != 0)
+				prettyPrintAttribs<"fx", "cond">(str, getNodes()[0]);
 			str << ":";
 			indent += INDENT_CHAR;
-			return true;
+			return false;
 		}
 
 		if (auto itFx = _attribs.find("fx"); itFx != _attribs.end())
 			str << indent << itFx->second;
 
-		prettyPrintAttribs<"fx">(str);
+		prettyPrintAttribs<"fx">(str, this);
 		
 		return false;
 
@@ -350,7 +351,7 @@ public:
 		if (auto it = _attribs.find("val"); it != _attribs.end())
 			str << " = " << it->second;
 
-		prettyPrintAttribs<"name", "val">(str);
+		prettyPrintAttribs<"name", "val">(str, this);
 		return false;
 	}
 
@@ -395,7 +396,7 @@ public:
 	bool prettyPrint(cnt::StringBuilder<>& str, td::String& indent) const override {
 		if (auto it = _attribs.find("fx"); it != _attribs.end())
 			str << indent << it->second;
-		prettyPrintAttribs<"fx">(str);
+		prettyPrintAttribs<"fx">(str, this);
 		return false;
 	}
 
