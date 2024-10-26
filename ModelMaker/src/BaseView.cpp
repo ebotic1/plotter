@@ -3,6 +3,7 @@
 #include <cnt/StringBuilder.h>
 #include "GlobalEvents.h"
 #include "MainWindow.h"
+#include <gui/Dialog.h>
 
 using LogType = LogView::LogType;
 
@@ -20,7 +21,6 @@ LogView::LogView() :
 	errorLen = tr("error").length();
 	warLen = tr("warning").length();
 	infoLen = tr("info").length();
-
 }
 
 void LogView::appendLog(const td::String text, LogType type, bool discardThisLog) const
@@ -151,6 +151,72 @@ void ViewForTab::getTimes(double& startTime, double& endTime, double& stepTime, 
 
 void ViewForTab::setPath(const td::String &path){
 	this->path = path;
+}
+
+const td::String &ViewForTab::getPath()
+{
+    return path;
+}
+
+class dialogSave: public gui::Dialog{
+	gui::View _mainView;
+	gui::Label *_lblSave = nullptr;
+	gui::VerticalLayout _vl;
+public:
+	dialogSave(ViewForTab *parent):
+		gui::Dialog(parent->getParentFrame(), {\
+	{gui::Dialog::Button::ID::User0, tr("Save"), gui::Button::Type::Default},\
+	{gui::Dialog::Button::ID::User1, tr("SaveAs"), gui::Button::Type::Normal},\
+	{gui::Dialog::Button::ID::User2, tr("DontSave"), gui::Button::Type::Destructive}\
+	}, gui::Size(600,1000), (td::UINT4)MainWindow::dialogIDs::saveData),
+	_vl(2)
+	{
+		cnt::StringBuilderSmall str;
+		str << "\t" << tr("Model") << " \"" << parent->getName() << "\" " << tr("NotSavedAlert") << "\t";
+		td::String text;
+		str.getString(text);
+		_lblSave = new gui::Label(std::move(text));
+
+		gui::Size size;
+		_lblSave->getMinSize(size);
+		size.height *= 3;
+		_lblSave->setPreferedContentSize(size);
+
+		_vl << *_lblSave;
+		_mainView.setLayout(&_vl);
+		setTitle(tr("saveDialogTitle"));
+		setCentralView(&_mainView);
+	}
+
+
+	~dialogSave(){
+		//delete _lblSave;
+	}
+};
+
+bool ViewForTab::promptSaveIfNecessary()
+{
+	if(!GlobalEvents::settingsVars.warnBeforeClose)
+		return false;
+
+	if ((lastSettingsVer == settings.getVersion() && lastModelExtract == tabView->getVersion()) || tabView->getVersion() == 0)
+		return false;
+	auto diag = new dialogSave(this);
+
+	diag->setResizable(false);
+	diag->keepOnTopOfParent();
+	diag->openModal([this](gui::Dialog::Button::ID id, gui::Dialog* d){
+		if(id == gui::Dialog::Button::ID::User0) //save
+			save();
+		if(id == gui::Dialog::Button::ID::User1) //saveAs
+			saveAs();
+		if(id == gui::Dialog::Button::ID::User2) //dont save
+			GlobalEvents::getMainWindowPtr()->closeTab(this);
+
+	});
+
+
+    return true;
 }
 
 void ViewForTab::updateModelNode()
@@ -305,14 +371,13 @@ const modelNode& ViewForTab::getModelNode(bool &error, bool supressLogs)
 	return model;
 }
 
-
-
+bool ViewForTab::shouldClose()
+{
+    return !promptSaveIfNecessary();
+}
 
 ViewForTab::~ViewForTab()
 {
-	if (lastSaved != tabView->getVersion() || path.isNull()) {
-		// reci korisniku da mora servirati
-	}
 	delete tabView;
 }
 

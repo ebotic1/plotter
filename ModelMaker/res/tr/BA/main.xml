@@ -18,8 +18,8 @@
 		<Res id="graphicalEditorLabel" tr="Grafički uređivač modela" />
 		<Res id="textEditorLabel" tr="Tekstualni unos jednačina" />
 		<Res id="NewTab" tr="Novi prozor" />
-		<Res id="Save" tr="Snimi" />
-		<Res id="SaveAs" tr="Snimi kao" />
+		<Res id="Save" tr="Spasi" />
+		<Res id="SaveAs" tr="Spasi kao" />
 		<Res id="ExporttoXML" tr="Izvezi kao XML" />
 		<Res id="TextualEditor" tr="Tekstualni editor" />
 		<Res id="GraphicalEditor" tr="Grafički editor" />
@@ -49,5 +49,10 @@
 		<Res id="tfFile" tr="Fajl za grafički editor" />
 		<Res id="fontLabel" tr="Font teksta: " />
 		<Res id="odeModel" tr="ODE model" />
+		<Res id="restoreTabs" tr="Vrati zadnje otvorene modele pri pokretanju" />
+		<Res id="DontSave" tr="Nemoj spašavati" />
+		<Res id="NotSavedAlert" tr="sadrži promjene koje nisu spašene." />
+		<Res id="saveDialogTitle" tr="Spašavanje modela" />
+		<Res id="confirmCloseSetting" tr="Upozori me pri zatvaranju prozora sa nespašenim promjenama" />
 	</Translations>
 </DevRes>

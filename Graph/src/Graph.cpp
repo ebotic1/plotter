@@ -602,6 +602,13 @@ Graph::Graph(bool startWithMargins, bool takeUserInput, td::ColorID backgroundCo
 
     legenda = new legend(axisColor);
 
+
+    double distance = 20;
+    for (size_t i = 0; i < slike.size(); ++i) {
+        slike[i].rect.setOrigin(distance, 5);
+        distance += 32 + slike[i].rect.width();
+    }
+
     if (startWithMargins)
         setUpDrawingWindow();
 }
@@ -730,13 +737,6 @@ void Graph::updateLimits(const Function& newFun){
 void Graph::onResize(const gui::Size& newSize) {
     setUpDrawingWindow();
 
-    double distance = 20;
-    for (size_t i = 0; i < slike.size(); ++i) {
-        slike[i].rect.setOrigin(distance, 5);
-        distance += 32 + slike[i].rect.width();
-    }
-
-
     if (!initalDraw)
         fitToWindow();
 }
@@ -744,7 +744,7 @@ void Graph::onResize(const gui::Size& newSize) {
 void Graph::fitToWindow(){
     if (Limits == nullptr)
         return;
-    if (drawingWindow.size.width == 0 || drawingWindow.size.height == 0)
+    if (drawingWindow.size.width < 1 || drawingWindow.size.height < 1)
         return;
 
     initalDraw = true;
@@ -1009,8 +1009,24 @@ void Graph::drawAxis(){
 
    
 
-    const gui::CoordType xAxisHeight = _drawNumbersOutside ? drawingRect.bottom : funkcije[0].realToTransformedY(0);
-    const gui::CoordType yAxisWidth = _drawNumbersOutside ? drawingWindow.point.x : funkcije[0].realToTransformedX(0);
+    gui::CoordType xAxisHeight = _drawNumbersOutside ? drawingRect.bottom : funkcije[0].realToTransformedY(0);
+    gui::CoordType yAxisWidth = _drawNumbersOutside ? drawingWindow.point.x : funkcije[0].realToTransformedX(0);
+
+    if(funkcije[0].TrasformedToRealY(drawingRect.top) < 0)
+        xAxisHeight = drawingRect.top;
+    else if(funkcije[0].TrasformedToRealY(drawingRect.bottom) > 0)
+        xAxisHeight = drawingRect.bottom;
+    else
+        xAxisHeight = funkcije[0].realToTransformedY(0);
+
+    
+    if(funkcije[0].realToTransformedX(drawingRect.right) < 0)
+        yAxisWidth = funkcije[0].realToTransformedX(drawingRect.right);
+    else if(funkcije[0].realToTransformedX(drawingRect.left) > 0)
+        yAxisWidth = funkcije[0].realToTransformedX(drawingRect.left);
+    else
+        yAxisWidth = funkcije[0].realToTransformedX(0);
+
     while (line < drawingWindow.point.x + drawingWindow.size.width || lineY >= drawingWindow.point.y){
 
         constexpr double markLen = 7;

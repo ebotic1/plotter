@@ -49,5 +49,10 @@
 		<Res id="tfFile" tr="Graphical editor save file" />
 		<Res id="fontLabel" tr="Text font: " />
 		<Res id="odeModel" tr="ODE model" />
+		<Res id="restoreTabs" tr="Restore last opened files on startup" />
+		<Res id="DontSave" tr="Close without saving" />
+		<Res id="NotSavedAlert" tr="has unsaved changes." />
+		<Res id="saveDialogTitle" tr="Save file" />
+		<Res id="confirmCloseSetting" tr="Confirm tab close on unsaved changes" />
 	</Translations>
 </DevRes>

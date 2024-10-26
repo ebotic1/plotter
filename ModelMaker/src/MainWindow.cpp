@@ -41,6 +41,7 @@ MainWindow::MainWindow()
     }
 
     _tabView.onClosedView([this](int) {
+
         if (_tabView.getNumberOfViews() == 1)
             showStartScreen(true);
     });
@@ -78,7 +79,15 @@ void MainWindow::changeTabName(const td::String &name, ViewForTab *tab)
 
 }
 
-
+void MainWindow::closeTab(gui::BaseView *tab)
+{
+    for(int i = 0; i<_tabView.getNumberOfViews(); ++i)
+        if(_tabView.getView(i) == tab){
+            _tabView.removeView(i);
+        }
+    if(_tabView.getNumberOfViews() == 0)
+        showStartScreen(true);
+}
 
 void MainWindow::addTab(ViewForTab::BaseClass *tab, const td::String &settingsStr, const td::String &path){
     ViewForTab *wholeTab = nullptr;
@@ -227,31 +236,32 @@ bool MainWindow::onActionItem(gui::ActionItemDescriptor& aiDesc)
     return false;
 }
 
-void MainWindow::openFile(const td::String& path)
+bool MainWindow::openFile(const td::String& path)
 {
    const char *ok = path.c_str();
     const auto openF = [this, &path](auto ptr) {
         td::String settings;
         if (ptr->openFile(path, settings)) {
             addTab(ptr, settings, path);
-            return;
+            return true;
         }
         else
             delete ptr;
+        return false;
     };
 
     if (path.endsWith(".modl") || path.endsWith(".xml")) {
         auto ptr = new TextEditorView;
-        openF(ptr);
+        return openF(ptr);
     }
 
     if (path.endsWith(".tfstate")) {
         auto ptr = new GraphicalEditorView;
-        openF(ptr);
+        return openF(ptr);
     }
 
 
-
+    return false;
 
 }
 
@@ -260,11 +270,24 @@ void MainWindow::onInitialAppearance()
 
     int argc;
     const char** argv;
+    bool success = false;
     std::tie(argc, argv) = getApplication()->getMainArgs();
     for (int i = 1; i < argc; ++i) {
-        openFile(argv[i]);
+        if(openFile(argv[i]))
+            success = true;
     }
 
+    if(!success && GlobalEvents::settingsVars.restoreTabs){
+        _restoredTabs = true;
+
+        cnt::PushBackVector<td::String> paths;
+        auto pathsString = getAppProperties()->getValue<td::String>("previousSessionTabPaths", "");
+        //getAppProperties()->setValue<td::String>("previousSessionTabPaths", "");
+        pathsString.split(":", paths);
+        for(const auto &path: paths)
+            openFile(path);
+
+    }
 
 }
 
@@ -277,7 +300,7 @@ DataDraw* MainWindow::getDataDrawer(bool openWindow)
         return dataDrawerPtr;
 
 
-    if (getAttachedWindow(DataDrawerWindow::dataDrawerWindowID) == nullptr){
+    if (getAttachedWindow((td::UINT4)dialogIDs::dataDrawer) == nullptr){
         dataDrawerPtr = new DataDraw; //workaround, view koji se nalazi u gui::Window prestaje biti validan nakon njegovog gasenja
         auto ptr = new DataDrawerWindow(this, dataDrawerPtr);
         ptr->setTitle("Simulation results");
@@ -340,6 +363,31 @@ const modelNode &MainWindow::getModelFromTabOrFile(const td::String &modelNameOr
 
 bool MainWindow::shouldClose()
 {
+    cnt::StringBuilder paths;
+    ViewForTab *tab;
+
+    for(int i = 0; i<_tabView.getNumberOfViews(); ){
+        tab = dynamic_cast<ViewForTab*>(_tabView.getView(i));
+        if(tab == nullptr){
+            _tabView.removeView(i);
+            continue;
+        }
+
+        if(GlobalEvents::settingsVars.restoreTabs && !tab->getPath().isNull())
+            paths << tab->getPath() << ":";
+
+        if(tab->promptSaveIfNecessary()){
+            _tabView.showView(i);
+            return false;
+        }
+
+        ++i;
+    }
+
+    td::String str;
+    paths.getString(str);
+    getAppProperties()->setValue<td::String>("previousSessionTabPaths", str);
+
     GlobalEvents::settingsVars.saveValues();
     return true;
 }
@@ -351,7 +399,7 @@ MainWindow::~MainWindow()
 }
 
 DataDrawerWindow::DataDrawerWindow(gui::Window *parent, DataDraw* mainView):
-    gui::Window(gui::Size(500, 500), parent, dataDrawerWindowID),
+    gui::Window(gui::Size(500, 500), parent, (td::UINT4)MainWindow::dialogIDs::dataDrawer),
     storedView(mainView)
 {
     setCentralView(storedView);

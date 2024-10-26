@@ -21,7 +21,7 @@ class SettingsView: public gui::View{
     int currentLangIndex = -1;
     gui::Frame *mainWindow;
 
-    gui::CheckBox _chBoxEmbed, _chBoxRestoreTabs;
+    gui::CheckBox _chBoxEmbed, _chBoxRestoreTabs, _chBoxConfirmClose;
 
     gui::Label _lblFont;
     gui::ComboBox fontCombo;
@@ -37,9 +37,10 @@ public:
         _lblLang(tr("Laungage: ")),
         layout(2,2),
         props(getAppProperties()),
-        _vl(2),
+        _vl(4),
         _chBoxEmbed(tr("embedGraph")),
-        _chBoxRestoreTabs()
+        _chBoxRestoreTabs(tr("restoreTabs")),
+        _chBoxConfirmClose(tr("confirmCloseSetting")),
         embededCurrent(GlobalEvents::settingsVars.embedPlot),
         langs(getSupportedLanguages()),
         _lblFont(tr("fontLabel"))
@@ -62,6 +63,11 @@ public:
         _chBoxEmbed.setChecked(embededCurrent, false);
         _chBoxEmbed.onClick([this, &settings](){settings.embedPlot = _chBoxEmbed.isChecked();});
 
+        _chBoxRestoreTabs.setChecked(settings.restoreTabs);
+        _chBoxRestoreTabs.onClick([this, &settings](){settings.restoreTabs = _chBoxRestoreTabs.isChecked();});
+
+        _chBoxConfirmClose.setChecked(settings.warnBeforeClose);
+        _chBoxConfirmClose.onClick([this, &settings](){settings.warnBeforeClose = _chBoxConfirmClose.isChecked();});
         
         auto fonts = gui::Font::getSystemFamilyNames();
         fontCombo.addItem("Default");
@@ -84,7 +90,7 @@ public:
         gc.appendRow(_lblFont) << fontCombo;
 
 
-        _vl << layout << _chBoxEmbed;
+        _vl << layout << _chBoxEmbed << _chBoxRestoreTabs << _chBoxConfirmClose;
 
         setSizeLimits(width, gui::Control::Limit::Fixed); //pokvareno
         setLayout(&_vl);

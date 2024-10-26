@@ -12,7 +12,7 @@ public:
         view(frame),
         gui::Dialog(frame, {
             {gui::Dialog::Button::ID::OK, tr("Ok"), gui::Button::Type::Default}
-        }, {0,0})
+        }, {0,0}, (td::UINT4)MainWindow::dialogIDs::settings)
     {
         setTitle(tr("settings"));
         setCentralView(&view);

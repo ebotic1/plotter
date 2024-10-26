@@ -27,6 +27,7 @@ void SettingsVars::loadSettingsVars(gui::Application* app)
     font = props.getValue<td::String>("editorFontEmir", "Default");
     embedPlot = (props.getValue<int>("embedPlotEmir", 1) == 1);
     restoreTabs = (props.getValue<int>("restoreTabsEmir", 1) == 1);
+    warnBeforeClose = (props.getValue<int>("warnBeforeClosingEmir", 1) == 1);
 
 }
 
@@ -67,6 +68,7 @@ void SettingsVars::saveValues()
     props.setValue<td::String>("editorFontEmir", font);
     props.setValue<int>("embedPlotEmir", (int)(embedPlot ? 1 : 0));
     props.setValue<int>("restoreTabsEmir", (int)(restoreTabs ? 1 : 0));
+    props.setValue<int>("warnBeforeClosingEmir", (int)(warnBeforeClose ? 1 : 0));
 
 
 }

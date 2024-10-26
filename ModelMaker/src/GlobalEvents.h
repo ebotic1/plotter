@@ -10,7 +10,7 @@ struct SettingsVars
 	td::ColorID colorAttribute, colorVariable, colorImports, colorKeyword, colorParam, colorComment;
 	double textSize;
 	td::String font;
-	bool embedPlot, restoreTabs;
+	bool embedPlot, restoreTabs, warnBeforeClose;
 	void saveValues();
 	void loadSettingsVars(gui::Application* app);
 	void loadDefaultSettings(gui::Application* app);

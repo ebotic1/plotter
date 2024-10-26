@@ -35,14 +35,13 @@ public:
 class ViewForTab : public gui::View {
 public:
 	class BaseClass : public gui::View {
-		unsigned int version = 1;
+		unsigned int version = 0;
 		std::unordered_set<td::String> vars, params;
 		void setVariabesAndParams(std::unordered_set<td::String>&& vars, std::unordered_set<td::String>&& params);
-		void handleInvalidAttribException(modelNode::exceptionInvalidAttribute& atr);
-		void handleInvalidCommandException(modelNode::exceptionInvalidCommand& cmnd);
 		friend class ViewForTab;
 	protected:
 		void modelRolledBack() {--version; }
+		void setVersion(unsigned int newVersion) {version = newVersion;}
 	public:
 		void modelChanged() { ++version; }
 		virtual bool save(const td::String& path, const td::String& settingsString) = 0;
@@ -81,7 +80,6 @@ public:
 	const LogView& getLog();
 	const BaseClass &getMainView();
 
-
 	const td::String &getName();
 	void setName(const td::String &name);
 	bool loadFile(const td::String& path);
@@ -90,9 +88,13 @@ public:
 	void exportToXML(td::String path);
 	void getTimes(double& startTime, double& endTime, double& stepTime, unsigned int& maxIterations);
 	void setPath(const td::String &path);
+	const td::String &getPath();
+	bool promptSaveIfNecessary();
 	const modelNode &getModelNode(bool &error, bool supressLogs = false);
 	const std::vector<ModelSettings::FunctionDesc> &getFunctions();
+	
 
+	bool shouldClose() override;
 	~ViewForTab();
 
 };

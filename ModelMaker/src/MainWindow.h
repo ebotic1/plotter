@@ -29,7 +29,6 @@ struct fileModels{
 class DataDrawerWindow : public gui::Window {
     DataDraw* storedView;
 public:
-    static constexpr int dataDrawerWindowID = 10;
     DataDrawerWindow(gui::Window* parent, DataDraw *mainView);
     ~DataDrawerWindow();
 };
@@ -42,7 +41,7 @@ private:
     gui::TabView _tabView;
     gui::ViewSwitcher _switcherView;
     DataDraw dataDrawer;
-    bool plotEmbedded = false;
+    bool plotEmbedded = false, _restoredTabs = false;
 
     StartingView startingView;
     ContextMenus _contextMenu;
@@ -55,14 +54,17 @@ private:
     void addTab(ViewForTab::BaseClass *tab, const td::String &settingsStr, const td::String &path = td::String());
 
 public:
+    enum class dialogIDs{dataDrawer = 200, saveData, settings, unused};
+
     MainWindow();
     struct exceptionCantAccessFile { td::String message; };
     struct exceptionCantFindTab { td::String message; };
     bool onActionItem(gui::ActionItemDescriptor& aiDesc) override;
     void showStartScreen(bool show);
     void changeTabName(const td::String &name, ViewForTab *tab);
+    void closeTab(gui::BaseView *tab);
     int simulate(ViewForTab* tab);
-    void openFile(const td::String& path);
+    bool openFile(const td::String& path);
     void onInitialAppearance() override;
     const modelNode &getModelFromTabOrFile(const td::String &modelNameOrPath);
     DataDraw* getDataDrawer(bool openWindow = true);

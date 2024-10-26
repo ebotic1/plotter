@@ -76,6 +76,7 @@ void DataDraw::addData(const td::String& name, const std::vector<FunctionDesc>& 
 		if (ynameCnt == 1)
 			g->setyAxisName(functions[0].yname);
 
+		g->fitToWindow();
 		tab = g;
 		
 	}
