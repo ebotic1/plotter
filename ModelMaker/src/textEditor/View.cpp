@@ -49,7 +49,7 @@ void TextEditorView::getModel(modelNode &model)
 				name = (*exprs)["fx"];
 				poz = name.find("(");
 				if (poz != -1) {
-					name = name.subStr(0, poz);
+					name = name.subStr(0, poz-1);
 					_expressions.emplace(name.trimRight());
 				}
 			}

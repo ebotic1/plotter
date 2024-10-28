@@ -7,7 +7,8 @@ class GlobalEvents;
 
 struct SettingsVars
 {
-	static constexpr const char* colorNames[] = { "Attributes", "Variables", "Keywords", "Functions", "Paramaters", "Comments", "Constants"};
+
+	static constexpr const char* colorNames[] = { "Constants", "Functions", "Attributes",  "Keywords", "Variables", "Paramaters", "Comments"};
 
 	td::ColorID colorAttribute, colorVariable, colorImports, colorKeyword, colorFunctions, colorParam, colorComment, colorConstants;
 

@@ -365,7 +365,8 @@ public:
 		_done = true;
 
 		const char *pozEq = std::find(cmndStart, cmndEnd, '=');
-		if (pozEq == cmndEnd) {
+		const char *pozZagrada = std::find(cmndStart, cmndEnd, '{');
+		if (pozEq == cmndEnd || pozZagrada != cmndEnd) {
 			setAttrib("name", getStringFromPtr(cmndStart, cmndEnd));
 			return true;
 		}
@@ -452,11 +453,9 @@ public:
 			addChild(new modelNode);
 			newChild = nodes.back();
 			return true;
-		}
-
-		if (compareUpperCase(cmndStart, "END")) {
+		}else{
 			_done = true;
-			return true;
+			return false;
 		}
 
 		return false;
@@ -464,7 +463,7 @@ public:
 
 	void prettyPrintClosing(cnt::StringBuilder<>& str, td::String &indent) const override{
 		indent.reduceSize(1);
-		str << indent << "end\n";
+		str << indent << "\n";
 	}
 
 	inline const char* getName() const override {

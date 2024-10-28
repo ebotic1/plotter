@@ -54,5 +54,9 @@
 		<Res id="NotSavedAlert" tr="has unsaved changes." />
 		<Res id="saveDialogTitle" tr="Save file" />
 		<Res id="confirmCloseSetting" tr="Confirm tab close on unsaved changes" />
+		<Res id="appSettings" tr="Main settings" />
+		<Res id="colorsSettings" tr="Colors" />
+		<Res id="whiteColors" tr="White theme colors:" />
+		<Res id="log" tr="Log" />
 	</Translations>
 </DevRes>

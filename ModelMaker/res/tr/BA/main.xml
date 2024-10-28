@@ -54,5 +54,9 @@
 		<Res id="NotSavedAlert" tr="sadrži promjene koje nisu spašene." />
 		<Res id="saveDialogTitle" tr="Spašavanje modela" />
 		<Res id="confirmCloseSetting" tr="Upozori me pri zatvaranju prozora sa nespašenim promjenama" />
+		<Res id="appSettings" tr="Glavne postavke" />
+		<Res id="colorsSettings" tr="Boje" />
+		<Res id="whiteColors" tr="Boje za bijelu pozadinu:" />
+		<Res id="log" tr="Zapisi" />
 	</Translations>
 </DevRes>

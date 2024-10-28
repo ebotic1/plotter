@@ -75,20 +75,23 @@ void LogView::measure(gui::CellInfo &c)
 
 ViewForTab::ViewForTab(BaseClass* tabView, const td::String &settingsStr):
 	tabView(tabView),
-	mainView(gui::SplitterLayout::Orientation::Horizontal, gui::SplitterLayout::AuxiliaryCell::First),
+	_logImg(":txtIcon"),
+	_settingsImg(":settings"),
 	tabAndLogSplitter(gui::SplitterLayout::Orientation::Vertical, gui::SplitterLayout::AuxiliaryCell::Second)
 {
 
-	tabAndLogSplitter.setContent(*tabView, logView);
-	tabAndLogView.setLayout(&tabAndLogSplitter);
-	mainView.setContent(settings, tabAndLogView);
+	_tabView.addView(&logView, tr("log") , &_logImg);
+	_tabView.addView(&settings, tr("settingsShort") , &_settingsImg);
+	tabAndLogSplitter.setContent(*tabView, _tabView);
+
 
 	settings.loadFromString(settingsStr);
 	_lastSavedSettings = settings.getVersion();
 	_lastSavedModel = tabView->getVersion();
 	bool error;
 	getModelNode(error, true);
-	setLayout(&mainView);
+
+	setLayout(&tabAndLogSplitter);
 }
 
 const LogView &ViewForTab::getLog(){
@@ -222,7 +225,7 @@ bool ViewForTab::promptSaveIfNecessary(bool exitProgram)
 		if(id == gui::Dialog::Button::ID::User2 && !exitProgram) //dont save
 			GlobalEvents::getMainWindowPtr()->closeTab(this);
 
-		if (exitProgram) {
+		if (exitProgram && id != gui::Dialog::Button::ID::Close) {
 			GlobalEvents::getMainWindowPtr()->prepareForClose();
 		}
 
@@ -379,6 +382,14 @@ const modelNode& ViewForTab::getModelNode(bool &error, bool supressLogs)
 	}
 
 	tabView->setVariabesAndParams(std::move(vars), std::move(params));
+
+	if(auto it = model._attribs.find("type"); it != model._attribs.end()){
+		if(it->second.cCompareNoCase("NL") == 0 || it->second.cCompareNoCase("WLS") == 0)
+			settings.showTimes(false);
+		else
+			settings.showTimes(true);
+	}else
+		settings.showTimes(true);
 
 	includeGuard = false;
 	return model;

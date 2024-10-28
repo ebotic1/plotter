@@ -236,7 +236,7 @@ void CodeEdit::highlightSyntax(const gui::Range& r)
 			setColor(rangeFound, GlobalEvents::settingsVars.colorVariable);
 		else if(_parent->getParams().contains(m) || _parent->_paramsNotRoot.contains(m))
 			setColor(rangeFound, GlobalEvents::settingsVars.colorParam);
-		else if (modelNode::functionKeywords.contains(m))
+		else if (modelNode::functionKeywords.contains(m) || _parent->_expressions.contains(m))
 			setColor(rangeFound, GlobalEvents::settingsVars.colorFunctions);
 		else if (modelNode::constantsKeywords.contains(m))
 			setColor(rangeFound, GlobalEvents::settingsVars.colorConstants);

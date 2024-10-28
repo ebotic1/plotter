@@ -8,14 +8,19 @@
 #include <gui/Application.h>
 #include <gui/VerticalLayout.h>
 #include <gui/CheckBox.h>
-#include <gui/TabView.h>
+#include <gui/StandardTabView.h>
+#include <gui/ColorPicker.h>
 
 class SettingsView: public gui::View{
 
     gui::View _vMain, _vColors;
     gui::VerticalLayout _vl, _tabViewLayout;
-    gui::TabView _tabView;
+    gui::StandardTabView _tabView;
     gui::Image _settingsImg;
+    static constexpr int colorsCnt = 0.5 + sizeof(GlobalEvents::settingsVars.colorNames) / sizeof(const char *);
+
+    gui::Label *_colorLabels[colorsCnt];
+    gui::ColorPicker _colorPickers[colorsCnt];
 
     mu::IAppProperties *props;
     gui::Label _lblLang;
@@ -43,14 +48,14 @@ public:
         props(getAppProperties()),
         _vl(4),
         _tabViewLayout(1),
-        _colorsGrid(14, 2),
+        _colorsGrid(colorsCnt, 2),
         _chBoxEmbed(tr("embedGraph")),
         _chBoxRestoreTabs(tr("restoreTabs")),
         _chBoxConfirmClose(tr("confirmCloseSetting")),
         embededCurrent(GlobalEvents::settingsVars.embedPlot),
         langs(getSupportedLanguages()),
         _lblFont(tr("fontLabel")),
-        _tabView(gui::TabHeader::Type::FitToText, 20, 20),
+    
         _settingsImg(":settings")
     {
         
@@ -102,20 +107,43 @@ public:
 
         setSizeLimits(width, gui::Control::Limit::Fixed);
 
+        gui::GridComposer cc(_colorsGrid);
+
+
+        td::ColorID *boje = getApplication()->isDarkMode() ? GlobalEvents::settingsVars.colorsBlack : GlobalEvents::settingsVars.colorsWhite;
+        
+
+        gui::ColorPicker *ptr;
+        for(int j = 0; j<colorsCnt; ++j){
+            _colorLabels[j] = new gui::Label(GlobalEvents::settingsVars.colorNames[j]);
+            cc.appendRow(*_colorLabels[j]) << _colorPickers[j];
+            ptr = _colorPickers + j;
+            ptr->setValue(boje[j]);
+            ptr->onChangedValue([ptr, j, boje](){
+                boje[j] = ptr->getValue();
+            });
+        }
+      
+
+
         _vMain.setLayout(&_vl);
         _vColors.setLayout(&_colorsGrid);
 
         _tabView.addView(&_vMain, tr("appSettings"), &_settingsImg);
         _tabView.addView(&_vColors, tr("colorsSettings"), &_settingsImg);
-        
 
         _tabViewLayout << _tabView;
         setLayout(&_tabViewLayout);
     }
 
     ~SettingsView(){
-        GlobalEvents::settingsVars.font = fontCombo.getSelectedText();
+      
+  GlobalEvents::settingsVars.font = fontCombo.getSelectedText();
 
+        for(int i = 0; i<colorsCnt; ++i){
+            delete _colorLabels[i];
+        }
+      
 
         GlobalEvents::settingsVars.saveValues();
         bool restartRequired = false;
@@ -138,6 +166,12 @@ public:
             }
             });
 
+    }
+
+    void measure(gui::CellInfo &c) override{
+        gui::View::measure(c);
+        c.minHor = 450;
+        c.minVer = 250;
     }
 
 };

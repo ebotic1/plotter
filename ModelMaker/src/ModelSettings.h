@@ -9,7 +9,6 @@
 #include <gui/NumericEdit.h>
 
 class ModelSettings : public gui::View {
-	gui::VerticalLayout _vl;
 	gui::GridLayout _gridLayout;
 	gui::Label _lblStart, _lblEnd, _lblStep, _lblMaxIter, _lblPreproc;
 	gui::TextEdit preprocesCommands;
@@ -32,6 +31,7 @@ public:
 
 public:
 	ModelSettings();
+	void showTimes(bool show);
 	void getDependencies(std::vector<DependencyDesc> &);
 	void getFunctions(std::vector<FunctionDesc>&);
 	void getStartStopTime(double& startTime, double& endTime, double& stepTime, unsigned int& maxIterations);

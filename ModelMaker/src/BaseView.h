@@ -6,6 +6,8 @@
 #include <gui/SplitterLayout.h>
 #include <unordered_set>
 #include <td/StringConverter.h>
+#include <gui/StandardTabView.h>
+#include <gui/Image.h>
 
 #include "../../EquationToXML/inc/nodes.h"
 #include "ModelSettings.h"
@@ -59,8 +61,10 @@ private:
 	std::vector<ModelSettings::FunctionDesc> funcionsDesc;
 	std::vector<ModelSettings::DependencyDesc> depenends;
 
-	gui::SplitterLayout mainView, tabAndLogSplitter;
-	gui::View tabAndLogView;
+	gui::SplitterLayout tabAndLogSplitter;
+	gui::StandardTabView _tabView;
+	gui::Image _logImg, _settingsImg;
+
 
 
 

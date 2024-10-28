@@ -21,8 +21,7 @@ ModelSettings::FunctionDesc::FunctionDesc(const Type& type, const td::String& na
 }
 
 ModelSettings::ModelSettings() :
-	_vl(6),
-	_gridLayout(4,2),
+	_gridLayout(7,2),
 	_lblStart(tr("startTime")), _lblEnd(tr("endTime")), _lblStep(tr("stepTime")),
 	_lblMaxIter(tr("maxIter")), _lblPreproc(tr("preproc")),
 	startTime(timeTypeTD, gui::LineEdit::Messages::Send),
@@ -60,20 +59,27 @@ ModelSettings::ModelSettings() :
 	grid.appendRow(_lblEnd) << endTime;
 	grid.appendRow(_lblStep) << stepTime;
 	grid.appendRow(_lblMaxIter) << maxIter;
-
-	_vl << _gridLayout;
-	_vl.appendSpace(10);
+	grid.startNewRowWithSpace(0,10);
+	grid.appendRow(_lblPreproc);
+	grid.appendEmptyCols(1);
+	grid.appendRow(preprocesCommands);
 
 	preprocesCommands.setSizeLimits(0, gui::Control::Limit::None, 100, gui::Control::Limit::Fixed);
 
-	_vl << _lblPreproc << preprocesCommands;
-	_vl.appendSpace(10);
-	_vl << paramaterView;
-
-	setLayout(&_vl);
+	setLayout(&_gridLayout);
 }
 
 
+void ModelSettings::showTimes(bool show)
+{
+	startTime.show(show);
+	_lblStart.show(show);
+	stepTime.show(show);
+	_lblStep.show(show);
+	endTime.show(show);
+	_lblEnd.show(show);
+	
+}
 
 void ModelSettings::getDependencies(std::vector<DependencyDesc>& desc)
 {

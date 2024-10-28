@@ -82,15 +82,36 @@ void SettingsVars::saveValues()
 {
     if(app == nullptr)
         return;
+
+
+    td::ColorID *colors = app->isDarkMode() ? colorsBlack : colorsWhite;
+
+    colorConstants = colors[0];
+    colorFunctions = colors[1];
+    colorAttribute = colors[2];
+    colorKeyword = colors[3];
+    colorVariable = colors[4];
+    colorParam = colors[5];
+    colorComment = colors[6];
+
     auto &props = *this->app->getProperties(); 
-    props.setValue<int>("constantsColorsEmir", (int)colorConstants);
-    props.setValue<int>("functionColorsEmir", (int)colorFunctions);
-    props.setValue<int>("attribColorEmir", (int)colorAttribute);
-    props.setValue<int>("importsColorEmir", (int)colorImports);
-    props.setValue<int>("keywordColorEmir", (int)colorKeyword);
-    props.setValue<int>("variableColorEmir", (int)colorVariable);
-    props.setValue<int>("paramColorEmir", (int)colorParam);
-    props.setValue<int>("commentColorEmir", (int)colorComment);
+    props.setValue<int>("constantsColorsWhiteEmir", (int)colorsWhite[0]);
+    props.setValue<int>("functionColorsWhiteEmir", (int)colorsWhite[1]);
+    props.setValue<int>("attribColorWhiteEmir", (int)colorsWhite[2]);
+    props.setValue<int>("keywordColorWhiteEmir", (int)colorsWhite[3]);
+    props.setValue<int>("variableColorWhiteEmir", (int)colorsWhite[4]);
+    props.setValue<int>("paramColorWhiteEmir", (int)colorsWhite[5]);
+    props.setValue<int>("commentColorWhiteEmir", (int)colorsWhite[6]);
+
+    props.setValue<int>("constantsColorsBlackEmir", (int)colorsBlack[0]);
+    props.setValue<int>("functionColorsBlackEmir", (int)colorsBlack[1]);
+    props.setValue<int>("attribColorBlackEmir", (int)colorsBlack[2]);
+    props.setValue<int>("keywordColorBlackEmir", (int)colorsBlack[3]);
+    props.setValue<int>("variableColorBlackEmir", (int)colorsBlack[4]);
+    props.setValue<int>("paramColorBlackEmir", (int)colorsBlack[5]);
+    props.setValue<int>("commentColorBlackEmir", (int)colorsBlack[6]);
+
+    props.setValue<int>("importsColorEmir", (int)colorsWhite[0]);
     props.setValue<float>("textSizeEmir", textSize);
     props.setValue<td::String>("editorFontEmir", font);
     props.setValue<int>("embedPlotEmir", (int)(embedPlot ? 1 : 0));
