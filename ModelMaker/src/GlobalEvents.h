@@ -7,7 +7,12 @@ class GlobalEvents;
 
 struct SettingsVars
 {
-	td::ColorID colorAttribute, colorVariable, colorImports, colorKeyword, colorParam, colorComment;
+	static constexpr const char* colorNames[] = { "Attributes", "Variables", "Keywords", "Functions", "Paramaters", "Comments", "Constants"};
+
+	td::ColorID colorAttribute, colorVariable, colorImports, colorKeyword, colorFunctions, colorParam, colorComment, colorConstants;
+
+	td::ColorID colorsWhite[7], colorsBlack[7];
+
 	double textSize;
 	td::String font;
 	bool embedPlot, restoreTabs, warnBeforeClose;

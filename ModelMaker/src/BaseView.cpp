@@ -84,6 +84,8 @@ ViewForTab::ViewForTab(BaseClass* tabView, const td::String &settingsStr):
 	mainView.setContent(settings, tabAndLogView);
 
 	settings.loadFromString(settingsStr);
+	_lastSavedSettings = settings.getVersion();
+	_lastSavedModel = tabView->getVersion();
 	bool error;
 	getModelNode(error, true);
 	setLayout(&mainView);
@@ -109,8 +111,11 @@ bool ViewForTab::loadFile(const td::String &path)
 {
     td::String settingsString;
 	bool retVal = tabView->openFile(path, settingsString);
-	if(retVal)
+	if (retVal) {
 		settings.loadFromString(settingsString);
+		_lastSavedSettings = settings.getVersion();
+		_lastSavedModel = tabView->getVersion();
+	}
 	return retVal;
 }
 
@@ -121,7 +126,8 @@ void ViewForTab::save(){
 	}
 
 	if (tabView->save(path, settings.getString())) {
-		lastSaved = tabView->getVersion();
+		_lastSavedModel = tabView->getVersion();
+		_lastSavedSettings = settings.getVersion();
 		logView.appendLog("Model saved", LogType::info);
 	}
 	bool error;
@@ -133,7 +139,7 @@ void ViewForTab::saveAs(){
 	getModelNode(error, true);
 	path.clean();
 	tabView->saveAs(settings.getString(), &path);
-	lastSaved = tabView->getVersion(); // u sustini mozda serviranje ne bude uspjesno trebalo bi se u prethodnoj funkciji i pointer na lastSaved poslati ali u 99.99% slucajeva nije bitno, bice servirano
+	_lastSavedModel = tabView->getVersion(); // u sustini mozda serviranje ne bude uspjesno trebalo bi se u prethodnoj funkciji i pointer na _lastSavedModel poslati ali u 99.99% slucajeva nije bitno, bice servirano
 }
 
 void ViewForTab::exportToXML(td::String path)
@@ -179,7 +185,7 @@ public:
 
 		gui::Size size;
 		_lblSave->getMinSize(size);
-		size.height *= 3;
+		size.height *= 2.2;
 		_lblSave->setPreferedContentSize(size);
 
 		_vl << *_lblSave;
@@ -190,28 +196,35 @@ public:
 
 
 	~dialogSave(){
-		//delete _lblSave;
+		delete _lblSave;
 	}
 };
 
-bool ViewForTab::promptSaveIfNecessary()
+bool ViewForTab::promptSaveIfNecessary(bool exitProgram)
 {
 	if(!GlobalEvents::settingsVars.warnBeforeClose)
 		return false;
 
-	if ((lastSettingsVer == settings.getVersion() && lastModelExtract == tabView->getVersion()) || tabView->getVersion() == 0)
+	if ((_lastSavedSettings == settings.getVersion() && _lastSavedModel == tabView->getVersion()) || tabView->getVersion() == 0)
 		return false;
 	auto diag = new dialogSave(this);
 
 	diag->setResizable(false);
 	diag->keepOnTopOfParent();
-	diag->openModal([this](gui::Dialog::Button::ID id, gui::Dialog* d){
+	diag->openModal([this, exitProgram](gui::Dialog::Button::ID id, gui::Dialog* d){
 		if(id == gui::Dialog::Button::ID::User0) //save
 			save();
-		if(id == gui::Dialog::Button::ID::User1) //saveAs
+		if (id == gui::Dialog::Button::ID::User1) //saveAs
+		{
 			saveAs();
-		if(id == gui::Dialog::Button::ID::User2) //dont save
+			return;
+		}
+		if(id == gui::Dialog::Button::ID::User2 && !exitProgram) //dont save
 			GlobalEvents::getMainWindowPtr()->closeTab(this);
+
+		if (exitProgram) {
+			GlobalEvents::getMainWindowPtr()->prepareForClose();
+		}
 
 	});
 
@@ -373,7 +386,7 @@ const modelNode& ViewForTab::getModelNode(bool &error, bool supressLogs)
 
 bool ViewForTab::shouldClose()
 {
-    return !promptSaveIfNecessary();
+    return !promptSaveIfNecessary(false);
 }
 
 ViewForTab::~ViewForTab()

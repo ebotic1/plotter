@@ -17,12 +17,38 @@ void SettingsVars::loadSettingsVars(gui::Application* app)
     auto &props = *this->app->getProperties();
 
 
-    colorAttribute = td::ColorID(props.getValue<int>("attribColorEmir", (int)td::ColorID::LightSkyBlue));
+
+
+    colorsWhite[0] = td::ColorID(props.getValue<int>("constantsColorsWhiteEmir", (int)td::ColorID::Red));
+    colorsWhite[1] = td::ColorID(props.getValue<int>("functionColorsWhiteEmir", (int)td::ColorID::DeepSkyBlue));
+    colorsWhite[2] = td::ColorID(props.getValue<int>("attribColorWhiteEmir", (int)td::ColorID::LightSkyBlue));
+    colorsWhite[3] = td::ColorID(props.getValue<int>("keywordColorWhiteEmir", (int)td::ColorID::DodgerBlue));
+    colorsWhite[4] = td::ColorID(props.getValue<int>("variableColorWhiteEmir", (int)td::ColorID::MediumSeaGreen));
+    colorsWhite[5] = td::ColorID(props.getValue<int>("paramColorWhiteEmir", (int)td::ColorID::OrangeRed));
+    colorsWhite[6] = td::ColorID(props.getValue<int>("commentColorWhiteEmir", (int)td::ColorID::LimeGreen));
+
+
+    colorsBlack[0] = td::ColorID(props.getValue<int>("constantsColorsBlackEmir", (int)td::ColorID::Red));
+    colorsBlack[1] = td::ColorID(props.getValue<int>("functionColorsBlackEmir", (int)td::ColorID::DeepSkyBlue));
+    colorsBlack[2] = td::ColorID(props.getValue<int>("attribColorBlackEmir", (int)td::ColorID::LightSkyBlue));
+    colorsBlack[3] = td::ColorID(props.getValue<int>("keywordColorBlackEmir", (int)td::ColorID::DodgerBlue));
+    colorsBlack[4] = td::ColorID(props.getValue<int>("variableColorBlackEmir", (int)td::ColorID::MediumSeaGreen));
+    colorsBlack[5] = td::ColorID(props.getValue<int>("paramColorBlackEmir", (int)td::ColorID::OrangeRed));
+    colorsBlack[6] = td::ColorID(props.getValue<int>("commentColorBlackEmir", (int)td::ColorID::LimeGreen));
+
+    td::ColorID *colors = app->isDarkMode() ? colorsBlack : colorsWhite;
+
+    colorConstants = colors[0];
+    colorFunctions = colors[1];
+    colorAttribute = colors[2];
+    colorKeyword = colors[3];
+    colorVariable = colors[4];
+    colorParam = colors[5];
+    colorComment = colors[6];
+    
+
+
     colorImports = td::ColorID(props.getValue<int>("importsColorEmir", (int)td::ColorID::Teal));
-    colorKeyword = td::ColorID(props.getValue<int>("keywordColorEmir", (int)td::ColorID::DodgerBlue));
-    colorVariable = td::ColorID(props.getValue<int>("variableColorEmir", (int)td::ColorID::MediumSeaGreen));
-    colorParam = td::ColorID(props.getValue<int>("paramColorEmir", (int)td::ColorID::OrangeRed));
-    colorComment = td::ColorID(props.getValue<int>("commentColorEmir", (int)td::ColorID::LimeGreen));
     textSize = props.getValue<float>("textSizeEmir", 14.0);
     font = props.getValue<td::String>("editorFontEmir", "Default");
     embedPlot = (props.getValue<int>("embedPlotEmir", 1) == 1);
@@ -56,8 +82,9 @@ void SettingsVars::saveValues()
 {
     if(app == nullptr)
         return;
-    auto &props = *this->app->getProperties();
-
+    auto &props = *this->app->getProperties(); 
+    props.setValue<int>("constantsColorsEmir", (int)colorConstants);
+    props.setValue<int>("functionColorsEmir", (int)colorFunctions);
     props.setValue<int>("attribColorEmir", (int)colorAttribute);
     props.setValue<int>("importsColorEmir", (int)colorImports);
     props.setValue<int>("keywordColorEmir", (int)colorKeyword);

@@ -12,8 +12,9 @@ class TextEditorView : public ViewForTab::BaseClass {
 	CodeEdit textMain;
 	gui::HorizontalLayout _hl;
 
-	std::unordered_set<td::String> vars;
-	std::unordered_set<td::String> params;
+	std::unordered_set<td::String> _varsNotRoot;
+	std::unordered_set<td::String> _paramsNotRoot;
+	std::unordered_set<td::String> _expressions;
 
 	friend class CodeEdit;
 public:

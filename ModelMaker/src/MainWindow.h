@@ -40,18 +40,23 @@ private:
     ToolBar _toolBar;
     gui::TabView _tabView;
     gui::ViewSwitcher _switcherView;
-    DataDraw dataDrawer;
-    bool plotEmbedded = false, _restoredTabs = false;
+    DataDraw _dataDrawer;
+    bool _plotEmbedded = false;
 
-    StartingView startingView;
+    StartingView _startingView;
     ContextMenus _contextMenu;
 
-    gui::Image textEditorIcon, guiEditorIcon;
+    gui::Image _textEditorIcon, _guiEditorIcon;
 
-    static std::vector<fileModels> loadedModels;
+    static std::vector<fileModels> _loadedModels;
 
     void simulate();
     void addTab(ViewForTab::BaseClass *tab, const td::String &settingsStr, const td::String &path = td::String());
+
+    std::set<gui::BaseView*> _tabsToProcess;
+    td::String _paths;
+    bool _closeWindow = false;
+    
 
 public:
     enum class dialogIDs{dataDrawer = 200, saveData, settings, unused};
@@ -69,6 +74,7 @@ public:
     const modelNode &getModelFromTabOrFile(const td::String &modelNameOrPath);
     DataDraw* getDataDrawer(bool openWindow = true);
 
+    bool prepareForClose();
     bool shouldClose() override;
     ~MainWindow();
 };

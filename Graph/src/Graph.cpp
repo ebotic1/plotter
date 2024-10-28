@@ -74,7 +74,7 @@ td::String Graph::to_string(gui::CoordType x) {
 
 
 bool Graph::saveXML(const td::String& path){
-    if (funkcije.size() == 0)
+    if (_funkcije.size() == 0)
         return true;
 
     xml::Writer w;
@@ -87,48 +87,48 @@ bool Graph::saveXML(const td::String& path){
     w.startElement("Model");
 
     gui::CoordType scaleX, scaleY, shiftX, shiftY;
-    funkcije[0].getScale(scaleX, scaleY);
-    funkcije[0].getShift(shiftX, shiftY);
+    _funkcije[0].getScale(scaleX, scaleY);
+    _funkcije[0].getShift(shiftX, shiftY);
 
-    w.attribute("minX", to_string(funkcije[0].transformedToRealX(drawingWindow.point.x)));
-    w.attribute("maxX", to_string(funkcije[0].transformedToRealX(drawingWindow.point.x + drawingWindow.size.width)));
-    w.attribute("maxY", to_string(funkcije[0].TrasformedToRealY(drawingWindow.point.y)));
-    w.attribute("minY", to_string(funkcije[0].TrasformedToRealY(drawingWindow.point.y + drawingWindow.size.height)));
+    w.attribute("minX", to_string(_funkcije[0].transformedToRealX(drawingWindow.point.x)));
+    w.attribute("maxX", to_string(_funkcije[0].transformedToRealX(drawingWindow.point.x + drawingWindow.size.width)));
+    w.attribute("maxY", to_string(_funkcije[0].TrasformedToRealY(drawingWindow.point.y)));
+    w.attribute("minY", to_string(_funkcije[0].TrasformedToRealY(drawingWindow.point.y + drawingWindow.size.height)));
 
     w.attribute("xLabel", xAxisName.toString());
     w.attribute("yLabel", yAxisName.toString());
 
     w.attributeC("background", toString(backgroundColor));
-    w.attributeC("axis", toString(axisColor));
+    w.attributeC("axis", toString(_axisColor));
     
 
-    for (size_t i = 0; i < funkcije.size(); ++i){
-        size_t length = funkcije[i].getLength();
+    for (size_t i = 0; i < _funkcije.size(); ++i){
+        size_t length = _funkcije[i].getLength();
 
         w.startElement("function");
-        w.attributeC("name", *funkcije[i].name);
-        w.attribute("width", to_string(funkcije[i].getLineWidth()));
-        w.attributeC("color", toString(funkcije[i].getColor()));
-        w.attributeC("pattern", toString(funkcije[i].getPattern()));
+        w.attributeC("name", *_funkcije[i].name);
+        w.attribute("width", to_string(_funkcije[i].getLineWidth()));
+        w.attributeC("color", toString(_funkcije[i].getColor()));
+        w.attributeC("pattern", toString(_funkcije[i].getPattern()));
         w.attribute("points", to_string(length));
         
         
         w.nodeString("x=[");
-        const gui::Point* tacke = funkcije[i].getPoints();
+        const gui::Point* tacke = _funkcije[i].getPoints();
         --length;
 
 
         for (size_t j = 0; j < length; ++j) {
-            w.nodeString(to_string(funkcije[i].transformedToRealX(tacke[j].x)));
+            w.nodeString(to_string(_funkcije[i].transformedToRealX(tacke[j].x)));
             w.nodeString(", ");
         }
-        w.nodeString(to_string(funkcije[i].transformedToRealX(tacke[length].x)));
+        w.nodeString(to_string(_funkcije[i].transformedToRealX(tacke[length].x)));
         w.nodeString("]\ny=[");
         for (size_t j = 0; j < length; ++j) {
-            w.nodeString(to_string(funkcije[i].TrasformedToRealY(tacke[j].y)));
+            w.nodeString(to_string(_funkcije[i].TrasformedToRealY(tacke[j].y)));
             w.nodeString(", ");
         }
-        w.nodeString(to_string(funkcije[i].TrasformedToRealY(tacke[length].y)));
+        w.nodeString(to_string(_funkcije[i].TrasformedToRealY(tacke[length].y)));
         w.nodeString("]");
         w.endElement();
        
@@ -176,7 +176,7 @@ bool Graph::saveTXT(const td::String& path, bool horizontal){
     }
     
     if (horizontal) {
-        for (auto & fun : funkcije) {
+        for (auto & fun : _funkcije) {
             size_t length = fun.getLength() - 1;
             const gui::Point* tacke = fun.getPoints();
 
@@ -196,10 +196,10 @@ bool Graph::saveTXT(const td::String& path, bool horizontal){
     }
     else{
 
-        std::sort(funkcije.begin(), funkcije.end(), [](const Function& f1, const Function& f2) {return f1.getLength() > f2.getLength(); });
+        std::sort(_funkcije.begin(), _funkcije.end(), [](const Function& f1, const Function& f2) {return f1.getLength() > f2.getLength(); });
 
         size_t length = 0;
-        for (auto & fun : funkcije) {
+        for (auto & fun : _funkcije) {
             out << fun.name->c_str() << "\t\t";
             if (length < fun.getLength())
                 length = fun.getLength();
@@ -208,7 +208,7 @@ bool Graph::saveTXT(const td::String& path, bool horizontal){
 
         for (size_t i = 0; i < length; ++i){
             out << "\n";
-            for (auto & fun : funkcije) {
+            for (auto & fun : _funkcije) {
                 if (fun.getLength() > i) 
                     out << to_string(fun.transformedToRealX(fun.getPoints()[i].x)) << "\t" << to_string(fun.TrasformedToRealY(fun.getPoints()[i].y)) << "\t";
                 else 
@@ -237,7 +237,7 @@ bool Graph::openFile(td::String path, bool readOnlyFunctions){
     }
 
     if (success) {
-        lastPath = path;
+        _lastPath = path;
         reDraw();
         return true;
     }
@@ -516,7 +516,7 @@ void Graph::readXML(const td::String& path, bool onlyData){
 
             addFunction(x.data(), y.data(), x.size(), (color == td::ColorID::Transparent) ? nextColor() : color, width, pattern, name);
                 
-            if (funkcije.size() == 1 && !onlyData) {
+            if (_funkcije.size() == 1 && !onlyData) {
                 if (minX == maxX || minY == maxY)
                     fitToWindow();
                 else
@@ -578,35 +578,36 @@ bool Graph::save(const td::String& path){
     return false;
 }
 
-Graph::Graph(bool startWithMargins, bool takeUserInput, td::ColorID backgroundColor) :gui::Canvas(takeUserInput ? inputs : noInputs), backgroundColor(backgroundColor), drawMargins(startWithMargins)
+Graph::Graph(bool startWithMargins, bool takeUserInput, td::ColorID backgroundColor) :gui::Canvas(takeUserInput ? inputs : noInputs), backgroundColor(backgroundColor), _drawMargins(startWithMargins)
 {
     enableResizeEvent(true);
+    registerForScrollEvents();
 
     for (const char *ime : std::vector<const char*>{":fullScreen", ":grid", ":legend", ":meni", ":save", ":reset", ":fitToWindow", ":info"})
-        slike.emplace_back(ime, gui::Rect({ 0,0 }, gui::Size(32, 32)));
+        _slike.emplace_back(ime, gui::Rect({ 0,0 }, gui::Size(32, 32)));
     
     if (backgroundColor == td::ColorID::SysCtrlBack)
-        axisColor = td::ColorID::SysText;
+        _axisColor = td::ColorID::SysText;
     else if (backgroundColor == td::ColorID::SysText)
-        axisColor = td::ColorID::SysCtrlBack;
-    else if (backgroundColor == axisColor)
-        axisColor = td::ColorID::Black;
-    else if (backgroundColor == axisColor)
-        axisColor = td::ColorID::White;
+        _axisColor = td::ColorID::SysCtrlBack;
+    else if (backgroundColor == _axisColor)
+        _axisColor = td::ColorID::Black;
+    else if (backgroundColor == _axisColor)
+        _axisColor = td::ColorID::White;
     setBackgroundColor(backgroundColor);
 
     gui::DrawableString test("1234567890.1234567890e^(1234567890.1234567890)");
     gui::Size sz;
     test.measure(FONT, sz);
-    numberHeight = sz.height;
+    _numberHeight = sz.height;
 
-    legenda = new legend(axisColor);
+    legenda = new legend(_axisColor);
 
 
     double distance = 20;
-    for (size_t i = 0; i < slike.size(); ++i) {
-        slike[i].rect.setOrigin(distance, 5);
-        distance += 32 + slike[i].rect.width();
+    for (size_t i = 0; i < _slike.size(); ++i) {
+        _slike[i].rect.setOrigin(distance, 5);
+        distance += 32 + _slike[i].rect.width();
     }
 
     if (startWithMargins)
@@ -619,7 +620,7 @@ void Graph::setUpDrawingWindow(){
     drawingWindow.point.y = 0;
     drawingWindow.point.x = 0;
 
-    if (drawMargins) {
+    if (_drawMargins) {
         //gui::Point center;
         //center.x = drawingWindow.point.x + drawingWindow.size.width / 2;
         //center.y = drawingWindow.point.y + drawingWindow.size.height / 2;
@@ -631,24 +632,24 @@ void Graph::setUpDrawingWindow(){
     }
 
     ZoomToWindow(past);
-    drawingRect.setOriginAndSize({ drawingWindow.point.x, drawingWindow.point.y }, drawingWindow.size);
+    _drawingRect.setOriginAndSize({ drawingWindow.point.x, drawingWindow.point.y }, drawingWindow.size);
 
 }
 
 
 
 void Graph::reset(){
-    pastColors.clear();
+    _pastColors.clear();
     verticals.clear();
     horizontals.clear();
     action = Actions::none;
     xAxisName = "";
     yAxisName = "";
-    funkcije.clear();
-    delete Limits;
-    Limits = nullptr;
+    _funkcije.clear();
+    delete _Limits;
+    _Limits = nullptr;
     delete legenda;
-    legenda = new legend(axisColor);
+    legenda = new legend(_axisColor);
 }
 
 void Graph::setBackgroundColor(td::ColorID color){
@@ -657,7 +658,7 @@ void Graph::setBackgroundColor(td::ColorID color){
 }
 
 void Graph::setAxisColor(td::ColorID boja){
-    axisColor = boja;
+    _axisColor = boja;
     reDraw();
 }
 
@@ -672,31 +673,31 @@ void Graph::setMargins(double top, double left, double right, double bottom)
 }
 
 void Graph::addFunction(gui::CoordType* x, gui::CoordType* y, size_t length, td::ColorID color, double lineWidth, td::LinePattern pattern, td::String name){
-    funkcije.emplace_back(x, y, length, color, name, lineWidth, pattern);
-    finishAddingFunction(funkcije.back());
+    _funkcije.emplace_back(x, y, length, color, name, lineWidth, pattern);
+    finishAddingFunction(_funkcije.back());
 }
 
 void Graph::addFunction(gui::CoordType* x, gui::CoordType* y, size_t length, double lineWidth, td::LinePattern pattern, td::String name){
-    funkcije.emplace_back(x, y, length, nextColor(), name, lineWidth, pattern);
-    finishAddingFunction(funkcije.back());
+    _funkcije.emplace_back(x, y, length, nextColor(), name, lineWidth, pattern);
+    finishAddingFunction(_funkcije.back());
 }
 
 
 void Graph::addFunction(Function&& fun){
-    funkcije.emplace_back(std::move(fun));
-    finishAddingFunction(funkcije.back());
+    _funkcije.emplace_back(std::move(fun));
+    finishAddingFunction(_funkcije.back());
 }
 
 void Graph::finishAddingFunction(Function& newFun) {
-    pastColors.push_back(newFun.getColor());
+    _pastColors.push_back(newFun.getColor());
     updateLimits(newFun);
-    if (funkcije.size() == 1) {
+    if (_funkcije.size() == 1) {
         newFun.increaseScaleAndShiftY(-1, 0);
     }
     else {
         gui::CoordType scaleX, scaleY, shiftX, shiftY;
-        funkcije[0].getScale(scaleX, scaleY);
-        funkcije[0].getShift(shiftX, shiftY);
+        _funkcije[0].getScale(scaleX, scaleY);
+        _funkcije[0].getShift(shiftX, shiftY);
         newFun.increaseScaleAndShiftX(scaleX, shiftX);
         newFun.increaseScaleAndShiftY(scaleY, shiftY);
     }
@@ -711,52 +712,52 @@ void Graph::updateLimits(const Function& newFun){
 
     const gui::Point *tacke = newFun.getPoints();
 
-    if (Limits == nullptr) {
-        Limits = new gui::CoordType[4];
-        Limits[int(limits::xMin)] = tacke[0].x;
-        Limits[int(limits::xMax)] = tacke[0].x;
-        Limits[int(limits::yMin)] = tacke[0].y;
-        Limits[int(limits::yMax)] = tacke[0].y;
+    if (_Limits == nullptr) {
+        _Limits = new gui::CoordType[4];
+        _Limits[int(limits::xMin)] = tacke[0].x;
+        _Limits[int(limits::xMax)] = tacke[0].x;
+        _Limits[int(limits::yMin)] = tacke[0].y;
+        _Limits[int(limits::yMax)] = tacke[0].y;
     }
 
     for (size_t i = 0; i < length; ++i) {
-        if (Limits[int(limits::xMax)] < tacke[i].x)
-            Limits[int(limits::xMax)] = tacke[i].x;
+        if (_Limits[int(limits::xMax)] < tacke[i].x)
+            _Limits[int(limits::xMax)] = tacke[i].x;
 
-        if (Limits[int(limits::yMax)] < tacke[i].y)
-            Limits[int(limits::yMax)] = tacke[i].y;
+        if (_Limits[int(limits::yMax)] < tacke[i].y)
+            _Limits[int(limits::yMax)] = tacke[i].y;
 
-        if (Limits[int(limits::xMin)] > tacke[i].x)
-            Limits[int(limits::xMin)] = tacke[i].x;
+        if (_Limits[int(limits::xMin)] > tacke[i].x)
+            _Limits[int(limits::xMin)] = tacke[i].x;
 
-        if (Limits[int(limits::yMin)] > tacke[i].y)
-            Limits[int(limits::yMin)] = tacke[i].y;
+        if (_Limits[int(limits::yMin)] > tacke[i].y)
+            _Limits[int(limits::yMin)] = tacke[i].y;
     }
 }
 
 void Graph::onResize(const gui::Size& newSize) {
     setUpDrawingWindow();
 
-    if (!initalDraw)
+    if (!_initalDraw)
         fitToWindow();
 }
 
 void Graph::fitToWindow(){
-    if (Limits == nullptr)
+    if (_Limits == nullptr)
         return;
     if (drawingWindow.size.width < 1 || drawingWindow.size.height < 1)
         return;
 
-    initalDraw = true;
+    _initalDraw = true;
     gui::CoordType scaleX, scaleY, shiftX, shiftY;
-    funkcije[0].getScale(scaleX, scaleY);
-    funkcije[0].getShift(shiftX, shiftY);
+    _funkcije[0].getScale(scaleX, scaleY);
+    _funkcije[0].getShift(shiftX, shiftY);
 
     gui::Geometry g;
-    g.point.x = Limits[int(limits::xMin)] * scaleX + shiftX;
-    g.point.y = Limits[int(limits::yMax)] * scaleY - shiftY;
-    g.size.width = (Limits[int(limits::xMax)] - Limits[int(limits::xMin)]) * scaleX;
-    g.size.height = (Limits[int(limits::yMin)] - Limits[int(limits::yMax)]) * scaleY;
+    g.point.x = _Limits[int(limits::xMin)] * scaleX + shiftX;
+    g.point.y = _Limits[int(limits::yMax)] * scaleY - shiftY;
+    g.size.width = (_Limits[int(limits::xMax)] - _Limits[int(limits::xMin)]) * scaleX;
+    g.size.height = (_Limits[int(limits::yMin)] - _Limits[int(limits::yMax)]) * scaleY;
 
 
     ZoomToWindow(g);
@@ -764,7 +765,7 @@ void Graph::fitToWindow(){
 }
 
 void Graph::ZoomToWindow(const gui::Geometry& window){
-    if (funkcije.size() == 0)
+    if (_funkcije.size() == 0)
         return;
     if (window.size.width < 0.1 || window.size.height < 0.1) {
         return;
@@ -779,34 +780,34 @@ void Graph::ZoomToWindow(const gui::Geometry& window){
     gui::CoordType scaleY = drawingWindow.size.height / window.size.height;
 
     gui::CoordType accumShiftX, accumShiftY;
-    funkcije[0].getShift(accumShiftX, accumShiftY);
+    _funkcije[0].getShift(accumShiftX, accumShiftY);
     accumShiftX -= drawingWindow.point.x;
     accumShiftY += drawingWindow.point.y + drawingWindow.size.height;
 
-    for (int i = 0; i < funkcije.size(); ++i){
-        funkcije[i].increaseScaleAndShiftX(scaleX, shiftX * scaleX + accumShiftX * (scaleX-1));
-        funkcije[i].increaseScaleAndShiftY(scaleY, shiftY * scaleY + accumShiftY * (scaleY-1));
+    for (int i = 0; i < _funkcije.size(); ++i){
+        _funkcije[i].increaseScaleAndShiftX(scaleX, shiftX * scaleX + accumShiftX * (scaleX-1));
+        _funkcije[i].increaseScaleAndShiftY(scaleY, shiftY * scaleY + accumShiftY * (scaleY-1));
     }
 
 }
 
 
 void Graph::ZoomToArea(gui::CoordType* minX, gui::CoordType* maxX, gui::CoordType* minY, gui::CoordType* maxY){
-    if (funkcije.size() == 0)
+    if (_funkcije.size() == 0)
         return;
     if (drawingWindow.size.width < 1 || drawingWindow.size.height < 1)
         return;
 
     gui::CoordType left, right, top, bottom;
 
-    left = (minX == nullptr) ? drawingWindow.point.x : funkcije[0].realToTransformedX(*minX);
-    right = (maxX == nullptr) ? (drawingWindow.point.x + drawingWindow.size.width) : funkcije[0].realToTransformedX(*maxX);
+    left = (minX == nullptr) ? drawingWindow.point.x : _funkcije[0].realToTransformedX(*minX);
+    right = (maxX == nullptr) ? (drawingWindow.point.x + drawingWindow.size.width) : _funkcije[0].realToTransformedX(*maxX);
 
     if (left > right)
         std::swap(left, right);
 
-    bottom = (minY == nullptr) ? (drawingWindow.point.y + drawingWindow.size.height) : funkcije[0].realToTransformedY(*minY);
-    top = (maxY == nullptr) ? drawingWindow.point.y : funkcije[0].realToTransformedY(*maxY);
+    bottom = (minY == nullptr) ? (drawingWindow.point.y + drawingWindow.size.height) : _funkcije[0].realToTransformedY(*minY);
+    top = (maxY == nullptr) ? drawingWindow.point.y : _funkcije[0].realToTransformedY(*maxY);
 
     if (top > bottom)
         std::swap(top, bottom);
@@ -823,16 +824,16 @@ void Graph::ZoomToArea(gui::CoordType* minX, gui::CoordType* maxX, gui::CoordTyp
 
 void Graph::onDraw(const gui::Rect& rect){
 
-    for (int i = 0; i < funkcije.size(); ++i)
-        funkcije[i].draw(drawingRect);
+    for (int i = 0; i < _funkcije.size(); ++i)
+        _funkcije[i].draw(_drawingRect);
 
     if (action == Actions::select) 
-        gui::Shape::drawRect(selectRect, SELECT_COLOR, 3, td::LinePattern::Dash);
+        gui::Shape::drawRect(_selectRect, SELECT_COLOR, 3, td::LinePattern::Dash);
 
-    if (drawMargins) {
-        gui::Shape::drawRect(drawingRect, axisColor, 2);
+    if (_drawMargins) {
+        gui::Shape::drawRect(_drawingRect, _axisColor, 2);
 
-        for(auto & img : slike)
+        for(auto & img : _slike)
             img.image.draw(img.rect);
 
     }
@@ -840,33 +841,33 @@ void Graph::onDraw(const gui::Rect& rect){
     drawAxis();
 
 
-    if (funkcije.size() == 0)
+    if (_funkcije.size() == 0)
         return;
 
     if (_drawLegend)
         legenda->draw({ (_legendLocation.x < 0) ? rect.right + _legendLocation.x : _legendLocation.x, (_legendLocation.y < 0) ? rect.bottom + _legendLocation.x : _legendLocation.y });
 
     for (size_t i = 0; i < verticals.size(); ++i) {
-        gui::CoordType xVal = funkcije[0].realToTransformedX(verticals[i]);
-        if(xVal >= drawingRect.left && xVal <= drawingRect.right)
-            gui::Shape::drawLine({ xVal, drawingRect.bottom }, { xVal, drawingRect.top }, axisColor, 1.8);
+        gui::CoordType xVal = _funkcije[0].realToTransformedX(verticals[i]);
+        if(xVal >= _drawingRect.left && xVal <= _drawingRect.right)
+            gui::Shape::drawLine({ xVal, _drawingRect.bottom }, { xVal, _drawingRect.top }, _axisColor, 1.8);
     }
     for (size_t i = 0; i < horizontals.size(); ++i) {
-        gui::CoordType yVal = funkcije[0].realToTransformedY(horizontals[i]);
-        if(yVal <= drawingRect.bottom && yVal >= drawingRect.top)
-            gui::Shape::drawLine({ drawingRect.left, yVal }, { drawingRect.right, yVal }, axisColor, 1.8);
+        gui::CoordType yVal = _funkcije[0].realToTransformedY(horizontals[i]);
+        if(yVal <= _drawingRect.bottom && yVal >= _drawingRect.top)
+            gui::Shape::drawLine({ _drawingRect.left, yVal }, { _drawingRect.right, yVal }, _axisColor, 1.8);
     }
     
 
     if (action == Actions::pointPeek) {
 
         td::String broj;
-        broj.format("{ %g , %g }", funkcije[0].transformedToRealX(lastMousePos.x), funkcije[0].TrasformedToRealY(lastMousePos.y));
+        broj.format("{ %g , %g }", _funkcije[0].transformedToRealX(_lastMousePos.x), _funkcije[0].TrasformedToRealY(_lastMousePos.y));
         gui::DrawableString str(broj);
         gui::Size sz;
         str.measure(FONT, sz);
 
-        gui::Rect pointRect(lastMousePos, gui::Size(sz.width + 23, sz.height + 23));
+        gui::Rect pointRect(_lastMousePos, gui::Size(sz.width + 23, sz.height + 23));
         gui::Shape shape;
         shape.createRoundedRect(pointRect, 17.5);
         shape.drawFill(td::ColorID::LightGray);
@@ -883,7 +884,7 @@ void Graph::changeWidth(double width, size_t function){
     if (checkRange(function))
         return;
 
-    funkcije[function].setLineWidth(width);
+    _funkcije[function].setLineWidth(width);
     reDraw();
 }
 
@@ -891,7 +892,7 @@ void Graph::changeName(const td::String& name, size_t function){
     if (checkRange(function))
         return;
 
-    *funkcije[function].name = name;
+    *_funkcije[function].name = name;
     if (legenda == nullptr)
         return;
     legenda->changeName(name, function);
@@ -902,7 +903,7 @@ void Graph::changePattern(td::LinePattern pattern, size_t function){
     if (checkRange(function))
         return;
 
-    funkcije[function].setPattern(pattern);
+    _funkcije[function].setPattern(pattern);
     reDraw();
 
 }
@@ -911,7 +912,7 @@ void Graph::changeColor(td::ColorID color, size_t function){ // todo: modifokova
     if (checkRange(function))
         return;
 
-    funkcije[function].setColor(color);
+    _funkcije[function].setColor(color);
     if (legenda == nullptr)
         return;
 
@@ -930,7 +931,7 @@ void Graph::setLegendLocation(const gui::Point& location)
 
 td::ColorID Graph::nextColor(){
     td::ColorID boja;
-if (pastColors.size() == 0) {
+if (_pastColors.size() == 0) {
             
         switch (backgroundColor){
         case td::ColorID::Black:
@@ -948,19 +949,19 @@ if (pastColors.size() == 0) {
     }
     else {
         bool repeat;
-        int current = int(pastColors.back());
+        int current = int(_pastColors.back());
         int infiniteLoopCheck = current;
         do {
             repeat = false;
             current += 23;
             current = current % 137; //otprilike sve boje su obuhvacene i svaka boja ce se izabrati prije nego sto se pocnu ponavljati
-            for (td::ColorID boja : pastColors)
+            for (td::ColorID boja : _pastColors)
                 if (current == int(boja) || current == int(backgroundColor)) {
                     repeat = true;
                     break;
                 }
             if (infiniteLoopCheck == current)
-                pastColors.clear();
+                _pastColors.clear();
         } while (repeat);
         boja = td::ColorID(current);
     }
@@ -970,20 +971,20 @@ if (pastColors.size() == 0) {
 }
 
 void Graph::drawAxis(){
-    if (funkcije.size() == 0)
+    if (_funkcije.size() == 0)
         return;
 
 
-        gui::Point zero(funkcije[0].realToTransformedX(0), funkcije[0].realToTransformedY(0)); //drawing x and y axis
-        if (drawingRect.left <= zero.x && zero.x <= drawingRect.right)
-            gui::Shape::drawLine({ zero.x, drawingRect.bottom }, { zero.x, drawingRect.top }, axisColor, 1.8);
-        if (drawingRect.top <= zero.y && zero.y <= drawingRect.bottom)
-            gui::Shape::drawLine({ drawingRect.left, zero.y }, { drawingRect.right, zero.y }, axisColor, 1.8);
+        gui::Point zero(_funkcije[0].realToTransformedX(0), _funkcije[0].realToTransformedY(0)); //drawing x and y axis
+        if (_drawingRect.left <= zero.x && zero.x <= _drawingRect.right)
+            gui::Shape::drawLine({ zero.x, _drawingRect.bottom }, { zero.x, _drawingRect.top }, _axisColor, 1.8);
+        if (_drawingRect.top <= zero.y && zero.y <= _drawingRect.bottom)
+            gui::Shape::drawLine({ _drawingRect.left, zero.y }, { _drawingRect.right, zero.y }, _axisColor, 1.8);
    
 
 
     gui::CoordType scaleX, scaleY;
-    funkcije[0].getScale(scaleX, scaleY);
+    _funkcije[0].getScale(scaleX, scaleY);
 
     static double gridLineSpaceX = std::log(7000.0 / gui::Display::getDefaultLogicalPixelToMmVRatio());  //200 mm za svaku grid liniju
     static double gridLineSpaceY = std::log(5000.0 / gui::Display::getDefaultLogicalPixelToMmHRatio());
@@ -992,16 +993,16 @@ void Graph::drawAxis(){
     gui::CoordType razmak = gridLineSpaceX + std::log2(1 / scaleX);
     razmak = std::round(razmak);
     razmak = std::pow(2.0, razmak);
-    gui::CoordType startVal = std::ceil(funkcije[0].transformedToRealX(drawingWindow.point.x) / razmak) * razmak;
-    gui::CoordType line = funkcije[0].realToTransformedX(startVal);
+    gui::CoordType startVal = std::ceil(_funkcije[0].transformedToRealX(drawingWindow.point.x) / razmak) * razmak;
+    gui::CoordType line = _funkcije[0].realToTransformedX(startVal);
 
 
 
     gui::CoordType razmakY = gridLineSpaceY + std::log2(-1 / scaleY);
     razmakY = std::round(razmakY);
     razmakY = std::pow(2.0, razmakY);
-    gui::CoordType startValY = std::ceil(funkcije[0].TrasformedToRealY(drawingWindow.point.y + drawingWindow.size.height) / razmakY) * razmakY;
-    gui::CoordType lineY = funkcije[0].realToTransformedY(startValY);
+    gui::CoordType startValY = std::ceil(_funkcije[0].TrasformedToRealY(drawingWindow.point.y + drawingWindow.size.height) / razmakY) * razmakY;
+    gui::CoordType lineY = _funkcije[0].realToTransformedY(startValY);
 
 
 
@@ -1009,59 +1010,61 @@ void Graph::drawAxis(){
 
    
 
-    gui::CoordType xAxisHeight = _drawNumbersOutside ? drawingRect.bottom : funkcije[0].realToTransformedY(0);
-    gui::CoordType yAxisWidth = _drawNumbersOutside ? drawingWindow.point.x : funkcije[0].realToTransformedX(0);
+    gui::CoordType xAxisHeight;
+    gui::CoordType yAxisWidth;
 
-    if(funkcije[0].TrasformedToRealY(drawingRect.top) < 0)
-        xAxisHeight = drawingRect.top;
-    else if(funkcije[0].TrasformedToRealY(drawingRect.bottom) > 0)
-        xAxisHeight = drawingRect.bottom;
+    if(_funkcije[0].TrasformedToRealY(_drawingRect.top) < 0)
+        xAxisHeight = _drawingRect.top;
+    else if(_funkcije[0].TrasformedToRealY(_drawingRect.bottom) > 0)
+        xAxisHeight = _drawingRect.bottom;
     else
-        xAxisHeight = funkcije[0].realToTransformedY(0);
+        xAxisHeight = _funkcije[0].realToTransformedY(0);
 
     
-    if(funkcije[0].realToTransformedX(drawingRect.right) < 0)
-        yAxisWidth = funkcije[0].realToTransformedX(drawingRect.right);
-    else if(funkcije[0].realToTransformedX(drawingRect.left) > 0)
-        yAxisWidth = funkcije[0].realToTransformedX(drawingRect.left);
+    if(_funkcije[0].transformedToRealX(_drawingRect.right) < 0)
+        yAxisWidth = _drawingRect.right;
+    else if(_funkcije[0].transformedToRealX(_drawingRect.left) > 0)
+        yAxisWidth = _drawingRect.left;
     else
-        yAxisWidth = funkcije[0].realToTransformedX(0);
+        yAxisWidth = _funkcije[0].realToTransformedX(0);
+    
 
     while (line < drawingWindow.point.x + drawingWindow.size.width || lineY >= drawingWindow.point.y){
 
         constexpr double markLen = 7;
         if (lineY >= drawingWindow.point.y) { // Y osa
-            gui::Shape::drawLine({ yAxisWidth - markLen, lineY }, { yAxisWidth + markLen,  lineY }, axisColor, 2);
+            gui::Shape::drawLine({ yAxisWidth - markLen, lineY }, { yAxisWidth + markLen,  lineY }, _axisColor, 2);
 
             gui::DrawableString broj(to_string(startValY));
-     
-            if (_drawNumbersOutside) {
-                gui::Size sz;
-                broj.measure(FONT, sz);
-                broj.draw({ yAxisWidth - markLen - 10 - sz.width,  lineY - numberHeight / 2 }, FONT, axisColor);
+
+            gui::Size sz;
+            broj.measure(FONT, sz);
+
+            if ((_drawNumbersOutside && yAxisWidth <= _drawingRect.left + 10) || (!_drawNumbersOutside && yAxisWidth >= _drawingRect.right - sz.width - 10)) {
+                broj.draw({ yAxisWidth - markLen - 10 - sz.width,  lineY - _numberHeight / 2 }, FONT, _axisColor);
             }
             else 
-                broj.draw({ yAxisWidth + markLen + 5,  lineY}, FONT, axisColor);
+                broj.draw({ yAxisWidth + markLen + 5,  lineY}, FONT, _axisColor);
             
-            if (drawGrid) 
-                gui::Shape::drawLine({ drawingWindow.point.x, lineY }, { drawingWindow.point.x + drawingWindow.size.width,  lineY }, axisColor, 1, td::LinePattern::Dash); 
+            if (_drawGrid) 
+                gui::Shape::drawLine({ drawingWindow.point.x, lineY }, { drawingWindow.point.x + drawingWindow.size.width,  lineY }, _axisColor, 1, td::LinePattern::Dash); 
 
         }
 
         if (line < drawingWindow.point.x + drawingWindow.size.width) { // X osa
-            gui::Shape::drawLine({ line, xAxisHeight - markLen }, { line,  xAxisHeight + markLen }, axisColor, 2); 
+            gui::Shape::drawLine({ line, xAxisHeight - markLen }, { line,  xAxisHeight + markLen }, _axisColor, 2); 
 
             gui::DrawableString broj(to_string(startVal));
             gui::Size sz;
             broj.measure(FONT, sz);
 
-            if (_drawNumbersOutside)
-                broj.draw({ line - sz.width / 2, xAxisHeight + numberHeight + 5 }, FONT, axisColor);
+            if ((_drawNumbersOutside && xAxisHeight >= _drawingRect.top + 10) || ( !_drawNumbersOutside && xAxisHeight <= _drawingRect.top + _numberHeight + 20))
+                broj.draw({ line - sz.width / 2, xAxisHeight + _numberHeight + 5 }, FONT, _axisColor);
             else 
-                broj.draw({ line - sz.width / 2 + 9, xAxisHeight - numberHeight - 22 }, FONT, axisColor);
+                broj.draw({ line - sz.width / 2 + 9, xAxisHeight - _numberHeight - 22 }, FONT, _axisColor);
 
-            if (drawGrid) 
-                gui::Shape::drawLine({ line, drawingRect.bottom }, { line,  drawingWindow.point.y }, axisColor, 1, td::LinePattern::Dash);
+            if (_drawGrid) 
+                gui::Shape::drawLine({ line, _drawingRect.bottom }, { line,  drawingWindow.point.y }, _axisColor, 1, td::LinePattern::Dash);
 
         }
 
@@ -1084,18 +1087,18 @@ void Graph::drawAxis(){
         constexpr double xAxisNameSeperation = 86;
 
         tr.saveContext();
-        tr.translate(drawingRect.left, drawingRect.bottom + xAxisNameSeperation);
+        tr.translate(_drawingRect.left, _drawingRect.bottom + xAxisNameSeperation);
         tr.setToContext();
-        this->xAxisName.draw(r, FONT, axisColor, td::TextAlignment::Center);
+        this->xAxisName.draw(r, FONT, _axisColor, td::TextAlignment::Center);
         tr.restoreContext();
         tr.saveContext();
 
         r.setWidth(drawingWindow.size.height);
         tr.identity();
-        tr.translate(drawingRect.left - yAxisNameSeperation, drawingRect.bottom);
+        tr.translate(_drawingRect.left - yAxisNameSeperation, _drawingRect.bottom);
         tr.rotateDeg(-90);
         tr.setToContext();
-        this->yAxisName.draw(r, FONT, axisColor, td::TextAlignment::Center);
+        this->yAxisName.draw(r, FONT, _axisColor, td::TextAlignment::Center);
         tr.restoreContext();
         
     }
@@ -1106,25 +1109,38 @@ void Graph::drawAxis(){
 
 
 void Graph::onPrimaryButtonDblClick(const gui::InputDevice& inputDevice){
-    if(!drawingRect.contains(inputDevice.getFramePoint()))
+    if(!_drawingRect.contains(inputDevice.getFramePoint()))
         return;
     action = Actions::pointPeek;
-    lastMousePos = inputDevice.getFramePoint();
+    _lastMousePos = inputDevice.getFramePoint();
     reDraw();
+}
+
+bool Graph::onScroll(const gui::InputDevice& inputDevice)
+{
+    gui::CoordType x = inputDevice.getScrollDelta().x * 20;
+    gui::CoordType y = inputDevice.getScrollDelta().y * 20;
+    if (inputDevice.getKey().isShiftPressed()) {
+        std::swap(x, y);
+        x *= -1;
+    }
+
+    moveGraph(x,y);
+    return true;
 }
 
 
 
 void Graph::onPrimaryButtonPressed(const gui::InputDevice& inputDevice) {
-    if (drawingRect.contains(inputDevice.getFramePoint())) {
+    if (_drawingRect.contains(inputDevice.getFramePoint())) {
         action = Actions::select;
-        selectRect.setOrigin(inputDevice.getFramePoint());
-        selectRect.setWidth(0);
-        selectRect.setHeight(0);
+        _selectRect.setOrigin(inputDevice.getFramePoint());
+        _selectRect.setWidth(0);
+        _selectRect.setHeight(0);
         return;
     }
 
-    if (slike[0].rect.contains(inputDevice.getFramePoint())) {
+    if (_slike[0].rect.contains(inputDevice.getFramePoint())) {
         if (!_drawNumbersOutside) {
             _drawNumbersOutside = true;
             _margins = _marginsOld;
@@ -1145,33 +1161,33 @@ void Graph::onPrimaryButtonPressed(const gui::InputDevice& inputDevice) {
         reDraw();
     }
 
-    if (slike[1].rect.contains(inputDevice.getFramePoint())) {
-        showGrid(!drawGrid);
+    if (_slike[1].rect.contains(inputDevice.getFramePoint())) {
+        showGrid(!_drawGrid);
     }
 
-    if (slike[2].rect.contains(inputDevice.getFramePoint())) {
+    if (_slike[2].rect.contains(inputDevice.getFramePoint())) {
         showLegend(!_drawLegend);
     }
 
-    if (slike[3].rect.contains(inputDevice.getFramePoint())) {
+    if (_slike[3].rect.contains(inputDevice.getFramePoint())) {
         showInformation();
     }
 
-    if (slike[4].rect.contains(inputDevice.getFramePoint())) {
+    if (_slike[4].rect.contains(inputDevice.getFramePoint())) {
         saveMenu();
     }
 
-    if (slike[5].rect.contains(inputDevice.getFramePoint())) {
+    if (_slike[5].rect.contains(inputDevice.getFramePoint())) {
         verticals.clear();
         horizontals.clear();
         reDraw();
     }
 
-    if (slike[6].rect.contains(inputDevice.getFramePoint())) {
+    if (_slike[6].rect.contains(inputDevice.getFramePoint())) {
         fitToWindow();
     }
 
-    if (slike[7].rect.contains(inputDevice.getFramePoint())) {
+    if (_slike[7].rect.contains(inputDevice.getFramePoint())) {
         showHelp();
     }
 
@@ -1196,12 +1212,12 @@ void Graph::onPrimaryButtonReleased(const gui::InputDevice& inputDevice){
     if (action == Actions::select) {
         action = Actions::none;
         
-        gui::Geometry g({ selectRect.left, selectRect.top }, gui::Size(selectRect.width(), selectRect.height()));
-        if (selectRect.width() < 0) {
+        gui::Geometry g({ _selectRect.left, _selectRect.top }, gui::Size(_selectRect.width(), _selectRect.height()));
+        if (_selectRect.width() < 0) {
             g.point.x += g.size.width;
             g.size.width *= -1;
         }
-        if (selectRect.height() < 0) {
+        if (_selectRect.height() < 0) {
             g.point.y += g.size.height;
             g.size.height *= -1;
         }
@@ -1220,7 +1236,7 @@ void Graph::onSecondaryButtonPressed(const gui::InputDevice& inputDevice){
         return;
 
     action = Actions::secondaryClick;
-    lastMousePos = inputDevice.getFramePoint();
+    _lastMousePos = inputDevice.getFramePoint();
 
 }
 
@@ -1238,7 +1254,14 @@ void Graph::onSecondaryButtonReleased(const gui::InputDevice& inputDevice){
 }
 
 
-
+inline void Graph::moveGraph(const gui::CoordType& x, const gui::CoordType& y)
+{
+    for (int i = 0; i < _funkcije.size(); ++i) {
+        _funkcije[i].increaseShiftX(x);
+        _funkcije[i].increaseShiftY(y);
+    }
+    reDraw();
+}
 
 
 void Graph::onCursorMoved(const gui::InputDevice& inputDevice){
@@ -1247,20 +1270,16 @@ void Graph::onCursorMoved(const gui::InputDevice& inputDevice){
         return; // moze i bez returna
     }
     if(action == Actions::drag){
-        for (int i = 0; i < funkcije.size(); ++i) {
-            funkcije[i].increaseShiftX(inputDevice.getFramePoint().x - lastMousePos.x);
-            funkcije[i].increaseShiftY(lastMousePos.y - inputDevice.getFramePoint().y);
-        }
-        reDraw();
+        moveGraph(inputDevice.getFramePoint().x - _lastMousePos.x, _lastMousePos.y - inputDevice.getFramePoint().y );
     }
-    lastMousePos = inputDevice.getFramePoint();
+    _lastMousePos = inputDevice.getFramePoint();
 
 }
 
 void Graph::onCursorDragged(const gui::InputDevice& inputDevice){
     if (action == Actions::select) {
-        selectRect.setWidth(inputDevice.getFramePoint().x - selectRect.left);
-        selectRect.setHeight(inputDevice.getFramePoint().y - selectRect.top);
+        _selectRect.setWidth(inputDevice.getFramePoint().x - _selectRect.left);
+        _selectRect.setHeight(inputDevice.getFramePoint().y - _selectRect.top);
         reDraw();
     }
 }
@@ -1325,7 +1344,7 @@ bool Graph::onKeyPressed(const gui::Key& key) {
     }
 
     if (c == 'g' || c == 'G') {
-        showGrid(!drawGrid);
+        showGrid(!_drawGrid);
         return true;
     }
 
@@ -1335,23 +1354,23 @@ bool Graph::onKeyPressed(const gui::Key& key) {
     }
 
     if (key.getVirtual() == gui::Key::Virtual::F5) {
-        if (lastPath.isNull())
+        if (_lastPath.isNull())
             return false;
        
 
-        auto funCnt = funkcije.size();
+        auto funCnt = _funkcije.size();
 
-        delete Limits;
-        Limits = nullptr;
+        delete _Limits;
+        _Limits = nullptr;
         delete legenda;
-        legenda = new legend(axisColor);
+        legenda = new legend(_axisColor);
         xAxisName = "";
         yAxisName = "";
-        pastColors.clear();
+        _pastColors.clear();
 
-        openFile(lastPath, true);
+        openFile(_lastPath, true);
 
-        funkcije.erase(funkcije.begin(), funkcije.begin() + funCnt);
+        _funkcije.erase(_funkcije.begin(), _funkcije.begin() + funCnt);
         reDraw();
 
 
@@ -1360,25 +1379,25 @@ bool Graph::onKeyPressed(const gui::Key& key) {
 
 
     if (key.getVirtual() == gui::Key::Virtual::F11) {
-        drawMargins = !drawMargins;
+        _drawMargins = !_drawMargins;
         setUpDrawingWindow();
         reDraw();
         return true;
     }
 
-    if (funkcije.size() == 0)
+    if (_funkcije.size() == 0)
         return false;
 
     if (c == 'v' || c == 'V' || c == 'h' || c == 'H') {
-        if (!gui::Rect({ drawingWindow.point.x, drawingWindow.point.y }, gui::Size(drawingWindow.size.width, drawingWindow.size.height)).contains(lastMousePos))
+        if (!gui::Rect({ drawingWindow.point.x, drawingWindow.point.y }, gui::Size(drawingWindow.size.width, drawingWindow.size.height)).contains(_lastMousePos))
             return true;
-        if (!active)
+        if (!_active)
             return false;
 
         if (c == 'v' || c == 'V')
-            verticals.emplace_back(funkcije[0].transformedToRealX(lastMousePos.x));
+            verticals.emplace_back(_funkcije[0].transformedToRealX(_lastMousePos.x));
         else
-            horizontals.emplace_back(funkcije[0].TrasformedToRealY(lastMousePos.y));
+            horizontals.emplace_back(_funkcije[0].TrasformedToRealY(_lastMousePos.y));
 
         reDraw();
         return true;
@@ -1402,12 +1421,12 @@ void Graph::showHelp(){
 }
 
 void Graph::onCursorExited(const gui::InputDevice& inputDevice) {
-    active = false;
+    _active = false;
 
 }
 
 void Graph::onCursorEntered(const gui::InputDevice& inputDevice) {
-    active = true;
+    _active = true;
 }
 
 
@@ -1427,7 +1446,7 @@ void Graph::reMeasure(gui::CellInfo& cell)
 
 Graph::~Graph()
 {
-    delete[] Limits;
+    delete[] _Limits;
     delete legenda;
 }
 

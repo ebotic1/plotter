@@ -8,14 +8,18 @@
 #include <gui/Application.h>
 #include <gui/VerticalLayout.h>
 #include <gui/CheckBox.h>
+#include <gui/TabView.h>
 
 class SettingsView: public gui::View{
 
-    gui::VerticalLayout _vl;
+    gui::View _vMain, _vColors;
+    gui::VerticalLayout _vl, _tabViewLayout;
+    gui::TabView _tabView;
+    gui::Image _settingsImg;
 
     mu::IAppProperties *props;
     gui::Label _lblLang;
-    gui::GridLayout layout;
+    gui::GridLayout layout, _colorsGrid;
     gui::ComboBox langCombo;
     const cnt::SafeFullVector<gui::Lang> langs;
     int currentLangIndex = -1;
@@ -38,12 +42,16 @@ public:
         layout(2,2),
         props(getAppProperties()),
         _vl(4),
+        _tabViewLayout(1),
+        _colorsGrid(14, 2),
         _chBoxEmbed(tr("embedGraph")),
         _chBoxRestoreTabs(tr("restoreTabs")),
         _chBoxConfirmClose(tr("confirmCloseSetting")),
         embededCurrent(GlobalEvents::settingsVars.embedPlot),
         langs(getSupportedLanguages()),
-        _lblFont(tr("fontLabel"))
+        _lblFont(tr("fontLabel")),
+        _tabView(gui::TabHeader::Type::FitToText, 20, 20),
+        _settingsImg(":settings")
     {
         
         auto currentLang = props->getKeyValue("Laungage", "BA");
@@ -92,8 +100,17 @@ public:
 
         _vl << layout << _chBoxEmbed << _chBoxRestoreTabs << _chBoxConfirmClose;
 
-        setSizeLimits(width, gui::Control::Limit::Fixed); //pokvareno
-        setLayout(&_vl);
+        setSizeLimits(width, gui::Control::Limit::Fixed);
+
+        _vMain.setLayout(&_vl);
+        _vColors.setLayout(&_colorsGrid);
+
+        _tabView.addView(&_vMain, tr("appSettings"), &_settingsImg);
+        _tabView.addView(&_vColors, tr("colorsSettings"), &_settingsImg);
+        
+
+        _tabViewLayout << _tabView;
+        setLayout(&_tabViewLayout);
     }
 
     ~SettingsView(){

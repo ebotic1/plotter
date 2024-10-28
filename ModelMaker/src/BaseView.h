@@ -65,7 +65,7 @@ private:
 
 
 	td::String path, name;
-	unsigned int lastSaved = 0, lastModelExtract = 0, lastSettingsVer = 0;
+	unsigned int _lastSavedModel = 0, _lastSavedSettings = 0, lastModelExtract = 0, lastSettingsVer = 0;
 	modelNode model, modelTab, emptyModel;
 	bool includeGuard = false;
 
@@ -89,7 +89,7 @@ public:
 	void getTimes(double& startTime, double& endTime, double& stepTime, unsigned int& maxIterations);
 	void setPath(const td::String &path);
 	const td::String &getPath();
-	bool promptSaveIfNecessary();
+	bool promptSaveIfNecessary(bool exitProgram);
 	const modelNode &getModelNode(bool &error, bool supressLogs = false);
 	const std::vector<ModelSettings::FunctionDesc> &getFunctions();
 	

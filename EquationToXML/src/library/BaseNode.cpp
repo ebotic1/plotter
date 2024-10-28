@@ -11,6 +11,10 @@ const std::unordered_set<td::String> baseNode::attributeKeywords{"type", "domain
 const std::unordered_set<td::String> baseNode::functionKeywords{ "abs","acos","asin","atg","cos","exp","sqrt","ln","log",\
 "sin","tg", "sqr", "atan2", "sign", "sinh", "cosh", "tgh", "asnh", "acsh", "atgh", "disc","conj", "real", "imag" };
 
+const std::unordered_set<td::String> baseNode::constantsKeywords{"pi", "e", "true", "false", "LowLimit", "HighLimit"};
+const std::unordered_set<td::String> baseNode::syntaxKeywords{"base", "if", "else", "end", "Model", "Vars", "Var", "Params", "Param", "Params", "NLEqs", "NLE", \
+"Group", "ODEqs", "ODE", "Init", "PostProc", "MeasEqs", "Limits", "EC", "ECs", "TFs", "TF", "Expressions"};
+
 unsigned int baseNode::_processingLine = 0;
 
 const std::regex baseNode::varPatten = std::regex(R"((base\.|^|[^A-Za-z_\.])([a-zA-Z_](?:[\w0-9.]+?)?)(?:$|[^\w.]))");
@@ -19,8 +23,6 @@ const std::regex baseNode::_attribsExtract(R"((?:,|\[|^)\s*([^=,\s]+?)\s*=\s*([^
 
 std::cmatch baseNode::match;
 std::cmatch baseNode::match2;
-
-
 
 
 

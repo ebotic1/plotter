@@ -8,7 +8,7 @@
 
 #include <gui/TableEdit.h>
 
-std::vector<fileModels> MainWindow::loadedModels;
+std::vector<fileModels> MainWindow::_loadedModels;
 
 void MainWindow::simulate()
 {
@@ -23,21 +23,21 @@ void MainWindow::simulate()
 MainWindow::MainWindow()
     : gui::Window(gui::Geometry(100, 10, 1500, 1000)),
       _tabView(gui::TabHeader::Type::Dynamic, 5, 25),
-      textEditorIcon(":txtIcon"),
-      guiEditorIcon(":guiIcon"),
+      _textEditorIcon(":txtIcon"),
+      _guiEditorIcon(":guiIcon"),
       _switcherView(2),
-      dataDrawer(&_tabView)
+      _dataDrawer(&_tabView)
 {
     setTitle("Model Maker");
     _mainMenuBar.setAsMain(this);
     setToolBar(_toolBar);
     setContextMenus(&_contextMenu);
-    _switcherView.addView(&startingView, true);
+    _switcherView.addView(&_startingView, true);
 
 
     GlobalEvents::settingsVars.loadSettingsVars(getApplication());
     if (GlobalEvents::settingsVars.embedPlot) {
-        plotEmbedded = true;
+        _plotEmbedded = true;
     }
 
     _tabView.onClosedView([this](int) {
@@ -91,15 +91,16 @@ void MainWindow::closeTab(gui::BaseView *tab)
 
 void MainWindow::addTab(ViewForTab::BaseClass *tab, const td::String &settingsStr, const td::String &path){
     ViewForTab *wholeTab = nullptr;
+    _tabsToProcess.clear();
     if(GraphicalEditorView *ptr = dynamic_cast<GraphicalEditorView *>(tab); ptr != nullptr){
         wholeTab = new ViewForTab(ptr, settingsStr);
-        _tabView.addView(wholeTab, "", &guiEditorIcon);
+        _tabView.addView(wholeTab, "", &_guiEditorIcon);
         changeTabName(wholeTab->getName().isNull()  ? tr("newGraphTab") : wholeTab->getName(), wholeTab);
         wholeTab->setPath(path);
     }
     else if(TextEditorView *ptr = dynamic_cast<TextEditorView *>(tab); ptr != nullptr){
         wholeTab = new ViewForTab(ptr, settingsStr);
-        _tabView.addView(wholeTab, "", &textEditorIcon);
+        _tabView.addView(wholeTab, "", &_textEditorIcon);
         changeTabName(wholeTab->getName().isNull()  ? tr("newTextTab") : wholeTab->getName(), wholeTab);
         if (path.endsWith(".modl"))
             wholeTab->setPath(path);
@@ -278,7 +279,6 @@ void MainWindow::onInitialAppearance()
     }
 
     if(!success && GlobalEvents::settingsVars.restoreTabs){
-        _restoredTabs = true;
 
         cnt::PushBackVector<td::String> paths;
         auto pathsString = getAppProperties()->getValue<td::String>("previousSessionTabPaths", "");
@@ -294,9 +294,9 @@ void MainWindow::onInitialAppearance()
 DataDraw* MainWindow::getDataDrawer(bool openWindow)
 {
 
-    static auto dataDrawerPtr = &dataDrawer;
+    static auto dataDrawerPtr = &_dataDrawer;
 
-    if(!openWindow || plotEmbedded)
+    if(!openWindow || _plotEmbedded)
         return dataDrawerPtr;
 
 
@@ -321,7 +321,7 @@ const modelNode &MainWindow::getModelFromTabOrFile(const td::String &modelNameOr
             throw (exceptionCantAccessFile) modelNameOrPath;
         
         auto time = std::filesystem::last_write_time(file).time_since_epoch();
-        for(auto &m: loadedModels){
+        for(auto &m: _loadedModels){
             if(m.path == modelNameOrPath)
             {
                 if(time == m.timeModified)
@@ -337,12 +337,12 @@ const modelNode &MainWindow::getModelFromTabOrFile(const td::String &modelNameOr
             }
         }
 
-        loadedModels.emplace_back(modelNameOrPath);
-        sucess = loadedModels.back().model.readFromFile(modelNameOrPath);
+        _loadedModels.emplace_back(modelNameOrPath);
+        sucess = _loadedModels.back().model.readFromFile(modelNameOrPath);
         if(!sucess)
             throw (exceptionCantAccessFile) modelNameOrPath;
-        loadedModels.back().timeModified = time;
-        return loadedModels.back().model;
+        _loadedModels.back().timeModified = time;
+        return _loadedModels.back().model;
         
 	
     }else{ //tab
@@ -361,34 +361,68 @@ const modelNode &MainWindow::getModelFromTabOrFile(const td::String &modelNameOr
 }
 
 
-bool MainWindow::shouldClose()
+bool MainWindow::prepareForClose()
 {
-    cnt::StringBuilder paths;
-    ViewForTab *tab;
+    decltype(_tabsToProcess)::iterator it;
+    ViewForTab* tab;
 
-    for(int i = 0; i<_tabView.getNumberOfViews(); ){
-        tab = dynamic_cast<ViewForTab*>(_tabView.getView(i));
-        if(tab == nullptr){
-            _tabView.removeView(i);
+    for (int i = _tabView.getNumberOfViews() - 1; i >= 0; --i) {
+        it = _tabsToProcess.find(_tabView.getView(i));
+        if (it == _tabsToProcess.end())
             continue;
-        }
 
-        if(GlobalEvents::settingsVars.restoreTabs && !tab->getPath().isNull())
-            paths << tab->getPath() << ":";
+        tab = (ViewForTab*)*it;
 
-        if(tab->promptSaveIfNecessary()){
-            _tabView.showView(i);
+        _tabsToProcess.erase(it);
+        _tabView.showView(i);
+        if (tab->promptSaveIfNecessary(true))
             return false;
-        }
 
-        ++i;
     }
 
-    td::String str;
-    paths.getString(str);
-    getAppProperties()->setValue<td::String>("previousSessionTabPaths", str);
 
+    _closeWindow = true;
+    close();
+    return true;
+
+}
+
+
+
+bool MainWindow::shouldClose()
+{
+    if (_closeWindow)
+        return true;
+
+    if (!_tabsToProcess.empty()) {
+        return prepareForClose();
+    }
+
+    ViewForTab* tab;
+    cnt::StringBuilder pathBuilder;
+
+    for (int i = _tabView.getNumberOfViews() - 1; i >= 0; --i) {
+        tab = dynamic_cast<ViewForTab*>(_tabView.getView(i));
+        if(tab == nullptr)
+            continue;
+
+        if(GlobalEvents::settingsVars.restoreTabs && !tab->getPath().isNull())
+            pathBuilder << tab->getPath() << ":";
+
+        if (GlobalEvents::settingsVars.warnBeforeClose)
+           _tabsToProcess.emplace(tab);
+
+    }
+
+    pathBuilder.getString(_paths);
+    getAppProperties()->setValue<td::String>("previousSessionTabPaths", _paths);
     GlobalEvents::settingsVars.saveValues();
+
+
+    if (GlobalEvents::settingsVars.warnBeforeClose) {
+        return prepareForClose();
+    }
+
     return true;
 }
 

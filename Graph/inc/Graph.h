@@ -11,34 +11,34 @@
 
 class GRAPH_API Graph : public gui::Canvas {
 
-	std::vector<Function> funkcije;
-	std::vector<td::ColorID> pastColors;
+	std::vector<Function> _funkcije;
+	std::vector<td::ColorID> _pastColors;
 	td::ColorID nextColor();
-	td::ColorID axisColor = td::ColorID::White;
+	td::ColorID _axisColor = td::ColorID::White;
 	td::ColorID backgroundColor = td::ColorID::Black;
 	static const std::initializer_list<gui::InputDevice::Event> inputs;
 	static const std::initializer_list<gui::InputDevice::Event> noInputs;
 	gui::Geometry drawingWindow;
-	gui::Rect drawingRect;
-	bool drawMargins;
+	gui::Rect _drawingRect;
+	bool _drawMargins;
 	bool _drawNumbersOutside = true;
 
 	struct Margins {
-		double marginTop = 80;
+		double marginTop = 100;
 		double marginRight = 200;
-		double marginBottom = 180;
+		double marginBottom = 150;
 		double marginLeft = 200;
 	}_margins, _marginsOld;
 
 	gui::Point _legendLocation = { -20.0, 20.0 };
 
-	bool active = false;
-	bool drawGrid = false;
+	bool _active = false;
+	bool _drawGrid = false;
 	gui::DrawableString xAxisName = "", yAxisName = "";
 	void drawAxis();
-	double numberHeight;
+	double _numberHeight;
 	td::String to_string(gui::CoordType x);
-	inline bool checkRange(const size_t& number) { return number > funkcije.size(); }
+	inline bool checkRange(const size_t& number) { return number > _funkcije.size(); }
 
 	enum class Actions { none, select, secondaryClick, drag, pointPeek } action = Actions::none;
 
@@ -46,13 +46,14 @@ class GRAPH_API Graph : public gui::Canvas {
 	void finishAddingFunction(Function& newFun);
 	void updateLimits(const Function& newFun);
 	void ZoomToWindow(const gui::Geometry& window);
+	void moveGraph(const gui::CoordType &x, const gui::CoordType& y);
 
 	enum class limits{xMin = 0, xMax, yMin, yMax};
-	gui::CoordType* Limits = nullptr;
-	bool initalDraw = false;
+	gui::CoordType* _Limits = nullptr;
+	bool _initalDraw = false;
 
-	gui::Rect selectRect;
-	gui::Point lastMousePos;
+	gui::Rect _selectRect;
+	gui::Point _lastMousePos;
 
 	bool _drawLegend = false;
 	bool _legendPositionChanged = false;
@@ -64,7 +65,7 @@ class GRAPH_API Graph : public gui::Canvas {
 	void saveMenu();
 	void readTXT(const td::String& path);
 	void readXML(const td::String& path, bool onlyData);
-	td::String txtPut, lastPath;
+	td::String _txtPut, _lastPath;
 
 	struct imageButton {
 		gui::Image image;
@@ -73,7 +74,7 @@ class GRAPH_API Graph : public gui::Canvas {
 		imageButton(const gui::Image& image, const gui::Rect& rect) : image(image), rect(rect) {};
 	};
 
-	std::vector<imageButton> slike;
+	std::vector<imageButton> _slike;
 
 
 protected:
@@ -90,6 +91,7 @@ protected:
 	void onCursorExited(const gui::InputDevice& inputDevice) override;
 	void onCursorEntered(const gui::InputDevice& inputDevice) override;
 	void onPrimaryButtonDblClick(const gui::InputDevice& inputDevice) override;
+	bool onScroll(const gui::InputDevice& inputDevice) override;
 
 	void onDraw(const gui::Rect& rect) override;
 	void onResize(const gui::Size& newSize) override;
@@ -109,7 +111,7 @@ public:
 
 	void setBackgroundColor(td::ColorID color);
 	void setAxisColor(td::ColorID boja);
-	td::ColorID getAxisColor() { return axisColor; }
+	td::ColorID getAxisColor() { return _axisColor; }
 	void setxAxisName(const td::String& xName) { xAxisName = xName; reDraw(); }
 	void setyAxisName(const td::String& yName) { yAxisName = yName; reDraw(); }
 	const td::String getxAxisName() { return xAxisName.toString(); }
@@ -117,7 +119,7 @@ public:
 	td::ColorID getBackgroundColor() { return backgroundColor; }
 	void setMargins(double top, double left, double right, double bottom);
 	void showLegend(bool draw) { _drawLegend = draw; reDraw(); }
-	void showGrid(bool draw) { drawGrid = draw; reDraw(); }
+	void showGrid(bool draw) { _drawGrid = draw; reDraw(); }
 
 	void addFunction(gui::CoordType* x, gui::CoordType* y, size_t length, td::ColorID color, double lineWidth = 2, td::LinePattern pattern = td::LinePattern::Solid, td::String name = "line");
 	void addFunction(gui::CoordType* x, gui::CoordType* y, size_t length, double lineWidth = 2, td::LinePattern pattern = td::LinePattern::Solid, td::String name = "line");
@@ -127,7 +129,7 @@ public:
 
 	
 
-	const std::vector<Function>& getFunctions(){return funkcije;}
+	const std::vector<Function>& getFunctions(){return _funkcije;}
 	void changeWidth(double width, size_t function);
 	void changeName(const td::String& name, size_t function);
 	void changePattern(td::LinePattern pattern, size_t function);

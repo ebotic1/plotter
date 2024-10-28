@@ -16,6 +16,47 @@ void TextEditorView::getModel(modelNode &model)
 {
 	model.clear();
 	model.processCommands(textMain.getText());
+
+	_varsNotRoot.clear();
+	_paramsNotRoot.clear();
+
+	for (const auto& node : model.getNodes()) {
+		if (std::strcmp(node->getName(), "Init") == 0) {
+			for (const auto& subModel : node->getNodes()) {
+				if (std::strcmp(subModel->getName(), "Model") == 0) {
+					for (const auto& varOrParN : subModel->getNodes()) {
+						
+						
+						if (std::strcmp(varOrParN->getName(), "Vars") == 0)
+							for (const auto& vars : varOrParN->getNodes())
+								_varsNotRoot.emplace((*vars)["name"]);
+
+
+						if (std::strcmp(varOrParN->getName(), "Params") == 0)
+							for (const auto& vars : varOrParN->getNodes())
+								_paramsNotRoot.emplace((*vars)["name"]);
+
+
+					}
+				}
+			}
+		}
+
+		if (std::strcmp(node->getName(), "Expressions") == 0) {
+			td::String name;
+			int poz;
+			for (const auto& exprs : node->getNodes()) {
+				name = (*exprs)["fx"];
+				poz = name.find("(");
+				if (poz != -1) {
+					name = name.subStr(0, poz);
+					_expressions.emplace(name.trimRight());
+				}
+			}
+		}
+
+	}
+
 }
 
 bool TextEditorView::save(const td::String &path, const td::String &settingsString)
@@ -111,7 +152,7 @@ bool TextEditorView::openFile(const td::String &path, td::String &settingsString
 		s.getString(code);
 
 		textMain.setText(code);
-		textMain.processText();
+		textMain.highlightSyntax();
 		textMain.setFontSize(GlobalEvents::settingsVars.textSize);
 		
 		return true;
@@ -147,11 +188,11 @@ void TextEditorView::refreshVisuals()
 {
     if (GlobalEvents::settingsVars.font.compare("Default", 7))
     {
-        textMain.processText();
+        textMain.highlightSyntax();
     }
     else
     {
         textMain.setFontName(GlobalEvents::settingsVars.font);
-        textMain.processText();
+        textMain.highlightSyntax();
     }
 }

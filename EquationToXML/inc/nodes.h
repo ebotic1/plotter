@@ -78,7 +78,7 @@ protected:
 
 public:
 	
-	static const std::unordered_set<td::String> attributeKeywords, functionKeywords;
+	static const std::unordered_set<td::String> attributeKeywords, functionKeywords, constantsKeywords, syntaxKeywords;
 	std::map<td::String, td::String> _attribs;
 	static const std::regex varPatten;
 	const std::vector<baseNode*> &getNodes() const;
