@@ -307,7 +307,7 @@ public:
 			return true;
 		}
 
-		while (*cmndEnd != ';' && *cmndEnd != '\n' && *cmndEnd != '\0') {
+		while (*cmndEnd != '\n' && *cmndEnd != '\0') {
 			if (*cmndEnd == ':')
 				if (!compareUpperCase(cmndStart, "IF") && !compareUpperCase(cmndStart, "ELSE"))
 					return false;

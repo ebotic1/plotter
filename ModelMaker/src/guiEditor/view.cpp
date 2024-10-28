@@ -11,6 +11,7 @@ GraphicalEditorView::GraphicalEditorView() :
 {
 	spliter.setContent(_canvas, props);
 	setLayout(&spliter);
+
 }
 
 bool GraphicalEditorView::save(const td::String& path, const td::String& settingsString)
@@ -47,6 +48,8 @@ bool GraphicalEditorView::openFile(const td::String& path, td::String& settingsS
 {
 	return _canvas.restoreState(path, settingsString);
 }
+
+
 
 
 

@@ -18,7 +18,7 @@ const std::unordered_set<td::String> baseNode::syntaxKeywords{"base", "if", "els
 unsigned int baseNode::_processingLine = 0;
 
 const std::regex baseNode::varPatten = std::regex(R"((base\.|^|[^A-Za-z_\.])([a-zA-Z_](?:[\w0-9.]+?)?)(?:$|[^\w.]))");
-const std::regex baseNode::_lineExtract = std::regex(R"(\s*([^;\n]*?)[ \t]*:?[ \t]*(?:(?:$|;|\n)|(?:(?://|#)([^\n]*))))");
+const std::regex baseNode::_lineExtract = std::regex(R"(\s*([^\n]*?)[ \t]*:?[ \t]*(?:(?:$|\n)|(?:(?://|#)([^\n]*))))");
 const std::regex baseNode::_attribsExtract(R"((?:,|\[|^)\s*([^=,\s]+?)\s*=\s*([^=,]+?)\s*(?=\]|,|$))");
 
 std::cmatch baseNode::match;

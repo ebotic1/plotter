@@ -38,13 +38,11 @@ private:
 
 	bool sumOperator;
 	gui::DrawableString znak;
-
-	static int blockCnt;
 	
 
 public:
 	sumBlock(gui::Point position, kanvas *parent, bool addition_operator, int cnt = 2);
-	virtual int& getCnt() override { return blockCnt; }
+	int getCnt() override { return canvasParent->getBlockCnt().getCnt<decltype(*this)>(); }
 
 	void setUpBlock() override;
 	void drawBlock(td::ColorID color) override;
@@ -54,7 +52,6 @@ public:
 	void updateSettingsView(BlockBase::settingsView* view) override;
 
 	void changeSign(bool addition);
-	static void resetCnt() { blockCnt = 0; }
 
 	static td::String getID() { return "sumBlock"; }
 	~sumBlock();

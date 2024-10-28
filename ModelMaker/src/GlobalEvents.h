@@ -5,14 +5,16 @@
 class MainWindow;
 class GlobalEvents;
 
+
+
 struct SettingsVars
 {
 
-	static constexpr const char* colorNames[] = { "Constants", "Functions", "Attributes",  "Keywords", "Variables", "Paramaters", "Comments"};
+	static constexpr const char* colorNames[] = { "Constants", "Functions", "Attributes",  "Keywords", "Variables", "Paramaters", "Comments", "Text Color"};
 
-	td::ColorID colorAttribute, colorVariable, colorImports, colorKeyword, colorFunctions, colorParam, colorComment, colorConstants;
+	td::ColorID colorAttribute, colorVariable, colorImports, colorKeyword, colorFunctions, colorParam, colorComment, colorConstants, colorText;
 
-	td::ColorID colorsWhite[7], colorsBlack[7];
+	td::ColorID colorsWhite[8], colorsBlack[8];
 
 	double textSize;
 	td::String font;

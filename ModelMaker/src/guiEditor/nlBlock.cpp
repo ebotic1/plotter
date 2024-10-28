@@ -1,7 +1,6 @@
 #include "nlBlock.h"
 #include "gui/Font.h"
 
-int NLBlock::blockCnt = 0;
 
 NLBlock::NLBlock(const gui::Point& position, kanvas* parent):
 	BlockBase(position, parent),
@@ -9,12 +8,12 @@ NLBlock::NLBlock(const gui::Point& position, kanvas* parent):
 {
 	squareBlockMI::setUp();
 	td::String name;
-	name.format("nl%d_out", blockCnt);
+	name.format("nl%d_out", getCnt());
 	setOutputName(name);
-	name.format("2 * nl%d_0", blockCnt);
+	name.format("2 * nl%d_0", getCnt());
 	setEquation(name);
 
-	++blockCnt;
+	canvasParent->getBlockCnt().increaseCnt<decltype(*this)>();
 }
 
 

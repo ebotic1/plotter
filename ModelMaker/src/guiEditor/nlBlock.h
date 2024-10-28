@@ -34,13 +34,10 @@ private:
 
 	gui::DrawableString eqDraw;
 
-	static int blockCnt;
-	
-
 public:
 
 	NLBlock(const gui::Point &position, kanvas *parent);
-	virtual int& getCnt() override { return blockCnt; }
+	int getCnt() override { return canvasParent->getBlockCnt().getCnt<decltype(*this)>(); }
 
 	void setUpBlock() override;
 	void drawBlock(td::ColorID color) override;
@@ -51,7 +48,6 @@ public:
 
 	void setEquation(td::String eq);
 
-	static void resetCnt() { blockCnt = 0; }
 	static td::String getID() { return "NLBlock"; }
 	~NLBlock();
 	friend class blockInterface;

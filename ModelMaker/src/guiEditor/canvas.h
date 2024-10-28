@@ -10,15 +10,19 @@
 #include <gui/Transformation.h>
 #include "blockBase.h"
 #include "../BaseView.h"
+#include "blockInterface.h"
 
 class properties;
+class GraphicalEditorView;
 
 class kanvas : public gui::Canvas {
-	std::vector<BlockBase *> blocks;
+	std::vector<BlockBase *> _blocks;
+	blockInterface blockCnts;
+
 	gui::Point lastMousePos = { 0,0 };
-	double scale = 1;
-	gui::Point totalScroll = { 0,0 };
-	gui::Transformation transformation;
+	double _scale = 1;
+	gui::Point _totalScroll = { 0,0 };
+	gui::Transformation _transformation;
 
 	enum class Actions{none, wiring, dragging, secondary, translate} lastAction = Actions::none;
 	struct blockInfo {
@@ -31,10 +35,10 @@ class kanvas : public gui::Canvas {
 	td::String currentPath;
 
 	properties* props;
-	ViewForTab::BaseClass* tabCore;
+	GraphicalEditorView* tabCore;
 
 public:
-	kanvas(properties *props, ViewForTab::BaseClass * tabCore);
+	kanvas(properties *props, GraphicalEditorView * tabCore);
 	properties* getProperties();
 	kanvas* getCanvas();
 
@@ -65,6 +69,7 @@ public:
 	bool exportToXML(const td::String& path);
 	void resetModel(bool resetCnt = true);
 	void reDraw();
+	blockInterface &getBlockCnt();
 
 	virtual ~kanvas();
 

@@ -93,6 +93,7 @@ void SettingsVars::saveValues()
     colorVariable = colors[4];
     colorParam = colors[5];
     colorComment = colors[6];
+    colorText = colors[7];
 
     auto &props = *this->app->getProperties(); 
     props.setValue<int>("constantsColorsWhiteEmir", (int)colorsWhite[0]);

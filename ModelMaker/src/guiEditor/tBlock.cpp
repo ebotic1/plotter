@@ -1,6 +1,5 @@
 #include "tBlock.h"
 
-int TFBlock::blockCnt = 0;
 
 
 void TFBlock::setNumerator(const td::String& nominator){
@@ -106,7 +105,6 @@ bool TFBlock::hasLaplaceOperator(const td::String& s)
 
 TFBlock::TFBlock(kanvas *parent): BlockBase({0,0}, parent) {
 	disableSetUp = true;
-	blockCnt;
 }
 
 TFBlock::TFBlock(const gui::Point& position, const td::String& inputName, const td::String& outputName, kanvas *parent):
@@ -128,13 +126,13 @@ TFBlock::TFBlock(const gui::Point& position, kanvas *parent):
 	BlockBase::BlockBase(position, parent)
 {
 	td::String ul, izl;
-	ul.format("tf%d_in", blockCnt);
-	izl.format("tf%d_out", blockCnt);
+	ul.format("tf%d_in", getCnt());
+	izl.format("tf%d_out", getCnt());
 	disableSetUp = true;
 	setInputName(ul);
 	disableSetUp = false;
 	setOutputName(izl);
-	++blockCnt;
+	canvasParent->getBlockCnt().increaseCnt<decltype(*this)>();
 
 
 	setNumerator("1");

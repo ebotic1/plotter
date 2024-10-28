@@ -1,14 +1,13 @@
 #include "sumBlock.h"
 
-int	sumBlock::blockCnt = 0;
-
 sumBlock::sumBlock(gui::Point position, kanvas* parent, bool addition_operator, int cnt):
 	squareBlockMInameless(cnt),
 	BlockBase(position, parent)
 {
 	changeSign(addition_operator);
 	td::String name;
-	name.format("sum%d", blockCnt++);
+	name.format("sum%d", getCnt());
+	canvasParent->getBlockCnt().increaseCnt<decltype(*this)>();
 	setOutputName(name);
 
 	setUpAll();

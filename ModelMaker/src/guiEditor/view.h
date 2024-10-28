@@ -16,6 +16,7 @@ class GraphicalEditorView: public ViewForTab::BaseClass {
 	
 	kanvas _canvas;
 
+	friend class kanvas;
 public:
 	GraphicalEditorView();
 	void switchToView(int number) {
@@ -28,6 +29,7 @@ public:
 	void getModel(modelNode& model);
 	void refreshVisuals();
 	bool openFile(const td::String& path, td::String& settingsString);
+	
 
 };
 

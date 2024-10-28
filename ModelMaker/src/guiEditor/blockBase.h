@@ -65,7 +65,7 @@ protected:
 
 public:
 	BlockBase(const gui::Point& position, kanvas *parent);
-	virtual int& getCnt() = 0;
+	virtual int getCnt() = 0;
 
 	const gui::Rect& getRect() const;
 	const bool getInputSwitched() const;
