@@ -160,8 +160,7 @@ bool MainWindow::onActionItem(gui::ActionItemDescriptor& aiDesc)
         return true;
     }
 
-    if(action == menuBarActionIDs::ODE){
-        openFile(gui::getResFileName(":ODE"));
+    static const auto removePath = [this](){
 #ifndef MU_DEBUG
         ViewForTab *view = dynamic_cast<ViewForTab*>(_tabView.getView(_tabView.getNumberOfViews() - 1));
         if (view == nullptr)
@@ -169,8 +168,30 @@ bool MainWindow::onActionItem(gui::ActionItemDescriptor& aiDesc)
 
         view->setPath("");
 #endif // !MU_DEBUG
-        
+    };
+
+    if(action == menuBarActionIDs::ODE){
+        openFile(gui::getResFileName(":ODE"));
+        removePath();
     }
+
+
+    if(action == menuBarActionIDs::DAE){
+        openFile(gui::getResFileName(":DAE"));
+        removePath();
+    }
+
+
+    if(action == menuBarActionIDs::NR){
+        openFile(gui::getResFileName(":NR"));
+        removePath();
+    }
+
+    if(action == menuBarActionIDs::WLS){
+        openFile(gui::getResFileName(":WLS"));
+        removePath();
+    }
+
     
     ViewForTab *currentView = dynamic_cast<ViewForTab*>(this->_tabView.getCurrentView());
 
@@ -314,7 +335,7 @@ DataDraw* MainWindow::getDataDrawer(bool openWindow)
 
 const modelNode &MainWindow::getModelFromTabOrFile(const td::String &modelNameOrPath)
 {
-    bool sucess;
+    bool success;
     if(modelNameOrPath.endsWith(".xml")){//file
         std::filesystem::path file(modelNameOrPath.c_str());
         if(!std::filesystem::exists(file))
@@ -328,8 +349,8 @@ const modelNode &MainWindow::getModelFromTabOrFile(const td::String &modelNameOr
                     return m.model;
                 else
                 {
-                    sucess = m.model.readFromFile(modelNameOrPath);
-                    if(!sucess)
+                    success = m.model.readFromFile(modelNameOrPath);
+                    if(!success)
                         throw (exceptionCantAccessFile) modelNameOrPath;
                     m.timeModified = time;
                     return m.model;
@@ -338,8 +359,8 @@ const modelNode &MainWindow::getModelFromTabOrFile(const td::String &modelNameOr
         }
 
         _loadedModels.emplace_back(modelNameOrPath);
-        sucess = _loadedModels.back().model.readFromFile(modelNameOrPath);
-        if(!sucess)
+        success = _loadedModels.back().model.readFromFile(modelNameOrPath);
+        if(!success)
             throw (exceptionCantAccessFile) modelNameOrPath;
         _loadedModels.back().timeModified = time;
         return _loadedModels.back().model;
@@ -347,12 +368,13 @@ const modelNode &MainWindow::getModelFromTabOrFile(const td::String &modelNameOr
 	
     }else{ //tab
         ViewForTab* tab;
-        for (int i = 0; i < _tabView.getNumberOfViews(); ++i)
+        for (int i = 0; i < _tabView.getNumberOfViews(); ++i){
             tab = dynamic_cast<ViewForTab*>(_tabView.getView(i));
             if(tab != nullptr && tab->getName() == modelNameOrPath){
-                sucess = true;
-                return tab->getModelNode(sucess);
+                success = true;
+                return tab->getModelNode(success);
             }        
+        }
         throw (exceptionCantFindTab) modelNameOrPath;
     }
 
@@ -401,7 +423,7 @@ bool MainWindow::shouldClose()
     ViewForTab* tab;
     cnt::StringBuilder pathBuilder;
 
-    for (int i = _tabView.getNumberOfViews() - 1; i >= 0; --i) {
+    for (int i = 0; i < _tabView.getNumberOfViews(); ++i) {
         tab = dynamic_cast<ViewForTab*>(_tabView.getView(i));
         if(tab == nullptr)
             continue;

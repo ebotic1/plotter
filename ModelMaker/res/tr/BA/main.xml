@@ -48,7 +48,7 @@
 		<Res id="saveTF" tr="Spasavanje modela prenosnih blokova" />
 		<Res id="tfFile" tr="Fajl za grafički editor" />
 		<Res id="fontLabel" tr="Font teksta: " />
-		<Res id="odeModel" tr="ODE model" />
+		<Res id="odeModel" tr="Diferencijalne jednačine" />
 		<Res id="restoreTabs" tr="Vrati zadnje otvorene modele pri pokretanju" />
 		<Res id="DontSave" tr="Nemoj spašavati" />
 		<Res id="NotSavedAlert" tr="sadrži promjene koje nisu spašene." />
@@ -58,5 +58,16 @@
 		<Res id="colorsSettings" tr="Boje" />
 		<Res id="whiteColors" tr="Boje za bijelu pozadinu:" />
 		<Res id="log" tr="Zapisi" />
+		<Res id="constants" tr="Konstantne:" />
+		<Res id="functions" tr="Funkcije:" />
+		<Res id="attributes" tr="Atributi:" />
+		<Res id="keywords" tr="Ključne riječi:" />
+		<Res id="variables" tr="Varijable:" />
+		<Res id="paramaters" tr="Parametri:" />
+		<Res id="comments" tr="Komentari:" />
+		<Res id="textColor" tr="Tekst:" />
+		<Res id="nrModel" tr="Nelinearni model" />
+		<Res id="wlsModel" tr="Metoda najmanjih kvadrata sa težinom" />
+		<Res id="daeModel" tr="Diferencijalno algebarski model" />
 	</Translations>
 </DevRes>

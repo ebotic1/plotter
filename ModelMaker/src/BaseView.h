@@ -8,6 +8,7 @@
 #include <td/StringConverter.h>
 #include <gui/StandardTabView.h>
 #include <gui/Image.h>
+#include <memory>
 
 #include "../../EquationToXML/inc/nodes.h"
 #include "ModelSettings.h"
@@ -56,7 +57,7 @@ public:
 		const std::unordered_set<td::String> &getParams();
 	};
 private:
-	LogView logView;
+	std::shared_ptr<LogView> logView;
 	ModelSettings settings;
 	std::vector<ModelSettings::FunctionDesc> funcionsDesc;
 	std::vector<ModelSettings::DependencyDesc> depenends;
@@ -81,7 +82,7 @@ private:
 public:
 	ViewForTab(BaseClass *, const td::String &settingsStr = td::String());
 
-	const LogView& getLog();
+	const std::shared_ptr<LogView> getLog();
 	const BaseClass &getMainView();
 
 	const td::String &getName();

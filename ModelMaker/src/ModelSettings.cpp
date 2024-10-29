@@ -28,7 +28,7 @@ ModelSettings::ModelSettings() :
 	endTime(timeTypeTD, gui::LineEdit::Messages::Send),
 	stepTime(stepTypeTD, gui::LineEdit::Messages::Send),
 	maxIter(td::DataType::uint4, gui::LineEdit::Messages::Send),
-	preprocesCommands(gui::TextEdit::HorizontalScroll::Yes, gui::TextEdit::Events::Send)
+	preprocesCommands(this)
 {
 
 	setUpLineEditSize(startTime,  td::Variant(timeType(0.0)));
@@ -36,33 +36,18 @@ ModelSettings::ModelSettings() :
 	setUpLineEditSize(stepTime,  td::Variant(stepType(0.01)));
 	setUpLineEditSize(maxIter, td::Variant(td::UINT4(500)));
 
-	preprocesCommands.onChangedSelection([this](){
-		++version;
-		auto text = preprocesCommands.getText();
-		const char *start = text.begin();
-		static std::cmatch match;
-		static std::regex keywordPatten(R"(((?:^|\s)(import|as|function|dataset|of|versus|vs|0)|(.real|.imag))(?:$|\s))");
-		static gui::Range rangeFound;
-		preprocesCommands.removeColor(gui::Range(0,text.length()));
-		while(std::regex_search((const td::UTF8 *)start, (const td::UTF8 *) text.end(), match, keywordPatten)){
-			rangeFound.location = match[1].first - text.begin();
-			rangeFound.length = match[1].length();
-			preprocesCommands.setColor(rangeFound, GlobalEvents::settingsVars.colorKeyword);
-			start = match.suffix().first;
-	}
-	
-	});
-	preprocesCommands.setFontSize(GlobalEvents::settingsVars.textSize);
+
 
 	gui::GridComposer grid(_gridLayout);
 	grid.appendRow(_lblStart) << startTime;
 	grid.appendRow(_lblEnd) << endTime;
 	grid.appendRow(_lblStep) << stepTime;
 	grid.appendRow(_lblMaxIter) << maxIter;
-	grid.startNewRowWithSpace(0,10);
+	grid.startNewRowWithSpace(1,10);
+	grid.appendEmptyCols(1);
 	grid.appendRow(_lblPreproc);
 	grid.appendEmptyCols(1);
-	grid.appendRow(preprocesCommands);
+	_gridLayout.insert(6,0,preprocesCommands, -1);
 
 	preprocesCommands.setSizeLimits(0, gui::Control::Limit::None, 100, gui::Control::Limit::Fixed);
 
@@ -84,13 +69,13 @@ void ModelSettings::showTimes(bool show)
 void ModelSettings::getDependencies(std::vector<DependencyDesc>& desc)
 {
 	desc.clear();
-	std::regex pattern(R"(import\s+([^;\n]+?)(?:\s+as\s+(\w+))?(?:\s+)?(?:[;\n]|$))");
+	std::regex pattern(R"(import\s+(?:(init)\s+)?([^;\n]+?)(?:\s+as\s+(\w+))?(?:\s+)?(?:[;\n]|$))");
 	std::cmatch match;
 
 	const auto& cmnds = preprocesCommands.getText();
 	auto start = cmnds.begin();
 	while (std::regex_search(start, cmnds.end(), match, pattern)) {
-		desc.emplace_back(match[1].first, match[1].length(),  match[2].first, match[2].length());
+		desc.emplace_back(match[2].first, match[2].length(),  match[3].first, match[3].length(), match[1].matched ? modelNode::addType::init : modelNode::addType::combine);
 		start = match.suffix().first;
 	}
 
@@ -109,20 +94,20 @@ inline static void markComplex(td::String& name, bool& isComplex) {
 void ModelSettings::getFunctions(std::vector<FunctionDesc>& desc)
 {
 	desc.clear();
-	std::regex pattern(R"((?:[^!]|)(function|dataset)\s+(?:([^;\n]+?)\s+of\s+)?([^\s\n;]+?)\s+(?:versus|vs)\s+([^\s\n;]+?)(?:\s+)?(?:[;\n]|$))");
+	std::regex pattern(R"((?:\s|^)(!)?(function|dataset)\s+(?:([^;\n]+?)\s+of\s+)?([^\s\n;]+?)\s+(?:versus|vs)\s+([^\s\n;]+?)(?:\s+)?(?:[;\n]|$))");
 	std::cmatch match;
 
 	const auto& cmnds = preprocesCommands.getText();
 	auto start = cmnds.begin();
 	while (std::regex_search(start, cmnds.end(), match, pattern)){
+		if(!match[1].matched){
+			desc.emplace_back(FunctionDesc::Type::graph, match[3].matched ? td::String(match[3].first, match[3].length()) : td::String(match[4].first, match[4].length()),\
+			td::String(match[4].first, match[4].length()),\
+			td::String(match[5].first, match[5].length()));
 
-		desc.emplace_back(FunctionDesc::Type::graph, match[2].matched ? td::String(match[2].first, match[2].length()) : td::String(match[3].first, match[3].length()),\
-		td::String(match[3].first, match[3].length()),\
-		td::String(match[4].first, match[4].length()));
-
-		if (match[1].length() != 8) //duzina rijeci "funkcija" je 8, malo nerobusno ali dobro je
-			desc.back().type = FunctionDesc::Type::points;
-
+			if (match[2].length() != 8) //duzina rijeci "funkcija" je 8, malo nerobusno ali dobro je
+				desc.back().type = FunctionDesc::Type::points;
+		}
 		start = match.suffix().first;
 	}
 	for (auto& d : desc) {
@@ -229,8 +214,45 @@ bool ModelSettings::onClick(gui::CheckBox *pBtn)
 }
 
 
-ModelSettings::DependencyDesc::DependencyDesc(const char *path, int str1Size, const char *alias, int str2Size):
+ModelSettings::DependencyDesc::DependencyDesc(const char *path, int str1Size, const char *alias, int str2Size, modelNode::addType type):
 	pathOrTabName(path, str1Size),
-	alias(alias, str2Size)
+	alias(alias, str2Size),
+	type(type)
 {
+}
+
+void SyntaxText::highlightText()
+{
+	auto text = getText();
+	const char *start = text.begin();
+	static std::cmatch match;
+	static std::regex keywordPatten(R"(((?:^|\s)(import|as|!?function|!?dataset|of|versus|vs|0|init)|(.real|.imag))(?:$|\s))");
+	static gui::Range rangeFound;
+	removeColor(gui::Range(0,text.length()));
+	while(std::regex_search((const td::UTF8 *)start, (const td::UTF8 *) text.end(), match, keywordPatten)){
+		rangeFound.location = match[1].first - text.begin();
+		rangeFound.length = match[1].length();
+		setColor(rangeFound, GlobalEvents::settingsVars.colorKeyword);
+		start = match.suffix().first;
+	}
+}
+
+SyntaxText::SyntaxText(ModelSettings *parent) : gui::TextEdit(gui::TextEdit::HorizontalScroll::Yes, gui::TextEdit::Events::Send),
+                                                _parent(parent)
+{
+	setFontSize(GlobalEvents::settingsVars.textSize);
+}
+
+bool SyntaxText::onKeyPressed(const gui::Key &k)
+{
+	++_parent->version;
+	highlightText();
+    return false;
+}
+
+void SyntaxText::setText(const td::String &text)
+{
+	++_parent->version;
+	gui::TextEdit::setText(text);
+	highlightText();
 }

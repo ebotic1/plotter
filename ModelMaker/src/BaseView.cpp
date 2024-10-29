@@ -77,10 +77,11 @@ ViewForTab::ViewForTab(BaseClass* tabView, const td::String &settingsStr):
 	tabView(tabView),
 	_logImg(":txtIcon"),
 	_settingsImg(":settings"),
-	tabAndLogSplitter(gui::SplitterLayout::Orientation::Vertical, gui::SplitterLayout::AuxiliaryCell::Second)
+	tabAndLogSplitter(gui::SplitterLayout::Orientation::Vertical, gui::SplitterLayout::AuxiliaryCell::Second),
+	logView(new LogView)
 {
 
-	_tabView.addView(&logView, tr("log") , &_logImg);
+	_tabView.addView(logView.get(), tr("log") , &_logImg);
 	_tabView.addView(&settings, tr("settingsShort") , &_settingsImg);
 	tabAndLogSplitter.setContent(*tabView, _tabView);
 
@@ -94,7 +95,7 @@ ViewForTab::ViewForTab(BaseClass* tabView, const td::String &settingsStr):
 	setLayout(&tabAndLogSplitter);
 }
 
-const LogView &ViewForTab::getLog(){
+const std::shared_ptr<LogView> ViewForTab::getLog(){
     return logView;
 }
 
@@ -131,7 +132,7 @@ void ViewForTab::save(){
 	if (tabView->save(path, settings.getString())) {
 		_lastSavedModel = tabView->getVersion();
 		_lastSavedSettings = settings.getVersion();
-		logView.appendLog("Model saved", LogType::info);
+		logView->appendLog("Model saved", LogType::info);
 	}
 	bool error;
 	getModelNode(error, true); //samo da se procesuje ime modela i varijable/parametri
@@ -270,7 +271,7 @@ const modelNode& ViewForTab::getModelNode(bool &error, bool supressLogs)
 		str.getString(m);
 		error = true;
 		includeGuard = false;
-		logView.appendLog(m, LogType::error, supressLogs);
+		logView->appendLog(m, LogType::error, supressLogs);
 		return emptyModel;
 	};
 
@@ -281,13 +282,13 @@ const modelNode& ViewForTab::getModelNode(bool &error, bool supressLogs)
 		str.getString(m);
 		error = true;
 		includeGuard = false;
-		logView.appendLog(m, LogType::error, supressLogs);
+		logView->appendLog(m, LogType::error, supressLogs);
 		return emptyModel;
 		};
 
 
 	if (includeGuard) {
-		logView.appendLog("Circular dependency detected, this model includes itself", LogType::error, supressLogs);
+		logView->appendLog("Circular dependency detected, this model includes itself", LogType::error, supressLogs);
 		error = true;
 		includeGuard = false;
 		return emptyModel;
@@ -302,7 +303,7 @@ const modelNode& ViewForTab::getModelNode(bool &error, bool supressLogs)
 		log += name;
 		log += ", unrecognized block ";
 		log += blName.message;
-		logView.appendLog(log, LogType::error, supressLogs);
+		logView->appendLog(log, LogType::error, supressLogs);
 		error = true;
 		includeGuard = false;
 		return emptyModel;
@@ -333,15 +334,15 @@ const modelNode& ViewForTab::getModelNode(bool &error, bool supressLogs)
 
 
 			log += dep.pathOrTabName;
-			logView.appendLog(log, LogType::info, supressLogs);
-			model.addWtih(GlobalEvents::getMainWindowPtr()->getModelFromTabOrFile(dep.pathOrTabName), dep.alias);
+			logView->appendLog(log, LogType::info, supressLogs);
+			model.addWtih(GlobalEvents::getMainWindowPtr()->getModelFromTabOrFile(dep.pathOrTabName), dep.alias, dep.type);
 		}
 		catch (MainWindow::exceptionCantFindTab &) {
-			logView.appendLog("Cant find requested model, no tab with such name exists", LogType::error, supressLogs);
+			logView->appendLog("Cant find requested model, no tab with such name exists", LogType::error, supressLogs);
 			error = true;
 		}
 		catch (MainWindow::exceptionCantAccessFile &) {
-			logView.appendLog("Cant find or access file", LogType::error, supressLogs);
+			logView->appendLog("Cant find or access file", LogType::error, supressLogs);
 			error = true;
 		}
 		catch (modelNode::exceptionInvalidBlockName& name) {
@@ -349,7 +350,7 @@ const modelNode& ViewForTab::getModelNode(bool &error, bool supressLogs)
 			s << "Unrecognized block \"" << name.message << "\", Discarding model";
 			td::String log;
 			s.getString(log);
-			logView.appendLog(log, LogType::error, supressLogs);
+			logView->appendLog(log, LogType::error, supressLogs);
 			error = true;
 		}
 		catch (modelNode::exceptionInvalidAttribute& atr) {
@@ -361,7 +362,7 @@ const modelNode& ViewForTab::getModelNode(bool &error, bool supressLogs)
 			return emptyModel;
 		}
 		catch (...) {
-			logView.appendLog("Unknown error occured, discarding model", LogType::error, supressLogs);
+			logView->appendLog("Unknown error occured, discarding model", LogType::error, supressLogs);
 			error = true;
 		}
 
@@ -384,7 +385,7 @@ const modelNode& ViewForTab::getModelNode(bool &error, bool supressLogs)
 	tabView->setVariabesAndParams(std::move(vars), std::move(params));
 
 	if(auto it = model._attribs.find("type"); it != model._attribs.end()){
-		if(it->second.cCompareNoCase("NL") == 0 || it->second.cCompareNoCase("WLS") == 0)
+		if(it->second.cCompareNoCase("NR") == 0 || it->second.cCompareNoCase("WLS") == 0)
 			settings.showTimes(false);
 		else
 			settings.showTimes(true);

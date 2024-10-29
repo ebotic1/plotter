@@ -17,16 +17,16 @@ void blockInterface::restoreState()
 
 void blockInterface::writeState(arch::ArchiveOut& f)
 {
-	f << cnts.size();
+	f << (td::UINT8)cnts.size();
 	for (const auto& c : cnts)
-		f << c.first << c.second;
+		f << (td::UINT8)c.first << c.second;
 }
 
 void blockInterface::reloadState(arch::ArchiveIn& f)
 {
 	int size;
 	f >> size;
-	size_t hash;
+	td::UINT8 hash;
 	for (int i = 0; i < size; ++i) {
 		f >> hash;
 		f >> cnts[hash];

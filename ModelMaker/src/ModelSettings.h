@@ -7,15 +7,29 @@
 #include <vector>
 #include <gui/Label.h>
 #include <gui/NumericEdit.h>
+#include "../../EquationToXML/inc/nodes.h"
+
+class ModelSettings;
+
+class SyntaxText: public gui::TextEdit{
+	ModelSettings *_parent;
+	void highlightText();
+public:
+	SyntaxText(ModelSettings *parent);
+	bool onKeyPressed(const gui::Key &k) override;
+	void setText(const td::String &text);
+
+};
 
 class ModelSettings : public gui::View {
 	gui::GridLayout _gridLayout;
 	gui::Label _lblStart, _lblEnd, _lblStep, _lblMaxIter, _lblPreproc;
-	gui::TextEdit preprocesCommands;
+	SyntaxText preprocesCommands;
 	gui::NumericEdit startTime, endTime, stepTime, maxIter;
 
 	gui::View paramaterView;
 	unsigned int version = 1;
+	friend class SyntaxText;
 
 public:
 	struct FunctionDesc {
@@ -26,7 +40,8 @@ public:
 	};
 	struct DependencyDesc {
 		td::String pathOrTabName, alias;
-		DependencyDesc(const char* path, int str1Size, const char* alias, int str2Size);
+		modelNode::addType type;
+		DependencyDesc(const char* path, int str1Size, const char* alias, int str2Size, modelNode::addType);
 	};
 
 public:

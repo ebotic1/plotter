@@ -86,7 +86,7 @@ public:
 	baseNode();
 	baseNode(baseNode&&) = delete;
 	baseNode(const baseNode& node);
-	virtual baseNode* createCopy(const td::String &alias) = 0;
+	virtual baseNode* createCopy(const td::String &alias) const = 0;
 	baseNode &operator =(baseNode&) = delete;
 
 	void printNodeToString(td::String& string) const;
@@ -126,6 +126,8 @@ class modelNode : public baseNode {
 	modelNode(const modelNode& model, const td::String &alias);
 public:
 
+	enum class addType{combine, init};
+
 	struct exceptionInvalidBlockName { td::String message; int line; };
 	struct exceptionInvalidCommand { td::String message; int line;};
 	struct exceptionInvalidAttribute { td::String message; int line; };
@@ -135,10 +137,10 @@ public:
 	modelNode(td::String command);
 	bool nodeAction(const char* cmndStart, const char* cmndEnd, baseNode*& newChild) override;
 	void prettyPrintClosing(cnt::StringBuilder<>& str, td::String &indent) const;
-	modelNode& addWtih(const modelNode &model, const td::String &alias);
+	modelNode& addWtih(const modelNode &model, const td::String &alias, addType type);
 	void clear();
 	bool readFromFile(const td::String &path);
-	baseNode* createCopy(const td::String& alias) override;
+	baseNode* createCopy(const td::String& alias) const override;
 	inline const char* getName() const override {
 		return "Model";
 	}

@@ -17,7 +17,7 @@ class SettingsView: public gui::View{
     gui::VerticalLayout _vl, _tabViewLayout;
     gui::StandardTabView _tabView;
     gui::Image _settingsImg;
-    static constexpr int colorsCnt = 0.5 + sizeof(GlobalEvents::settingsVars.colorNames) / sizeof(const char *);
+    static constexpr int colorsCnt = GlobalEvents::settingsVars.colorCnt;
 
     gui::Label *_colorLabels[colorsCnt];
     gui::ColorPicker _colorPickers[colorsCnt];
@@ -171,7 +171,7 @@ public:
     void measure(gui::CellInfo &c) override{
         gui::View::measure(c);
         c.minHor = 450;
-        c.minVer = 250;
+        c.minVer = 290;
     }
 
 };

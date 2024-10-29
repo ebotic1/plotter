@@ -68,13 +68,13 @@ public:
 		baseNode(node, alias){
 		tip = node.tip;
 	}
-	baseNode* createCopy(const td::String& alias) override {
+	baseNode* createCopy(const td::String& alias) const override {
 		return new conditionNode(*this, alias);
 	}
 	bool prettyPrint(cnt::StringBuilder<>& str, td::String& indent) const override{
 		if(getName()[0] != 'T'){ //not Then
 			indent.reduceSize(1);
-			str << indent << "Else";
+			str << indent << "else";
 
 			if (auto itFx = _attribs.find("fx"); itFx != _attribs.end())
 				str << indent << itFx->second;
@@ -86,7 +86,7 @@ public:
 		}
 
 		if (auto itFx = _attribs.find("fx"); itFx != _attribs.end()){
-			str << indent << itFx->second;
+			str << "\n" << indent << itFx->second;
 			return true;
 		}
 
@@ -158,7 +158,7 @@ public:
 	{
 		consumeEnd = n.consumeEnd;
 	}
-	baseNode* createCopy(const td::String& alias) override {
+	baseNode* createCopy(const td::String& alias) const override {
 		singleEquation &equation = *new singleEquation(*this, alias);
 		
 		if (auto itFx = equation._attribs.find("fx"); itFx != equation._attribs.end())
@@ -288,7 +288,7 @@ public:
 	containerNode() = default;
 	containerNode(const containerNode<containerName, nodeType>& node, const td::String &alias):
 	baseNode(node,alias){}
-	baseNode* createCopy(const td::String &alias) override {
+	baseNode* createCopy(const td::String &alias) const override {
 		return new containerNode<containerName, nodeType>(*this, alias);
 	}
 	bool nodeAction(const char* cmndStart, const char* cmndEnd, baseNode*& newChild) override {
@@ -304,7 +304,7 @@ public:
 
 		if (compareUpperCase(cmndStart, "END")) {
 			_done = true;
-			return true;
+			return false;
 		}
 
 		while (*cmndEnd != '\n' && *cmndEnd != '\0') {
@@ -337,7 +337,7 @@ public:
 	variableNode(const variableNode &n) = default;
 	variableNode(const variableNode &n, const td::String &alias):
 		baseNode(n,alias){}
-	virtual baseNode* createCopy(const td::String &alias) override{
+	virtual baseNode* createCopy(const td::String &alias) const override{
 		auto &var = *new variableNode(*this, alias);
 		if (auto it = var._attribs.find("name"); it != var._attribs.end())
 			addAlias(it->second, alias);
@@ -391,7 +391,7 @@ public:
 	SingleExpression(const SingleExpression& n) = default;
 	SingleExpression(const SingleExpression& n, const td::String& alias) :
 		baseNode(n, alias) {}
-	virtual baseNode* createCopy(const td::String& alias) override {
+	virtual baseNode* createCopy(const td::String& alias) const override {
 		return new SingleExpression(*this, alias);
 	}
 	bool prettyPrint(cnt::StringBuilder<>& str, td::String& indent) const override {
@@ -441,7 +441,7 @@ public:
 		baseNode(node, alias){
 
 		}
-	baseNode* createCopy(const td::String &alias) override {
+	baseNode* createCopy(const td::String &alias) const override {
 		return new initNode(*this, alias);
 	}
 	virtual bool nodeAction(const char* cmndStart, const char* cmndEnd, baseNode*& newChild) override {
@@ -542,42 +542,62 @@ void modelNode::prettyPrintClosing(cnt::StringBuilder<> &str, td::String &indent
 	str << indent << "end\n";
 }
 
-modelNode &modelNode::addWtih(const modelNode &model, const td::String &alias)
+modelNode &modelNode::addWtih(const modelNode &model, const td::String &alias, addType type)
 {
+	if(type == addType::combine){
 
-	for (const auto& a : model._attribs) {
-		if (a.first.cCompareNoCase("domain") == 0) {
-			if (!_attribs.contains("domain"))
-				_attribs["domain"] = a.second;
-			else if(_attribs["domain"].cCompareNoCase("real") == 0)
-				_attribs["domain"] = a.second;
-		}
-
-		if (a.first.cCompareNoCase("type") == 0) {
-			if (!_attribs.contains("type"))
-				_attribs["type"] = a.second;
-			else if (_attribs["type"].cCompareNoCase("NR") == 0)
-				_attribs["type"] = a.second;
-			else if (_attribs["type"].cCompareNoCase("ODE") == 0 && a.second.cCompareNoCase("DAE") == 0)
-				_attribs["type"] = "DAE";
-
-		}
-
-	}
-
-    bool found;
-	for (const auto& n : model.nodes) {
-		found = false;
-		for (const auto& thisNode : nodes)
-			if (std::strcmp(thisNode->getName(), n->getName()) == 0) {
-				found = true;
-				for (const auto& child : n->getNodes())
-					thisNode->addChild(child->createCopy(alias));
+		for (const auto& a : model._attribs) {
+			if (a.first.cCompareNoCase("domain") == 0) {
+				if (!_attribs.contains("domain"))
+					_attribs["domain"] = a.second;
+				else if(_attribs["domain"].cCompareNoCase("real") == 0)
+					_attribs["domain"] = a.second;
 			}
-			
-		if (!found)
-			nodes.push_back(n->createCopy(alias));
+
+			if (a.first.cCompareNoCase("type") == 0) {
+				if (!_attribs.contains("type"))
+					_attribs["type"] = a.second;
+				else if (_attribs["type"].cCompareNoCase("NR") == 0)
+					_attribs["type"] = a.second;
+				else if (_attribs["type"].cCompareNoCase("ODE") == 0 && a.second.cCompareNoCase("DAE") == 0)
+					_attribs["type"] = "DAE";
+
+			}
+
+		}
+
+		bool found;
+		for (const auto& n : model.nodes) {
+			found = false;
+			for (const auto& thisNode : nodes)
+				if (std::strcmp(thisNode->getName(), n->getName()) == 0) {
+					found = true;
+					for (const auto& child : n->getNodes())
+						thisNode->addChild(child->createCopy(alias));
+				}
+				
+			if (!found)
+				nodes.push_back(n->createCopy(alias));
+		}
+	}else if(type == addType::init){
+		bool found = false;
+
+		for (const auto& n : nodes) {
+			if (std::strcmp(n->getName(), "Init") == 0) {
+				found = true;
+				n->addChild(model.createCopy(alias));
+			}
+		}
+
+		if(!found){
+			auto ptr = new initNode;
+			ptr->addChild(model.createCopy(alias));
+			nodes.insert(nodes.begin()+2, ptr);
+		}
+
 	}
+
+
 	return *this;
 }
 
@@ -589,7 +609,7 @@ void modelNode::clear(){
 
 
 
-baseNode *modelNode::createCopy(const td::String& alias)
+baseNode *modelNode::createCopy(const td::String& alias) const
 {
 	return new modelNode(*this, alias);
 }

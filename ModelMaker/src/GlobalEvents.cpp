@@ -16,8 +16,9 @@ void SettingsVars::loadSettingsVars(gui::Application* app)
     }
     auto &props = *this->app->getProperties();
 
-
-
+    colorNames = { tr("constants"), tr("functions"), tr("attributes"),  tr("keywords"), tr("variables"), tr("paramaters"), tr("comments"), tr("textColor")};
+    if(colorNames.size() != colorCnt)
+        assert("SettingsVars u globalEvents.h mora imati ispravno podešenu vrijednost colorCnt");
 
     colorsWhite[0] = td::ColorID(props.getValue<int>("constantsColorsWhiteEmir", (int)td::ColorID::Red));
     colorsWhite[1] = td::ColorID(props.getValue<int>("functionColorsWhiteEmir", (int)td::ColorID::DeepSkyBlue));
@@ -26,6 +27,7 @@ void SettingsVars::loadSettingsVars(gui::Application* app)
     colorsWhite[4] = td::ColorID(props.getValue<int>("variableColorWhiteEmir", (int)td::ColorID::MediumSeaGreen));
     colorsWhite[5] = td::ColorID(props.getValue<int>("paramColorWhiteEmir", (int)td::ColorID::OrangeRed));
     colorsWhite[6] = td::ColorID(props.getValue<int>("commentColorWhiteEmir", (int)td::ColorID::LimeGreen));
+    colorsWhite[7] = td::ColorID(props.getValue<int>("textColorWhiteEmir", (int)td::ColorID::SysText));
 
 
     colorsBlack[0] = td::ColorID(props.getValue<int>("constantsColorsBlackEmir", (int)td::ColorID::Red));
@@ -35,16 +37,9 @@ void SettingsVars::loadSettingsVars(gui::Application* app)
     colorsBlack[4] = td::ColorID(props.getValue<int>("variableColorBlackEmir", (int)td::ColorID::MediumSeaGreen));
     colorsBlack[5] = td::ColorID(props.getValue<int>("paramColorBlackEmir", (int)td::ColorID::OrangeRed));
     colorsBlack[6] = td::ColorID(props.getValue<int>("commentColorBlackEmir", (int)td::ColorID::LimeGreen));
+    colorsBlack[7] = td::ColorID(props.getValue<int>("textColorBlackEmir", (int)td::ColorID::SysText));
 
-    td::ColorID *colors = app->isDarkMode() ? colorsBlack : colorsWhite;
-
-    colorConstants = colors[0];
-    colorFunctions = colors[1];
-    colorAttribute = colors[2];
-    colorKeyword = colors[3];
-    colorVariable = colors[4];
-    colorParam = colors[5];
-    colorComment = colors[6];
+    setColors();
     
 
 
@@ -68,6 +63,7 @@ void SettingsVars::loadDefaultSettings(gui::Application* app)
             return;
     }
 
+
     auto& props = *this->app->getProperties();
 
 
@@ -78,12 +74,8 @@ void SettingsVars::loadDefaultSettings(gui::Application* app)
 
 }
 
-void SettingsVars::saveValues()
+void SettingsVars::setColors()
 {
-    if(app == nullptr)
-        return;
-
-
     td::ColorID *colors = app->isDarkMode() ? colorsBlack : colorsWhite;
 
     colorConstants = colors[0];
@@ -95,6 +87,18 @@ void SettingsVars::saveValues()
     colorComment = colors[6];
     colorText = colors[7];
 
+
+
+}
+
+void SettingsVars::saveValues()
+{
+    if(app == nullptr)
+        return;
+
+
+    setColors();
+
     auto &props = *this->app->getProperties(); 
     props.setValue<int>("constantsColorsWhiteEmir", (int)colorsWhite[0]);
     props.setValue<int>("functionColorsWhiteEmir", (int)colorsWhite[1]);
@@ -103,6 +107,7 @@ void SettingsVars::saveValues()
     props.setValue<int>("variableColorWhiteEmir", (int)colorsWhite[4]);
     props.setValue<int>("paramColorWhiteEmir", (int)colorsWhite[5]);
     props.setValue<int>("commentColorWhiteEmir", (int)colorsWhite[6]);
+    props.setValue<int>("textColorWhiteEmir", (int)colorsWhite[7]);
 
     props.setValue<int>("constantsColorsBlackEmir", (int)colorsBlack[0]);
     props.setValue<int>("functionColorsBlackEmir", (int)colorsBlack[1]);
@@ -111,6 +116,7 @@ void SettingsVars::saveValues()
     props.setValue<int>("variableColorBlackEmir", (int)colorsBlack[4]);
     props.setValue<int>("paramColorBlackEmir", (int)colorsBlack[5]);
     props.setValue<int>("commentColorBlackEmir", (int)colorsBlack[6]);
+    props.setValue<int>("textColorBlackEmir", (int)colorsBlack[7]);
 
     props.setValue<int>("importsColorEmir", (int)colorsWhite[0]);
     props.setValue<float>("textSizeEmir", textSize);

@@ -7,7 +7,7 @@
 #define BACK_COMMENT_CHAR "`"
 #define INDENT_CHAR "\t"
 
-const std::unordered_set<td::String> baseNode::attributeKeywords{"type", "domain", "name", "eps", "dT", "signal", "out", "desc", "method"};
+const std::unordered_set<td::String> baseNode::attributeKeywords{"type", "domain", "name", "eps", "dT", "signal", "out", "desc", "method", "w", "conj"};
 const std::unordered_set<td::String> baseNode::functionKeywords{ "abs","acos","asin","atg","cos","exp","sqrt","ln","log",\
 "sin","tg", "sqr", "atan2", "sign", "sinh", "cosh", "tgh", "asnh", "acsh", "atgh", "disc","conj", "real", "imag" };
 

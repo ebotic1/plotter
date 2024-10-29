@@ -5,10 +5,10 @@
 
 //constexpr bool IZBACI_ENTER_FUNKCIONALNOST = true;
 
-const std::regex CodeEdit::varPattern = std::regex(R"((^|[^A-Za-z_\.])([a-zA-Z_](?:[\w.]*?))(?:$|[^0-9A-Za-z_\.]))");
+const std::regex CodeEdit::varPattern = std::regex(R"((?:^|[^A-Za-z_\.])(base\.)?([a-zA-Z_](?:[\w.]*?))(?:$|[^0-9A-Za-z_\.]))");
 const std::regex CodeEdit::attribPattern = std::regex(R"((?:\[|,)\s*([a-zA-Z]+?)\s*?=)");
 const std::regex CodeEdit::expPattern = std::regex(R"(\^(?:(\([^;\n]+\))|((?:[0-9]+?)?(?:[\w_.]+)?)))");
-const std::regex CodeEdit::numberPattern = std::regex(R"([0-9]+)");
+const std::regex CodeEdit::numberPattern = std::regex(R"((?:(e-[0-9][0-9\.]*)|(?:(?:^|[^\w])([0-9][0-9\.]*))))");
 
 const std::regex CodeEdit::modelKeywordSearch = std::regex(R"((?:(Model)(?:[^\n]*?:)|(end)))");//unused
 
@@ -220,8 +220,9 @@ bool CodeEdit::onKeyReleased(const gui::Key& key)
 void CodeEdit::highlightSyntax(const gui::Range& r)
 {
 	gui::Range rangeFound;
-	removeColor(r);
-	removeMarkup(r, gui::Font::Markup::Superscript);
+	removeColor(r); //ovo se ne bi trebalo pozivati ali nekad se desavaju prolblemi bez ovoga
+	setColor(r, GlobalEvents::settingsVars.colorText);
+	//removeMarkup(r, gui::Font::Markup::Superscript);
 
 	const td::UTF8* end = _text.begin() + r.location + r.length;
 	const char* start = _text.begin() + r.location;
@@ -242,13 +243,26 @@ void CodeEdit::highlightSyntax(const gui::Range& r)
 			setColor(rangeFound, GlobalEvents::settingsVars.colorConstants);
 		else if (modelNode::syntaxKeywords.contains(m))
 			setColor(rangeFound, GlobalEvents::settingsVars.colorKeyword);
+
+		if(match[1].matched){
+			rangeFound.location = match[1].first - _text.begin();
+			rangeFound.length = 5; //base.
+			setColor(rangeFound, GlobalEvents::settingsVars.colorKeyword);
+		}
+			
+		
 		start = match.suffix().first;
 	}
 
 	start = _text.begin() + r.location;
 	while (std::regex_search((const td::UTF8*)start, end, match, numberPattern)) {
-		rangeFound.location = match[0].first - _text.begin();
-		rangeFound.length = match[0].length();
+		if(match[1].matched){
+			rangeFound.location = match[1].first - _text.begin();
+			rangeFound.length = match[1].length();
+		}else{
+			rangeFound.location = match[2].first - _text.begin();
+			rangeFound.length = match[2].length();
+		}
 		setColor(rangeFound, GlobalEvents::settingsVars.colorConstants);
 		start = match.suffix().first;
 	}

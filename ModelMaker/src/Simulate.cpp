@@ -68,7 +68,7 @@ using LogType = LogView::LogType;
 template<typename solverType, typename resultType>
 class SolutionBuffer : public sc::ISolutionBuffer {
 	const std::vector<ModelSettings::FunctionDesc> &functions;
-	const LogView *logger;
+	const std::shared_ptr<LogView> logger;
 	solverType *solver;
 	std::chrono::steady_clock::time_point startTime;
 	int cnt = 0, maxPoints;
@@ -103,7 +103,7 @@ class SolutionBuffer : public sc::ISolutionBuffer {
 	}
 
 public:
-	SolutionBuffer(const td::String &modelName, const LogView *logger, bool initSucess, const std::vector<ModelSettings::FunctionDesc> &functions, int maxPoints, solverType *solver):
+	SolutionBuffer(const td::String &modelName, const std::shared_ptr<LogView> logger, bool initSucess, const std::vector<ModelSettings::FunctionDesc> &functions, int maxPoints, solverType *solver):
 		functions(functions),
 		logger(logger),
 		solver(solver),
@@ -180,7 +180,7 @@ public:
 
 
 
-			if (itX == end && paramIntX > 0 && funD.yAxis.cCompare("0") == 0) { // parametar u x
+			if (itX == end && paramIntX >= 0 && funD.yAxis.cCompare("0") == 0) { // parametar u x
 				if constexpr (!isComplex) {
 					if (funD.type == ModelSettings::FunctionDesc::Type::graph)
 						outFuncs.push_back(DataDraw::FunctionDesc(funD.name, solver->getParamsPtr() + paramIntX, nullptr, 1, funD.xAxis, ""));
@@ -194,7 +194,7 @@ public:
 			}
 
 
-			if (itY == end && paramIntY > 0 && funD.xAxis.cCompare("0") == 0) { // parametar u y
+			if (itY == end && paramIntY >= 0 && funD.xAxis.cCompare("0") == 0) { // parametar u y
 				if constexpr (!isComplex) {
 					if (funD.type == ModelSettings::FunctionDesc::Type::graph)
 						outFuncs.push_back(DataDraw::FunctionDesc(funD.name, nullptr, solver->getParamsPtr() + paramIntY, 1, "", funD.yAxis));
@@ -258,7 +258,7 @@ public:
 		if constexpr (std::is_same<resultType, td::cmplx>::value) {
 			for (int i = 0; i < storePointers.size(); ++i)
 				storePointers[i].first[cnt] = (storePointers[i].second)->real();
-			for (int i = 0; i < storePointers.size(); ++i)
+			for (int i = 0; i < storePointersImag.size(); ++i)
 				storePointersImag[i].first[cnt] = (storePointers[i].second)->imag();
 		}
 		else {
@@ -299,8 +299,8 @@ public:
 };
 
 
-SolutionBuffer(const td::String &, const LogView *, bool, const std::vector<ModelSettings::FunctionDesc> &, int, sc::IDblSolver *) -> SolutionBuffer<sc::IDblSolver, double>;
-SolutionBuffer(const td::String &, const LogView *, bool, const std::vector<ModelSettings::FunctionDesc> &, int, sc::ICmplxSolver *) -> SolutionBuffer<sc::ICmplxSolver, td::cmplx>;
+SolutionBuffer(const td::String &, const std::shared_ptr<LogView>, bool, const std::vector<ModelSettings::FunctionDesc> &, int, sc::IDblSolver *) -> SolutionBuffer<sc::IDblSolver, double>;
+SolutionBuffer(const td::String &, const std::shared_ptr<LogView>, bool, const std::vector<ModelSettings::FunctionDesc> &, int, sc::ICmplxSolver *) -> SolutionBuffer<sc::ICmplxSolver, td::cmplx>;
 
 
 enum class EquationTypes { NR, DAE, ODE, WLS };
@@ -388,7 +388,7 @@ int MainWindow::simulate(ViewForTab *tab)
 	bool error;
 	const modelNode &model = tab->getModelNode(error);
 	if(error){
-		logView.appendLog(tr("simulationFailed"), LogType::error);
+		logView->appendLog(tr("simulationFailed"), LogType::error);
 		return -1;
 	}
 	
@@ -398,7 +398,7 @@ int MainWindow::simulate(ViewForTab *tab)
 	else{
 		isComplex = (it->second.cCompareNoCase("cmplx") == 0 || it->second.cCompareNoCase("complex") == 0) ? true : false;
 		if(!isComplex && it->second.cCompareNoCase("real") != 0)
-			logView.appendLog("model attribute 'domain' is not 'real' or 'complex', assuming real", LogType::warning);
+			logView->appendLog("model attribute 'domain' is not 'real' or 'complex', assuming real", LogType::warning);
 	}
 
 
@@ -406,7 +406,7 @@ int MainWindow::simulate(ViewForTab *tab)
     
 	EquationTypes equationType;
 	if(auto it = model._attribs.find("type"); it == model._attribs.end()){
-		logView.appendLog("model does not have attribute 'type', assuming 'NR'(nonlinear equations)", LogType::warning);
+		logView->appendLog("model does not have attribute 'type', assuming 'NR'(nonlinear equations)", LogType::warning);
 		equationType = EquationTypes::NR;
 	}else{
 		if(it->second.cCompareNoCase("NR") == 0)
@@ -421,8 +421,8 @@ int MainWindow::simulate(ViewForTab *tab)
 			td::String msg("attribute 'type' has unsupported value ");
 			msg += it->second;
 			msg += ", simulation stopping";
-			logView.appendLog(msg, LogType::error);
-			logView.appendLog("Supported types are: NR, DAE, ODE, WLS", LogType::info);
+			logView->appendLog(msg, LogType::error);
+			logView->appendLog("Supported types are: NR, DAE, ODE, WLS", LogType::info);
 			return -2;
 		}
 	}
@@ -477,13 +477,13 @@ int MainWindow::simulate(ViewForTab *tab)
                 s = sc::createCmplxNRSolver(maxIter);
 				break;
 			case EquationTypes::ODE:
-                    logView.appendLog("Complex ODE solver will be implemented in the future", LogType::error);
+                    logView->appendLog("Complex ODE solver will be implemented in the future", LogType::error);
                     return -1;
 					//s = sc::createCmplxODESolver();
 				break;
 			case EquationTypes::DAE:
 				//s = sc::createCmplxDAESolver(maxIter);
-                logView.appendLog("Complex DAE solver will be implemented in the future", LogType::error);
+                logView->appendLog("Complex DAE solver will be implemented in the future", LogType::error);
                 return -1;
 			case EquationTypes::WLS:
                 s = sc::createCmplxWLSSolver(maxIter);
@@ -496,7 +496,7 @@ int MainWindow::simulate(ViewForTab *tab)
 
 		bool useAutoFuncs = false;
 		std::vector<ModelSettings::FunctionDesc> autoFuncs;
-		int size = (equationType == EquationTypes::NR) ? 1 : 1 + std::abs(startTime - endTime) / stepTime;
+		int size = (equationType == EquationTypes::NR || equationType == EquationTypes::WLS) ? 1 : 1 + std::abs(startTime - endTime) / stepTime;
 
 		if (funcs.empty() && initSucess) {
 			useAutoFuncs = true;
@@ -513,10 +513,10 @@ int MainWindow::simulate(ViewForTab *tab)
 					autoFuncs.push_back(ModelSettings::FunctionDesc(ModelSettings::FunctionDesc::Type::graph, s->getSymbolName(symIndex), s->getSymbolName(symIndex), "t"));
 
 			if (autoFuncs.empty())
-				logView.appendLog("No out variables found. You must add 'out=true' attribute to a single variable or the variable declaration tag for them to be visible to the plotter", LogType::warning);
+				logView->appendLog("No out variables found. You must add 'out=true' attribute to a single variable or the variable declaration tag for them to be visible to the plotter", LogType::warning);
 		}
 
-		auto buffer = new SolutionBuffer(tab->getName(), &logView, initSucess, useAutoFuncs ? autoFuncs : funcs, size, s);
+		auto buffer = new SolutionBuffer(tab->getName(), logView, initSucess, useAutoFuncs ? autoFuncs : funcs, size, s);
 
 		if(initSucess){
 			if(equationType == EquationTypes::DAE || equationType == EquationTypes::ODE)

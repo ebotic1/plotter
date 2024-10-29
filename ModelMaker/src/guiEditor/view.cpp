@@ -46,6 +46,7 @@ void GraphicalEditorView::refreshVisuals()
 
 bool GraphicalEditorView::openFile(const td::String& path, td::String& settingsString)
 {
+	this->modelChanged();
 	return _canvas.restoreState(path, settingsString);
 }
 

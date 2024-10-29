@@ -90,8 +90,8 @@ inline void kanvas::onCursorDragged(const gui::InputDevice& inputDevice) {
 		return;
 	}
 	else if (lastAction == Actions::dragging) {
-		gui::CoordType deltaX = inputDevice.getFramePoint().x - lastMousePos.x;
-		gui::CoordType deltaY = inputDevice.getFramePoint().y - lastMousePos.y;
+		gui::CoordType deltaX = (inputDevice.getFramePoint().x - lastMousePos.x) / _scale;
+		gui::CoordType deltaY = (inputDevice.getFramePoint().y - lastMousePos.y) / _scale;
 
 		tempCurrentBlock.TFBlock->setPosition({ tempCurrentBlock.TFBlock->getRect().left + deltaX, tempCurrentBlock.TFBlock->getRect().top + deltaY });
 		lastMousePos = inputDevice.getFramePoint();
@@ -182,9 +182,9 @@ void kanvas::getModel(modelNode& mod)
 {
 	mod.clear();
 
-	mod.processCommands("Paradms:\nVars:");
+	mod.processCommands("Model:\nParams:\nVars:");
 	BlockBase::Nodes nodes;
-
+	
 	baseNode& params = *mod.getNodes()[0];
 
 

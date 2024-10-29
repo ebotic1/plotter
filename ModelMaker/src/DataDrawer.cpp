@@ -16,7 +16,8 @@ DataDraw::FunctionDesc::FunctionDesc(const td::String& name, double* x, double* 
 
 
 DataDraw::DataDraw(gui::TabView* tabView):
-	imgGraph(":txtIcon"),
+	imgGraph(":graphData"),
+	imgTable(":tableData"),
 	_hl(1),
 	_tabViewOwnership(tabView == nullptr),
 	_tabView((tabView == nullptr) ? new gui::TabView(gui::TabHeader::Type::Dynamic, 10, 50) : tabView)
@@ -40,6 +41,7 @@ void DataDraw::measure(gui::CellInfo& cell)
 void DataDraw::addData(const td::String& name, const std::vector<FunctionDesc>& functions, Type tip)
 {
 	gui::BaseView* tab = nullptr;
+	gui::Image *img;
 	if (functions.size() == 0)
 		return;
 
@@ -78,11 +80,13 @@ void DataDraw::addData(const td::String& name, const std::vector<FunctionDesc>& 
 
 		g->fitToWindow();
 		tab = g;
+		img = &imgGraph;
 		
 	}
 	else {
 		auto table = new Table(functions);
 		tab = table;
+		img = &imgTable;
 	}
 	
 		Tab* searchTab;
@@ -94,8 +98,8 @@ void DataDraw::addData(const td::String& name, const std::vector<FunctionDesc>& 
 			}
 		}
 	
-
-	_tabView->addView(new Tab(name, tab), name, &imgGraph);
+	
+	_tabView->addView(new Tab(name, tab), name, img);
 	
 }
 

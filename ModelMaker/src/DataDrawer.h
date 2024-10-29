@@ -15,7 +15,7 @@
 class DataDraw : public gui::View {
 	gui::TabView *_tabView;
 	gui::HorizontalLayout _hl;
-	gui::Image imgGraph;
+	gui::Image imgGraph, imgTable;
 	bool _tabViewOwnership;
 
 	struct Tab : public gui::View {

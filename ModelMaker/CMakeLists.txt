@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.18)
 
 set(SOLUTION_NAME modelMaker) #Unijeti naziv solution-a
 
+
 #BEGIN dio koji ide u sve solutions
 project(${SOLUTION_NAME})
 set(SOURCE_ROOT ${CMAKE_CURRENT_LIST_DIR})
@@ -12,6 +13,5 @@ endif()
 set(WORK_ROOT ${HOME_ROOT}/Work)
 include(${WORK_ROOT}/DevEnv/Common.cmake) 
 #END dio koji ide u sve solutions
-
 
 include("modelMaker.cmake")

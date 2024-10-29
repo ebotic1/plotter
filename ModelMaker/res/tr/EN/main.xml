@@ -48,7 +48,7 @@
 		<Res id="saveTF" tr="Save transfer function block model" />
 		<Res id="tfFile" tr="Graphical editor save file" />
 		<Res id="fontLabel" tr="Text font: " />
-		<Res id="odeModel" tr="ODE model" />
+		<Res id="odeModel" tr="Differential equations" />
 		<Res id="restoreTabs" tr="Restore last opened files on startup" />
 		<Res id="DontSave" tr="Close without saving" />
 		<Res id="NotSavedAlert" tr="has unsaved changes." />
@@ -58,5 +58,16 @@
 		<Res id="colorsSettings" tr="Colors" />
 		<Res id="whiteColors" tr="White theme colors:" />
 		<Res id="log" tr="Log" />
+		<Res id="constants" tr="Constants:" />
+		<Res id="functions" tr="Functions:" />
+		<Res id="attributes" tr="Attributes:" />
+		<Res id="keywords" tr="Keywords:" />
+		<Res id="variables" tr="Variables:" />
+		<Res id="paramaters" tr="Paramaters:" />
+		<Res id="comments" tr="Comments:" />
+		<Res id="textColor" tr="Text:" />
+		<Res id="nrModel" tr="Nonlinear model" />
+		<Res id="wlsModel" tr="Weighted least squares" />
+		<Res id="daeModel" tr="Differential-algebaric model" />
 	</Translations>
 </DevRes>

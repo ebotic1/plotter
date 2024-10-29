@@ -1,6 +1,7 @@
 #pragma once
 #include <gui/ActionItemDescriptor.h>
 #include <gui/Window.h>
+#include <gui/Label.h>
 
 class MainWindow;
 class GlobalEvents;
@@ -10,19 +11,28 @@ class GlobalEvents;
 struct SettingsVars
 {
 
-	static constexpr const char* colorNames[] = { "Constants", "Functions", "Attributes",  "Keywords", "Variables", "Paramaters", "Comments", "Text Color"};
+	static const char *tr(const char *key){
+		static gui::Label helper("");
+		return helper.tr(key).c_str();
+	}
+
+	
+	std::vector<const char*> colorNames;
+	static constexpr int colorCnt = 8;
 
 	td::ColorID colorAttribute, colorVariable, colorImports, colorKeyword, colorFunctions, colorParam, colorComment, colorConstants, colorText;
 
-	td::ColorID colorsWhite[8], colorsBlack[8];
+	td::ColorID colorsWhite[colorCnt], colorsBlack[colorCnt];
 
 	double textSize;
 	td::String font;
 	bool embedPlot, restoreTabs, warnBeforeClose;
+	
 	void saveValues();
 	void loadSettingsVars(gui::Application* app);
 	void loadDefaultSettings(gui::Application* app);
 private:
+	void setColors();
 	static gui::Application *app;
 	friend class GlobalEvents;
 };

@@ -2,7 +2,7 @@
 #include <gui/MenuBar.h>
 #include <gui/MenuItem.h>
 
-enum menuBarActionIDs{New=1, Simulate, Save, SaveAs, Export, Settings, EmptyModel, OpenFromFile, ODE};
+enum menuBarActionIDs{New=1, Simulate, Save, SaveAs, Export, Settings, EmptyModel, OpenFromFile, ODE, NR, WLS, DAE};
 
 enum subMenuIDs{subMenuModel=1, subMenuNewModel, subMenuSettings, subMenuNewText, subMenuNewGraphical};
 
@@ -15,7 +15,7 @@ public:
 	model(subMenuModel, tr("Model"), 3),
 	newModel(subMenuNewModel, tr("NewTab"), 3),
 	settings(subMenuSettings, tr("app"), 2),
-	modelText(subMenuNewText, tr("TextualEditor"), 2),
+	modelText(subMenuNewText, tr("TextualEditor"), 5),
 	modelGraphical(subMenuNewGraphical, tr("GraphicalEditor"), 1)
 	{
 		{
@@ -40,6 +40,10 @@ public:
 			auto &items = modelText.getItems();
 			items[0].initAsActionItem(tr("emptyModel"), EmptyModel, "<Ctrl>n");
 			items[1].initAsActionItem(tr("odeModel"), ODE);
+			items[2].initAsActionItem(tr("nrModel"), NR);
+			items[3].initAsActionItem(tr("wlsModel"), WLS);
+			items[4].initAsActionItem(tr("daeModel"), DAE);
+
 		}
 
 		{

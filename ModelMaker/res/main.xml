@@ -4,15 +4,16 @@
 		<Res id="start" path=":images/start.png"/>
 		<Res id="txtIcon" path=":images/textEditor.png"/>
 		<Res id="guiIcon" path=":images/graphEditor.png"/>
-		<Res id="tableData" path=":images/graphEditor.png"/>
-		<Res id="graphData" path=":images/graphEditor.png"/>
+		<Res id="tableData" path=":images/table.png"/>
+		<Res id="graphData" path=":images/plot.png"/>
 		<Res id="settings" path="Work/Common/Icons/ToolsA_32.png"/>
 	</Images>
 
 	<FileNames>
-		<Res id="ODE" path=":models/ode.txt"/>
-		<Res id="NL" path=":models/nl.txt"/>
-		<Res id="DAE" path=":models/dae.txt"/>
+		<Res id="ODE" path=":models/ode.modl"/>
+		<Res id="NR" path=":models/nr.modl"/>
+		<Res id="DAE" path=":models/dae.modl"/>
+		<Res id="WLS" path=":models/wls.modl"/>
 	</FileNames>
 
 </DevRes>
