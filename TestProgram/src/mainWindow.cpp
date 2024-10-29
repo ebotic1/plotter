@@ -1,6 +1,6 @@
-#include "gui/Window.h"
+#include <gui/Window.h>
 #include "mainWindow.h"
-#include "./../../Canvas/inc/canvas.h"
+#include "./../../Graph/inc/Graph.h"
 
 #include "gui/FileDialog.h"
 
@@ -20,6 +20,7 @@ MainWindow::MainWindow()
         y[i] = i * i;
     }
 
+    
 
     gui::CoordType* xx = new gui::CoordType[6];
     gui::CoordType* yy = new gui::CoordType[6];

@@ -5,8 +5,8 @@
 #include "gui/Slider.h"
 #include "gui/ColorPicker.h"
 #include "gui/ViewSwitcher.h"
-#include "./../../common/property.h"
-#include "./../../Canvas/inc/canvas.h"
+#include "./../../common/Property.h"
+#include "./../../Graph/inc/Graph.h"
 
 
 const std::vector<td::String> patternNames = { "Solid", "Dash", "Dot", "DashDot", "DashEq", "Data points" };
@@ -15,7 +15,7 @@ class switcher : public gui::ViewSwitcher {
 	gui::VerticalLayout graphProps;
 	gui::VerticalLayout lineProps;
 	gui::View view1, view2;
-	graph& mainGraph;
+	Graph& mainGraph;
 	size_t index = 0;
 
 	elementProperty name;
@@ -31,7 +31,7 @@ class switcher : public gui::ViewSwitcher {
 
 	
 public:
-	switcher(graph& mainView) : gui::ViewSwitcher(2), graphProps(8), lineProps(6), mainGraph(mainView),
+	switcher(Graph& mainView) : gui::ViewSwitcher(2), graphProps(8), lineProps(6), mainGraph(mainView),
 		name("name: ", td::string8, "name of the function that appears on the legend"),
 		sliderLabel("Line width:"),
 		axisLabel("Axis color:"), backgroundLabel("Background Color:"),
@@ -139,7 +139,7 @@ void switcher::showGraph(){
 
 
 
-splitterLayout::splitterLayout(graph& mainView) : _mainLayout(gui::SplitterLayout::Orientation::Horizontal), v(4), _graph(mainView){
+splitterLayout::splitterLayout(Graph& mainView) : _mainLayout(gui::SplitterLayout::Orientation::Horizontal), v(4), _graph(mainView){
 	props = new switcher(mainView);
 	picker.forwardMessagesTo(this);
 	picker.addItem("Graph");
@@ -149,7 +149,9 @@ splitterLayout::splitterLayout(graph& mainView) : _mainLayout(gui::SplitterLayou
 	v << *props;
 	v.appendSpacer();
 	
-	_mainLayout.setContent(mainView, v);
+	_settingsView.setLayout(&v);
+
+	_mainLayout.setContent(mainView, _settingsView);
 
 	setLayout(&_mainLayout);
 }

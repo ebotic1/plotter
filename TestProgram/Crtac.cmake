@@ -1,4 +1,4 @@
-include(${CMAKE_CURRENT_LIST_DIR}/../Canvas/plotlib.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/../Graph/graph.cmake)
 
 set(EXECUTABLE_NAME Plotter)
 
@@ -15,7 +15,7 @@ add_executable(${EXECUTABLE_NAME} ${INCS} ${SOURCES} ${COMMON})
 
 target_link_libraries(${EXECUTABLE_NAME}	debug ${MU_LIB_DEBUG}   optimized ${MU_LIB_RELEASE}
 										debug ${NATGUI_LIB_DEBUG}  optimized ${NATGUI_LIB_RELEASE} 
-										${plotlib_lib})
+										${GRAPH_NAME})
 
 set(CMAKE_WIN32_EXECUTABLE TRUE)
 

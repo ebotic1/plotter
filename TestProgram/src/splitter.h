@@ -1,6 +1,6 @@
-#include "gui/SplitterLayout.h"
+#include <gui/SplitterLayout.h>
 #include "gui/View.h"
-#include "./../../Canvas/inc/canvas.h"
+#include "./../../Graph/inc/Graph.h"
 #include "gui/ComboBox.h"
 #include "gui/VerticalLayout.h"
 
@@ -14,12 +14,13 @@ class splitterLayout : public gui::View {
 	gui::ComboBox picker;
 	gui::VerticalLayout v;
 	switcher* props = nullptr;
-	graph& _graph;
+	Graph& _graph;
+	gui::View _settingsView;
 
 	bool ignoreSelections = false;
 
 public:
-	splitterLayout(graph& mainView);
+	splitterLayout(Graph& mainView);
 	void refreshPicks();
 
 

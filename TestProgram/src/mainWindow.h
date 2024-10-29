@@ -1,6 +1,6 @@
-#include "gui/Window.h"
-#include "./../../Canvas/inc/canvas.h"
-#include "gui/MenuBar.h"
+#include <gui/Window.h>
+#include "./../../Graph/inc/Graph.h"
+#include <gui/MenuBar.h>
 #include "splitter.h"
 
 
@@ -37,7 +37,7 @@ private:
 protected:
     MenuBar _mainMenuBar;
     //ToolBar _toolBar;
-    graph _graph;
+    Graph _graph;
     splitterLayout splitter;
 
     bool resetGraph = true;

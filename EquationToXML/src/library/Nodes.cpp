@@ -282,7 +282,7 @@ bool conditionNode::nodeAction(const char* cmndStart, const char* cmndEnd, baseN
 
 
 
-template<ConstExprString containerName, typename nodeType>
+template<template<int> class ConstExprString containerName, typename nodeType>
 class containerNode : public baseNode {
 public:
 	containerNode() = default;
