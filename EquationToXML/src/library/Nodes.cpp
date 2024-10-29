@@ -282,7 +282,7 @@ bool conditionNode::nodeAction(const char* cmndStart, const char* cmndEnd, baseN
 
 
 
-template<template<int> class ConstExprString containerName, typename nodeType>
+template<ConstExprString containerName, typename nodeType>
 class containerNode : public baseNode {
 public:
 	containerNode() = default;
@@ -421,7 +421,7 @@ public:
 };
 
 
-typedef containerNode<"Vars", variableNode<"Var">> varsNode;
+typedef containerNode<ConstExprString("Vars"), variableNode<"Var">> varsNode;
 typedef containerNode<"Params", variableNode<"Param">> paramsNode;
 typedef containerNode<"NLEqs", singleEquation> NLEquationsNode;
 typedef containerNode<"ODEqs", singleEquation> ODEquationsNode;
