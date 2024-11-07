@@ -339,7 +339,7 @@ const modelNode &MainWindow::getModelFromTabOrFile(const td::String &modelNameOr
     if(modelNameOrPath.endsWith(".xml")){//file
         std::filesystem::path file(modelNameOrPath.c_str());
         if(!std::filesystem::exists(file))
-            throw (exceptionCantAccessFile) modelNameOrPath;
+            throw exceptionCantAccessFile{modelNameOrPath};
         
         auto time = std::filesystem::last_write_time(file).time_since_epoch();
         for(auto &m: _loadedModels){
@@ -351,7 +351,7 @@ const modelNode &MainWindow::getModelFromTabOrFile(const td::String &modelNameOr
                 {
                     success = m.model.readFromFile(modelNameOrPath);
                     if(!success)
-                        throw (exceptionCantAccessFile) modelNameOrPath;
+                        throw exceptionCantAccessFile {modelNameOrPath};
                     m.timeModified = time;
                     return m.model;
                 }
@@ -361,7 +361,7 @@ const modelNode &MainWindow::getModelFromTabOrFile(const td::String &modelNameOr
         _loadedModels.emplace_back(modelNameOrPath);
         success = _loadedModels.back().model.readFromFile(modelNameOrPath);
         if(!success)
-            throw (exceptionCantAccessFile) modelNameOrPath;
+            throw exceptionCantAccessFile {modelNameOrPath};
         _loadedModels.back().timeModified = time;
         return _loadedModels.back().model;
         
@@ -375,7 +375,7 @@ const modelNode &MainWindow::getModelFromTabOrFile(const td::String &modelNameOr
                 return tab->getModelNode(success);
             }        
         }
-        throw (exceptionCantFindTab) modelNameOrPath;
+        throw exceptionCantFindTab {modelNameOrPath};
     }
 
     static modelNode m; // should never run
