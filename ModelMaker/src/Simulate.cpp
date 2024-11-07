@@ -499,8 +499,11 @@ int MainWindow::simulate(ViewForTab *tab)
 			}
 			initSucess = s->init(modelStr, sc::ICmplxSolver::SourceType::Memory);
 		}
-	else
-		static_assert(false, "wrong pointer type for initSimulation");
+	else{
+		static_assert(s==nullptr, "wrong pointer type for initSimulation");
+		return 0;
+	}
+
 
 		bool useAutoFuncs = false;
 		std::vector<ModelSettings::FunctionDesc> autoFuncs;
