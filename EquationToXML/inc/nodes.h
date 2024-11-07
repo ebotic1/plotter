@@ -133,7 +133,7 @@ public:
 	modelNode &operator =(const modelNode &model);
 	modelNode(td::String command);
 	bool nodeAction(const char* cmndStart, const char* cmndEnd, baseNode*& newChild) override;
-	void prettyPrintClosing(cnt::StringBuilder<>& str, td::String &indent) const;
+	void prettyPrintClosing(cnt::StringBuilder<>& str, td::String &indent) const override;
 	modelNode& addWtih(const modelNode &model, const td::String &alias, addType type);
 	void clear();
 	bool readFromFile(const td::String &path);

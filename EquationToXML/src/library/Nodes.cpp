@@ -336,7 +336,7 @@ bool conditionNodeInline::nodeAction(const char *cmndStart, const char *cmndEnd,
 		else
 			msg = "Expected \"end\" but instead got ";
 		msg += getStringFromPtr(cmndStart, cmndEnd);
-		throw modelNode::exceptionInvalidCommand(msg, _processingLine);
+		throw(modelNode::exceptionInvalidCommand(msg, _processingLine));
 	}
 
 	expectingEnd = true;
@@ -599,7 +599,7 @@ bool modelNode::nodeAction(const char* cmndStart, const char* cmndEnd, baseNode*
 	else if (compareUpperCase(cmndStart, "EXPRESSIONS"))
 		addChild(new ExpressionsNode);
 	else
-		throw exceptionInvalidBlockName(td::String(cmndStart, cmndEnd-cmndStart), _processingLine);
+		throw(exceptionInvalidBlockName(td::String(cmndStart, cmndEnd-cmndStart), _processingLine));
 
 	
 	newChild = nodes.back();
