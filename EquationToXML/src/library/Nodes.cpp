@@ -15,7 +15,18 @@
 
 
 #ifdef MU_MACOS
-using ConstExprString = baseNode::ConstExprString<N>;
+	template <size_t N>
+	struct ConstExprString {
+		char data[N];
+		constexpr ConstExprString(const char(&str)[N]) {
+			for (std::size_t i = 0; i < N; ++i)
+				data[i] = str[i];
+		}
+
+		constexpr const char*get() const {
+			return data;
+		}
+	};
 #else
 template <std::size_t N>
 using ConstExprString = baseNode::ConstExprString<N>;
@@ -341,7 +352,7 @@ bool conditionNodeInline::nodeAction(const char *cmndStart, const char *cmndEnd,
 }
 
 
-template<ConstExprString containerName, typename nodeType>
+template<baseNode::ConstExprString containerName, typename nodeType>
 class containerNode : public baseNode {
 public:
 	containerNode() = default;
