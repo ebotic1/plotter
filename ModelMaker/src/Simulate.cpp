@@ -446,13 +446,14 @@ int MainWindow::simulate(ViewForTab *tab)
 #ifdef MU_MACOS
 	td::String mPath = "/Volumes/RAMDisk/modelForSimulator.xml";
 	model.printNode(mPath); //u slucaju problema da se moze pogledati finalni generisani model koji je poslan solveru
-#endif
+#else
 	td::String mPath = "./modelForSimulator.xml";
 	model.printNode(mPath);
 #endif
-
+#endif
 
 	//mPath = "/home/bots/Desktop/model-Solver/real/ACGenWith1Load_WithLimit_Comp_DAE_RK4.xml";
+	//mPath = "/home/bots/Desktop/model-Solver/real/PF_WLimits.xml";
 
 	auto initSimulation = [&](auto s)
     {
@@ -475,6 +476,7 @@ int MainWindow::simulate(ViewForTab *tab)
 				break;
 			}
             initSucess = s->init(modelStr, sc::IDblSolver::SourceType::Memory);
+			//initSucess = s->init(mPath, sc::IDblSolver::SourceType::File);
 		}
 		else if constexpr (std::is_same<decltype(s), sc::ICmplxSolver*>::value)
         {

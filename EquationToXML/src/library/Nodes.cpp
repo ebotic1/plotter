@@ -13,8 +13,13 @@
 #define INDENT_CHAR "\t"
 #define IMPLICIT_MULTIPLY false
 
+
+#ifdef MU_MACOS
+using ConstExprString = baseNode::ConstExprString<N>;
+#else
 template <std::size_t N>
 using ConstExprString = baseNode::ConstExprString<N>;
+#endif //MU_MACOS
 
 
 static bool beginsWith(const char* string, const char *what) {
@@ -27,15 +32,16 @@ static bool beginsWith(const char* string, const char *what) {
 static inline bool compareUpperCase(const char* string, const char* uppercaseStringToCompareWith) {
 
 	while (*string != '\0' && std::toupper(*string++) == *uppercaseStringToCompareWith++) {
-
-#ifdef MU_DEBUG
-		if (std::toupper(*uppercaseStringToCompareWith) != *uppercaseStringToCompareWith)
-			assert("compareUpperCase compared string with something not written in upper case");
-#endif // MU_DEBUG
-
 		if (*uppercaseStringToCompareWith == '\0')
 			return true;
 	}
+
+	#ifdef MU_DEBUG
+		--uppercaseStringToCompareWith;
+		if (std::toupper(*uppercaseStringToCompareWith) != *uppercaseStringToCompareWith)
+			assert(!"compareUpperCase compared string with something not written in upper case");
+	#endif // MU_DEBUG
+
 	return false;
 }
 
@@ -60,7 +66,7 @@ static inline td::String getStringFromPtr(const char* start, const char* end) {
 class conditionNode : public baseNode {
 public:
 	enum class type { thenn, elsee };
-private:
+protected:
 	type tip;
 public:
 	conditionNode(type);
@@ -75,13 +81,15 @@ public:
 		if(getName()[0] != 'T'){ //not Then
 			indent.reduceSize(1);
 			str << indent << "else";
-
-			if (auto itFx = _attribs.find("fx"); itFx != _attribs.end())
-				str << indent << itFx->second;
-
 			prettyPrintAttribs<"fx">(str, this);
+
 			str << ":";
 			indent += INDENT_CHAR;
+
+			if (auto itFx = _attribs.find("fx"); itFx != _attribs.end()){
+				str << indent << "\n" << indent << itFx->second;
+			}
+
 			return true;
 		}
 
@@ -107,7 +115,21 @@ public:
 conditionNode::conditionNode(type t) : tip(t) {}
 
 
+class conditionNodeInline : public conditionNode {
+	bool expectingEnd = false;
+public:
+	conditionNodeInline(conditionNode::type type):
+		conditionNode(type)
+	{}
+	conditionNodeInline(const conditionNode& node, const td::String &alias):
+		conditionNode(node, alias)
+	{}
+	baseNode* createCopy(const td::String& alias) const override {
+		return new conditionNodeInline(*this, alias);
+	}
 
+	bool nodeAction(const char* cmndStart, const char* cmndEnd, baseNode*& newChild) override;
+};
 
 
 static inline void addAlias(td::String& line, const td::String& alias) { //doda ime ispred varijable npr import.x, takoder dodaje "*" ispred varijable npr 3x pretvara u 3*x
@@ -148,7 +170,7 @@ static inline void addAlias(td::String& line, const td::String& alias) { //doda 
 }
 
 
-
+template<typename conditionNodeType>
 class singleEquation : public baseNode {
 	bool consumeEnd = false;
 	bool addIf = false;
@@ -218,14 +240,14 @@ public:
 			return false;
 
 		if (compareUpperCase(cmndStart, "ELSE")) {
-			auto elseN = new conditionNode(conditionNode::type::elsee);
+			auto elseN = new conditionNodeType(conditionNode::type::elsee);
 			addChild(elseN);
 			newChild = nodes.back();
 			_done = true;
 			consumeEnd = true;
 			static const char* ifPtr = "if";
 			if(const char *poz = std::search(cmndStart, cmndEnd, ifPtr, ifPtr+2); poz != cmndEnd) {
-				auto lastNode = new conditionNode(conditionNode::type::thenn);
+				auto lastNode = new conditionNodeType(conditionNode::type::thenn);
 				auto equation = new singleEquation;
 				elseN->addChild(equation);
 				equation->setAttrib("cond", getStringFromPtr(poz+2, cmndEnd));
@@ -241,7 +263,7 @@ public:
 		
 		if (beginsWith(cmndStart, "if")) {
 			setAttrib("cond", getStringFromPtr(skipWhiteSpace(cmndStart+2), cmndEnd));
-			addChild(new conditionNode(conditionNode::type::thenn));
+			addChild(new conditionNodeType(conditionNode::type::thenn));
 			newChild = nodes.back();
 			consumeEnd = true;
 			return true;
@@ -258,7 +280,8 @@ public:
 	}
 };
 
-
+typedef singleEquation<conditionNode> Equation;
+typedef singleEquation<conditionNodeInline> EquationCounted;
 
 
 bool conditionNode::nodeAction(const char* cmndStart, const char* cmndEnd, baseNode*& newChild)
@@ -273,13 +296,49 @@ bool conditionNode::nodeAction(const char* cmndStart, const char* cmndEnd, baseN
 		return false;
 	}
 
-	addChild(new singleEquation());
+	addChild(new Equation());
 	newChild = nodes.back();
 
 	return false;
 }
 
 
+
+bool conditionNodeInline::nodeAction(const char *cmndStart, const char *cmndEnd, baseNode *&newChild){
+	if(_done)
+		return false;
+
+	if (compareUpperCase(cmndStart, "END")){
+		_done = true;
+		return false;
+	}
+
+	 if (tip == conditionNode::type::thenn && compareUpperCase(cmndStart, "ELSE")) {
+		_done = true;
+		return false;
+	}
+
+	if(expectingEnd){
+		td::String msg;
+		if(tip == conditionNode::type::thenn)
+			msg = "Expected \"else\" or \"end\" but instead got ";
+		else
+			msg = "Expected \"end\" but instead got ";
+		msg += getStringFromPtr(cmndStart, cmndEnd);
+		throw modelNode::exceptionInvalidCommand(msg, _processingLine);
+	}
+
+	expectingEnd = true;
+
+	if (compareUpperCase(cmndStart, "IF")) {
+		newChild = new EquationCounted;
+		addChild(newChild);
+		return false;
+	}
+
+	_attribs["fx"] = getStringFromPtr(cmndStart, cmndEnd);
+	return true;
+}
 
 
 template<ConstExprString containerName, typename nodeType>
@@ -295,7 +354,7 @@ public:
 		if (_done) return false;
 
 		if (compareUpperCase(cmndStart, "GROUP")) {
-			typedef containerNode<"Group", singleEquation> GroupNode;
+			typedef containerNode<"Group", Equation> GroupNode;
 			addChild(new GroupNode);
 			newChild = nodes.back();
 			return true;
@@ -420,17 +479,18 @@ public:
 	}
 };
 
-
+//typedef singleEquation<conditionNode> Equation;
+//typedef singleEquation<conditionNodeInline> EquationCounted;
 typedef containerNode<"Vars", variableNode<"Var">> varsNode;
 typedef containerNode<"Params", variableNode<"Param">> paramsNode;
-typedef containerNode<"NLEqs", singleEquation> NLEquationsNode;
-typedef containerNode<"ODEqs", singleEquation> ODEquationsNode;
-typedef containerNode<"PostProc", singleEquation> postProcNode;
-typedef containerNode<"MeasEqs", singleEquation> MeasEqNode;
+typedef containerNode<"NLEqs", EquationCounted> NLEquationsNode;
+typedef containerNode<"ODEqs", EquationCounted> ODEquationsNode;
+typedef containerNode<"PostProc", Equation> postProcNode;
+typedef containerNode<"MeasEqs", EquationCounted> MeasEqNode;
 
-typedef containerNode<"Limits", singleEquation> LimitNode;
-typedef containerNode<"ECs", singleEquation> ECsNode;
-typedef containerNode<"TFs", singleEquation> TFsNode;
+typedef containerNode<"Limits", Equation> LimitNode;
+typedef containerNode<"ECs", EquationCounted> ECsNode;
+typedef containerNode<"TFs", EquationCounted> TFsNode;
 typedef containerNode<"Expressions", SingleExpression> ExpressionsNode;
 
 
@@ -673,13 +733,13 @@ public:
 		else if (name->cCompare("NLEqs") == 0)
 			_lastNode->addChild(new NLEquationsNode);
 		else if (name->cCompare("Eq") == 0)
-			_lastNode->addChild(new singleEquation);
+			_lastNode->addChild(new Equation);
 		else if (name->cCompare("Then") == 0)
 			_lastNode->addChild(new conditionNode(conditionNode::type::thenn));
 		else if (name->cCompare("Else") == 0)
 			_lastNode->addChild(new conditionNode(conditionNode::type::elsee));
 		else if (name->cCompare("Group") == 0)
-			_lastNode->addChild(new containerNode<"Group", singleEquation>);
+			_lastNode->addChild(new containerNode<"Group", Equation>);
 		else if (name->cCompare("ODEqs") == 0)
 			_lastNode->addChild(new ODEquationsNode);
 		else if (name->cCompare("Init") == 0)
@@ -801,3 +861,4 @@ bool modelNode::readFromFile(const td::String& path)
 	return par.parseFile(path);
 
 }
+
