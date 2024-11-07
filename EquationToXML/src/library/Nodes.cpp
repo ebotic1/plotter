@@ -599,7 +599,7 @@ bool modelNode::nodeAction(const char* cmndStart, const char* cmndEnd, baseNode*
 	else if (compareUpperCase(cmndStart, "EXPRESSIONS"))
 		addChild(new ExpressionsNode);
 	else
-		throw(exceptionInvalidBlockName(td::String(cmndStart, cmndEnd-cmndStart), _processingLine));
+		throw exceptionInvalidBlockName{td::String(cmndStart, cmndEnd-cmndStart), _processingLine};
 
 	
 	newChild = nodes.back();
