@@ -336,7 +336,7 @@ bool conditionNodeInline::nodeAction(const char *cmndStart, const char *cmndEnd,
 		else
 			msg = "Expected \"end\" but instead got ";
 		msg += getStringFromPtr(cmndStart, cmndEnd);
-		throw(modelNode::exceptionInvalidCommand(msg, _processingLine));
+		throw modelNode::exceptionInvalidCommand{msg, _processingLine};
 	}
 
 	expectingEnd = true;

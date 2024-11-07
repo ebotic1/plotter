@@ -48,7 +48,7 @@ protected:
 
 	bool _done = false;
 
-	static unsigned int _processingLine;
+	static int _processingLine;
 	std::vector<baseNode*> nodes;
 	td::String _comment;
 	virtual bool nodeAction(const char* cmndStart, const char* cmndEnd, baseNode*& newChild) = 0;

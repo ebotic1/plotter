@@ -15,7 +15,7 @@ const std::unordered_set<td::String> baseNode::constantsKeywords{"pi", "e", "tru
 const std::unordered_set<td::String> baseNode::syntaxKeywords{"base", "if", "else", "end", "Model", "Vars", "Var", "Params", "Param", "Params", "NLEqs", "NLE", \
 "Group", "ODEqs", "ODE", "Init", "PostProc", "MeasEqs", "Limits", "EC", "ECs", "TFs", "TF", "Expressions"};
 
-unsigned int baseNode::_processingLine = 0;
+int baseNode::_processingLine = 0;
 
 const std::regex baseNode::varPatten = std::regex(R"((base\.|^|[^A-Za-z_\.])([a-zA-Z_](?:[\w0-9.]+?)?)(?:$|[^\w.]))");
 const std::regex baseNode::_lineExtract = std::regex(R"(\s*([^\n]*?)[ \t]*:?[ \t]*(?:(?:$|\n)|(?:(?://|#)([^\n]*))))");
@@ -263,7 +263,7 @@ void baseNode::addLine(const char* start, const char* end, const char* comment, 
 	if(!(poz1 == end && poz2 == end))
 		if (poz1 > poz2 || (poz1 != end && poz2 == end) || (poz1 == end && poz2 != end) || (poz1 != start && poz2 != end-1)) //ako nisu ispravno postavljenje zagrade []
 		{
-			throw(modelNode::exceptionInvalidCommand(td::String(start, end-start), _processingLine));
+			throw modelNode::exceptionInvalidCommand{td::String(start, end-start), _processingLine};
 		}
 
 
@@ -292,7 +292,7 @@ void baseNode::addLine(const char* start, const char* end, const char* comment, 
 			}
 			lastChlid = lastChlid->parent;
 			if(lastChlid == nullptr)//nema se vise kome proslijediti komanda svi node-ovi su je odbili. Ovo se moze desit ako se stavi previse puta 'end'
-				throw(modelNode::exceptionInvalidCommand(td::String(cmndStart, cmndEnd - cmndStart), _processingLine));
+				throw modelNode::exceptionInvalidCommand{td::String(cmndStart, cmndEnd - cmndStart), _processingLine};
 			}
 
 
@@ -305,7 +305,7 @@ void baseNode::addLine(const char* start, const char* end, const char* comment, 
 			lastChlid->addComment(td::String(comment, commentLen), false, true);
 
 			if (child == nullptr && poz1 != end) //komanda ne stvara novi node ali postavlja atribute
-				throw(modelNode::exceptionInvalidCommand(td::String(match[1].first, match[1].length()), _processingLine));
+				throw modelNode::exceptionInvalidCommand{td::String(match[1].first, match[1].length()), _processingLine};
 		}
 
 		
@@ -314,7 +314,7 @@ void baseNode::addLine(const char* start, const char* end, const char* comment, 
 				attrib.fromKnownString(match2[1].first, match2[1].length());
 
 				if (!attributeKeywords.contains(attrib))
-					throw(modelNode::exceptionInvalidAttribute(std::move(attrib), _processingLine));
+					throw modelNode::exceptionInvalidAttribute{std::move(attrib), _processingLine};
 
 				lastChlid->_attribs[attrib].fromKnownString(match2[2].first, match2[2].length());
 
@@ -323,7 +323,7 @@ void baseNode::addLine(const char* start, const char* end, const char* comment, 
 		}
 
 	}else
-		throw(modelNode::exceptionInvalidCommand(td::String(start, end - start), _processingLine));
+		throw modelNode::exceptionInvalidCommand{td::String(start, end - start), _processingLine};
 
 }
 
