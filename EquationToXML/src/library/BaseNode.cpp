@@ -333,6 +333,7 @@ void baseNode::processCommands(const td::String& text)
 {
 	parent = nullptr;
 	_processingLine = 0;
+	lastChlid = this;
 	const char* start = text.begin();
 	while (std::regex_search(start, text.end(), match, _lineExtract)) {
 		if (match[1].length() == 0) {
