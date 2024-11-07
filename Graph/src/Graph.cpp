@@ -662,7 +662,13 @@ void Graph::setAxisColor(td::ColorID boja){
     reDraw();
 }
 
-void Graph::setMargins(double top, double left, double right, double bottom)
+void Graph::setAxisNameDistance(double xNameDistanceFromAxis, double yNameDistanceFromAxis)
+{
+    double yAxisNameSeperation = xNameDistanceFromAxis;
+    double xAxisNameSeperation = yNameDistanceFromAxis;
+}
+
+void Graph::setMargins(double top, double left, double right, double bottom) 
 {
     double _marginTop = top;
     double _marginRight = right;
@@ -1082,9 +1088,7 @@ void Graph::drawAxis(){
     //axis names
     {
         gui::Transformation tr;
-           
-        constexpr double yAxisNameSeperation = 150;
-        constexpr double xAxisNameSeperation = 86;
+        
 
         tr.saveContext();
         tr.translate(_drawingRect.left, _drawingRect.bottom + xAxisNameSeperation);

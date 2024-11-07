@@ -24,7 +24,7 @@ void blockInterface::writeState(arch::ArchiveOut& f)
 
 void blockInterface::reloadState(arch::ArchiveIn& f)
 {
-	int size;
+	td::UINT8 size;
 	f >> size;
 	td::UINT8 hash;
 	for (int i = 0; i < size; ++i) {

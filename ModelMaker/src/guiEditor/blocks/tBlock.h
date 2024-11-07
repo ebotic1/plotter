@@ -1,10 +1,10 @@
 #pragma once
-#include "gui/Shape.h"
-#include "gui/DrawableString.h"
+#include <gui/Shape.h>
+#include <gui/DrawableString.h>
 #include <vector>
 #include "blockBase.h"
 #include "squareBlock.h"
-#include "blockInterface.h"
+#include "../blockInterface.h"
 
 #define FONT_ID gui::Font::ID::SystemNormal
 
@@ -58,7 +58,7 @@ public:
 	gui::View& getSettingView() {
 		return *new gui::View();
 	}
-	void drawBlock(td::ColorID color) override;
+	void drawBlock(const td::ColorID &color) override;
 	void updateSettingsView(BlockBase::settingsView* view) override;
 	void writeToModel(modelNode& model, Nodes& nodes) override;
 

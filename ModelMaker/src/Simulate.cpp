@@ -9,6 +9,84 @@
 #include "DataDrawer.h"
 
 
+
+//double NR solver (for NL and WLS)
+inline int solveNR(sc::IDblSolver* pSolver, const td::String& modelStr)
+{
+    if (!pSolver->init(modelStr, sc::IDblSolver::SourceType::Memory))
+    {
+        std::cout << "Error! Solver Init FAILED" << std::endl;
+        std::cout << pSolver->getLastErrorStr() << std::endl;
+        return -10;
+    }
+    
+    auto solStatus = pSolver->solve();
+    if (solStatus != sc::Solution::OK)
+    {
+        std::cout << "ERROR! Cannot solve the problem" << std::endl;
+        std::cout << "SolutionStatus=" << pSolver->getSolutionStatusStr() << std::endl;
+        return -11;
+    }
+    
+    std::cout << "Problem solved in "<< pSolver->getIterationsNo() << " iterations. Precision = " << pSolver->getSolvedPrecision() << std::endl;
+    
+    
+    int nVar = pSolver->getNumberVariables();
+    int nPar = pSolver->getNumberParameters();
+    std::cout << "Problem solved in "<< pSolver->getIterationsNo() << " iterations. Precision = " << pSolver->getSolvedPrecision() << std::endl;
+
+    std::cout << "No of Variables: " << nVar << std::endl << "---------------------------" << std::endl;
+    std::cout << "SOLUTION_DATA" << std::endl << "---------------------------" << std::endl;
+
+    double* pVar = pSolver->getVariablesPtr();
+    
+    for (int i=0; i< nVar; i++, pVar++)
+    {
+        std::cout << i+1 << ". " << pSolver->getVariableName(i) <<"=" << *pVar << std::endl;
+    }
+    return 0;
+}
+
+
+//complex NR solver (for NL and WLS)
+inline int solveNR(sc::ICmplxSolver* pSolver, const td::String& modelStr)
+{
+    if (!pSolver->init(modelStr, sc::ICmplxSolver::SourceType::Memory))
+    {
+        std::cout << "Error! Solver Init FAILED" << std::endl;
+        std::cout << pSolver->getLastErrorStr() << std::endl;
+        return -10;
+    }
+    
+    auto solStatus = pSolver->solve();
+    if (solStatus != sc::Solution::OK)
+    {
+        std::cout << "ERROR! Cannot solve the problem" << std::endl;
+        std::cout << "SolutionStatus=" << pSolver->getSolutionStatusStr() << std::endl;
+        return -11;
+    }
+    
+    std::cout << "Problem solved in "<< pSolver->getIterationsNo() << " iterations. Precision = " << pSolver->getSolvedPrecision() << std::endl;
+    
+    
+    int nVar = pSolver->getNumberVariables();
+    int nPar = pSolver->getNumberParameters();
+    std::cout << "Problem solved in "<< pSolver->getIterationsNo() << " iterations. Precision = " << pSolver->getSolvedPrecision() << std::endl;
+
+    std::cout << "No of Variables: " << nVar << std::endl << "---------------------------" << std::endl;
+    std::cout << "SOLUTION_DATA" << std::endl << "---------------------------" << std::endl;
+
+    td::cmplx* pVar = pSolver->getVariablesPtr();
+    
+    for (int i=0; i< nVar; i++, pVar++)
+    {
+        std::cout << i+1 << ". " << pSolver->getVariableName(i) <<"=" << *pVar << std::endl;
+    }
+    return 0;
+}
+
+
+
 #ifdef MU_DEBUG
 #define TEST_SIMULATION
 
@@ -307,81 +385,6 @@ enum class EquationTypes { NR, DAE, ODE, WLS };
 
 
 
-//double NR solver (for NL and WLS)
-inline int solveNR(sc::IDblSolver* pSolver, const td::String& modelStr)
-{
-    if (!pSolver->init(modelStr, sc::IDblSolver::SourceType::Memory))
-    {
-        std::cout << "Error! Solver Init FAILED" << std::endl;
-        std::cout << pSolver->getLastErrorStr() << std::endl;
-        return -10;
-    }
-    
-    auto solStatus = pSolver->solve();
-    if (solStatus != sc::Solution::OK)
-    {
-        std::cout << "ERROR! Cannot solve the problem" << std::endl;
-        std::cout << "SolutionStatus=" << pSolver->getSolutionStatusStr() << std::endl;
-        return -11;
-    }
-    
-    std::cout << "Problem solved in "<< pSolver->getIterationsNo() << " iterations. Precision = " << pSolver->getSolvedPrecision() << std::endl;
-    
-    
-    int nVar = pSolver->getNumberVariables();
-    int nPar = pSolver->getNumberParameters();
-    std::cout << "Problem solved in "<< pSolver->getIterationsNo() << " iterations. Precision = " << pSolver->getSolvedPrecision() << std::endl;
-
-    std::cout << "No of Variables: " << nVar << std::endl << "---------------------------" << std::endl;
-    std::cout << "SOLUTION_DATA" << std::endl << "---------------------------" << std::endl;
-
-    double* pVar = pSolver->getVariablesPtr();
-    
-    for (int i=0; i< nVar; i++, pVar++)
-    {
-        std::cout << i+1 << ". " << pSolver->getVariableName(i) <<"=" << *pVar << std::endl;
-    }
-    return 0;
-}
-
-
-//complex NR solver (for NL and WLS)
-inline int solveNR(sc::ICmplxSolver* pSolver, const td::String& modelStr)
-{
-    if (!pSolver->init(modelStr, sc::ICmplxSolver::SourceType::Memory))
-    {
-        std::cout << "Error! Solver Init FAILED" << std::endl;
-        std::cout << pSolver->getLastErrorStr() << std::endl;
-        return -10;
-    }
-    
-    auto solStatus = pSolver->solve();
-    if (solStatus != sc::Solution::OK)
-    {
-        std::cout << "ERROR! Cannot solve the problem" << std::endl;
-        std::cout << "SolutionStatus=" << pSolver->getSolutionStatusStr() << std::endl;
-        return -11;
-    }
-    
-    std::cout << "Problem solved in "<< pSolver->getIterationsNo() << " iterations. Precision = " << pSolver->getSolvedPrecision() << std::endl;
-    
-    
-    int nVar = pSolver->getNumberVariables();
-    int nPar = pSolver->getNumberParameters();
-    std::cout << "Problem solved in "<< pSolver->getIterationsNo() << " iterations. Precision = " << pSolver->getSolvedPrecision() << std::endl;
-
-    std::cout << "No of Variables: " << nVar << std::endl << "---------------------------" << std::endl;
-    std::cout << "SOLUTION_DATA" << std::endl << "---------------------------" << std::endl;
-
-    td::cmplx* pVar = pSolver->getVariablesPtr();
-    
-    for (int i=0; i< nVar; i++, pVar++)
-    {
-        std::cout << i+1 << ". " << pSolver->getVariableName(i) <<"=" << *pVar << std::endl;
-    }
-    return 0;
-}
-
 int MainWindow::simulate(ViewForTab *tab)
 {
 	const auto& logView = tab->getLog();
@@ -441,12 +444,15 @@ int MainWindow::simulate(ViewForTab *tab)
 	
 #ifdef MU_DEBUG
 #ifdef MU_MACOS
-	model.printNode("/Volumes/RAMDisk/modelForSimulator.xml"); //u slucaju problema da se moze pogledati finalni generisani model koji je poslan solveru
+	td::String mPath = "/Volumes/RAMDisk/modelForSimulator.xml";
+	model.printNode(mPath); //u slucaju problema da se moze pogledati finalni generisani model koji je poslan solveru
 #endif
-	model.printNode("./modelForSimulator.xml");
+	td::String mPath = "./modelForSimulator.xml";
+	model.printNode(mPath);
 #endif
 
 
+	//mPath = "/home/bots/Desktop/model-Solver/real/ACGenWith1Load_WithLimit_Comp_DAE_RK4.xml";
 
 	auto initSimulation = [&](auto s)
     {

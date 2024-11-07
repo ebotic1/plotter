@@ -1,7 +1,8 @@
 #include "canvas.h"
-#include "tBlock.h"
-#include "sumBlock.h"
-#include "nlBlock.h"
+#include "blocks/tBlock.h"
+#include "blocks/sumBlock.h"
+#include "blocks/nlBlock.h"
+#include "blocks/ProductBlock.h"
 #include "propertySwitcher.h"
 #include "view.h"
 #include <gui/Application.h>
@@ -123,14 +124,7 @@ inline void kanvas::onPrimaryButtonDblClick(const gui::InputDevice& inputDevice)
 
 inline bool kanvas::onZoom(const gui::InputDevice& inputDevice) {
 	auto s = inputDevice.getScale() > 1 ? 1.15 : 0.8695652173913043;
-	gui::Size sz;
-	getSize(sz);
-
-	gui::Point mousePoint(getModelPoint(gui::Point(sz.width / 2, sz.height / 2)));
-
-	scroll({ -mousePoint.x, -mousePoint.y });
 	zoom(s);
-	scroll(mousePoint);
 
 	return true;
 }
@@ -138,10 +132,18 @@ inline bool kanvas::onZoom(const gui::InputDevice& inputDevice) {
 
 void kanvas::zoom(double factor)
 {
+	static gui::Size sz;
+	getSize(sz);
+	gui::Point mousePoint(getModelPoint(gui::Point(sz.width / 2, sz.height / 2)));
+	scroll({ -mousePoint.x, -mousePoint.y });
+	
 	_scale *= factor;
 	_transformation.scale(factor);
 	_totalScroll.x /= factor;
 	_totalScroll.y /= factor;
+
+	scroll(mousePoint);
+
 	reDraw();
 }
 
@@ -278,6 +280,8 @@ bool kanvas::restoreState(const td::String& file, td::String& settingsString)
 				kopija[i] = sumBlock::restoreFromFile(in, this);
 			else if (ID == NLBlock::getID())
 				kopija[i] = NLBlock::restoreFromFile(in, this);
+			else if (ID == ProductBlock::getID())
+				kopija[i] = ProductBlock::restoreFromFile(in, this);
 			else
 				throw std::logic_error("unknown block");
 
@@ -437,6 +441,10 @@ inline bool kanvas::onActionItem(gui::ActionItemDescriptor& aiDesc) {
 		}
 		if (aiDesc._actionItemID == 12) {
 			_blocks.push_back(new NLBlock(getModelPoint(lastMousePos), this));
+			return true;
+		}
+		if (aiDesc._actionItemID == 13) {
+			_blocks.push_back(new ProductBlock(getModelPoint(lastMousePos), this));
 			return true;
 		}
 	}

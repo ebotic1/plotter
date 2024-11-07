@@ -76,6 +76,9 @@ class GRAPH_API Graph : public gui::Canvas {
 
 	std::vector<imageButton> _slike;
 
+	double yAxisNameSeperation = 150;
+    double xAxisNameSeperation = 86;
+
 
 protected:
 
@@ -116,6 +119,8 @@ public:
 	void setyAxisName(const td::String& yName) { yAxisName = yName; reDraw(); }
 	const td::String getxAxisName() { return xAxisName.toString(); }
 	const td::String getyAxisName() { return yAxisName.toString(); }
+	void setAxisNameDistance(double xNameDistanceFromAxis, double yNameDistanceFromAxis);
+
 	td::ColorID getBackgroundColor() { return backgroundColor; }
 	void setMargins(double top, double left, double right, double bottom);
 	void showLegend(bool draw) { _drawLegend = draw; reDraw(); }

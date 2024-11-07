@@ -21,7 +21,7 @@
 class baseNode {
 public:
 
-	template <int N>
+	template <size_t N>
 	struct ConstExprString {
 		char data[N];
 		constexpr ConstExprString(const char(&str)[N]) {

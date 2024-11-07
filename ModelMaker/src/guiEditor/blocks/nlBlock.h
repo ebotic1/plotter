@@ -1,7 +1,7 @@
 #pragma once
 #include "squareBlock.h"
-#include "blockInterface.h"
-#include "canvas.h"
+#include "../blockInterface.h"
+#include "../canvas.h"
 
 
 class NLBlock : public squareBlock, public squareBlockSO, public squareBlockMI
@@ -40,7 +40,7 @@ public:
 	int getCnt() override { return canvasParent->getBlockCnt().getCnt<decltype(*this)>(); }
 
 	void setUpBlock() override;
-	void drawBlock(td::ColorID color) override;
+	void drawBlock(const td::ColorID &color) override;
 	void writeToModel(modelNode& model, Nodes& nodes) override;
 	void saveToFile(arch::ArchiveOut& f) override;
 	static NLBlock* restoreFromFile(arch::ArchiveIn& f, kanvas* parent);

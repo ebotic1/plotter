@@ -2,10 +2,10 @@
 #include "blockBase.h"
 #include <vector>
 #include <deque>
-#include "gui/Shape.h"
-#include "td/String.h"
-#include "gui/DrawableString.h"
-#include "canvas.h"
+#include <gui/Shape.h>
+#include <td/String.h>
+#include <gui/DrawableString.h>
+#include "../canvas.h"
 
 class squareBlock : virtual public BlockBase {
 
@@ -19,12 +19,12 @@ class squareBlock : virtual public BlockBase {
 
 protected:
 	std::vector<gui::Shape> connectionLines;
-	
+	void drawArrows(const td::ColorID &color);
 
 public:
 	squareBlock();
 	void setUpWires(bool refreshCanvas) override;
-	void drawBlock(td::ColorID color) override;
+	void drawBlock(const td::ColorID &color) override;
 	void setUpBlock() override;
 
 	const gui::Point& getInput(int poz) const override
@@ -75,7 +75,7 @@ public:
 	const td::String& getInputName(int pos) const override{ return ulazName; }
 	void updateSettingsView(BlockBase::settingsView* view) override;
 
-	void drawBlock(td::ColorID color) override;
+	void drawBlock(const td::ColorID &color) override;
 	void setUpBlock() override;
 
 };
@@ -111,7 +111,7 @@ public:
 	void setOutputName(const td::String& name);
 	void updateSettingsView(BlockBase::settingsView* view) override;
 
-	void drawBlock(td::ColorID color) override;
+	void drawBlock(const td::ColorID &color) override;
 	void setUpBlock() override;
 
 };
@@ -180,7 +180,7 @@ public:
 	void setInputName(const td::String &name, int pos);
 	void changeInputCnt(int cnt) override;
 	void updateSettingsView(BlockBase::settingsView* view) override;
-	void drawBlock(td::ColorID color) override;
+	void drawBlock(const td::ColorID &color) override;
 	void setUpBlock() override;
 	void saveToFile(arch::ArchiveOut& f) override;
 	void restoreFromFile(arch::ArchiveIn& f);

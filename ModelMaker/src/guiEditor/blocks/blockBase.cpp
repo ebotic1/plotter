@@ -1,7 +1,7 @@
 #include "blockBase.h"
-#include "canvas.h"
-#include "../GlobalEvents.h"
-
+#include "../canvas.h"
+#include "../../GlobalEvents.h"
+#include <gui/DrawableString.h>
 
 const gui::Rect& BlockBase::getRect() const{
 	return _r;
@@ -92,6 +92,9 @@ void BlockBase::connectTo(BlockBase* block, int pozFrom, int pozTo) {
 	block->disconnectInput(pozTo);
 	connectedTo.at(pozFrom).emplace( block, pozTo );
 	block->connectedFrom.at(pozTo) = { this, pozFrom };
+
+	block->setUpBlock();
+	setUpBlock();
 
 	if(!disableSetUp)
 		setUpWires(true);
@@ -190,10 +193,18 @@ void BlockBase::setPosition(const gui::Point& position){
 {
 	_r.setOrigin(position);
 	if (!fontInit) {
+		const double fontSize = GlobalEvents::settingsVars.textSize;
 		if(GlobalEvents::settingsVars.font.cCompareNoCase("Default") == 0)
-			blockFont.create("Times", 14, gui::Font::Style::Normal, gui::Font::Unit::LogicalPixel);
+			blockFont.create("Times", fontSize, gui::Font::Style::Normal, gui::Font::Unit::LogicalPixel);
 		else
-			blockFont.create(GlobalEvents::settingsVars.font, 14, gui::Font::Style::Normal, gui::Font::Unit::LogicalPixel);
+			blockFont.create(GlobalEvents::settingsVars.font, fontSize, gui::Font::Style::Normal, gui::Font::Unit::LogicalPixel);
+
+		gui::Size sz;
+		gui::DrawableString s = "1234567890?+-";
+		s.measure(&blockFont, sz);
+		s.measure(&blockFont, sz);
+		_textHeight = sz.height;
+
 		fontInit = true;
 	}
 }

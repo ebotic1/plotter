@@ -69,5 +69,7 @@
 		<Res id="nrModel" tr="Nelinearni model" />
 		<Res id="wlsModel" tr="Metoda najmanjih kvadrata sa težinom" />
 		<Res id="daeModel" tr="Diferencijalno algebarski model" />
+		<Res id="gain" tr="Pojačanje: " />
+		<Res id="gainTooltip" tr="Ulaz ovog bloka če biti pomnožen sa ovom vrijednosti" />
 	</Translations>
 </DevRes>

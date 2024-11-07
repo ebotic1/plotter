@@ -12,6 +12,14 @@ inline void setUpTextRect(gui::DrawableString &string, gui::Rect &areaRect, cons
 	areaRect.setWidth(width);
 }
 
+inline void squareBlock::drawArrows(const td::ColorID &color)
+{
+	for (const auto& arrow : arrows)
+		arrow.drawWire(color);
+
+	for (const auto& line : connectionLines)
+		line.drawWire(color);
+}
 
 squareBlock::squareBlock()
 {
@@ -92,7 +100,7 @@ void squareBlock::setUpWires(bool refreshCanvas)
 
 void squareBlock::createArrow(gui::Shape& arrow, const gui::Point& posBegin, const gui::Point& posEnd, const double &lenght)
 {
-	const gui::CoordType arrowLenght = lenght * 0.1875;
+	const gui::CoordType arrowLenght = 7.5;
 	const char direction = (posBegin.x < posEnd.x) ? 1 : -1;
 
 	gui::Point tacke[] = { posBegin,  posEnd, {posEnd.x - arrowLenght * direction, posEnd.y - arrowLenght}, posEnd, {posEnd.x - arrowLenght * direction, posEnd.y + arrowLenght} };
@@ -103,13 +111,13 @@ void squareBlock::createArrow(gui::Shape& arrow, const gui::Point& posBegin, con
 void squareBlock::setUpBlock()
 {
 	const int& cnt = (getInputCnt() > getOutputCnt()) ? getInputCnt() : getOutputCnt();
-	_r.setHeight(100 + (cnt-1) * 50);
+	_r.setHeight((100 + (cnt-1) * 50) * blockFont.getSize() / 14);
 	double distanceInput = _r.height() / (getInputCnt() + 1);
 	double distanceOutput = _r.height() / (getOutputCnt() + 1);
 
 
 
-	const gui::CoordType armLenght = _r.height() * 0.1 + 60;
+	//const gui::CoordType armLenght = _r.height() * 0.1 + 60;
 
 	gui::Point inputPoint, outputPoint;
 
@@ -128,11 +136,18 @@ void squareBlock::setUpBlock()
 	inputPoints.resize(getInputCnt());
 	outputPoints.resize(getOutputCnt());
 
+	//lenght * 0.1875;
+	gui::CoordType armLenght;
+	armLenght = getIsConnectedFrom() ? 15 : (_r.height() * 0.1 + 60);
+	
+
 	int i = 0;
 	for (; i < getInputCnt(); ++i) {
 		inputPoints[i] = { inputPoint.x - armLenght * direction , inputPoint.y + i * distanceInput };
 		createArrow(arrows[i], inputPoints[i], { inputPoint.x, inputPoint.y + i * distanceInput }, armLenght);
 	}
+
+	armLenght = getIsConnectedTo() ? 15 : (_r.height() * 0.1 + 60);
 
 	for (int j = 0; j < getOutputCnt(); ++j) {
 		outputPoints[j] = { outputPoint.x + armLenght * direction , outputPoint.y + j * distanceOutput };
@@ -140,20 +155,16 @@ void squareBlock::setUpBlock()
 	}
 
 	recShape.createRect(_r);
+	
 }
 
 
 
 
-void squareBlock::drawBlock(td::ColorID color)
+void squareBlock::drawBlock(const td::ColorID &color)
 {
-	recShape.drawWire(color);
-	for (const auto& arrow : arrows)
-		arrow.drawWire(color);
-
-	for (const auto& line : connectionLines)
-		line.drawWire(color);
-
+	recShape.drawWire(color);	
+	drawArrows(color);
 }
 
 
@@ -189,17 +200,18 @@ void squareBlockSI::updateSettingsView(BlockBase::settingsView* view)
 	viewSI->inputProp.setValue(ulazName);
 }
 
-void squareBlockSI::drawBlock(td::ColorID color)
+void squareBlockSI::drawBlock(const td::ColorID &color)
 {
 	if (drawUlaz.isInitialized() && !getIsConnectedFrom())
 		drawUlaz.draw(inputRect, &blockFont, color, td::TextAlignment::Center);
 
-
+	/*
 	if (connectedFrom[0].first != nullptr) {
 		gui::Shape dot;
 		dot.createCircle(gui::Circle(getInput(0), 4), 1);
 		dot.drawFill(color);
 	}
+	*/
 }
 
 void squareBlockSI::setUpBlock()
@@ -236,7 +248,7 @@ void squareBlockSO::updateSettingsView(BlockBase::settingsView* view)
 	viewSO->outputProp.setValue(izlazName);
 }
 
-void squareBlockSO::drawBlock(td::ColorID color)
+void squareBlockSO::drawBlock(const td::ColorID &color)
 {
 
 	if (drawIzlaz.isInitialized() && !getIsConnectedTo())
@@ -366,7 +378,7 @@ void squareBlockMI::updateSettingsView(BlockBase::settingsView* view)
 	
 }
 
-void squareBlockMI::drawBlock(td::ColorID color)
+void squareBlockMI::drawBlock(const td::ColorID &color)
 {
 
 }

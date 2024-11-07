@@ -31,10 +31,16 @@ void sumBlock::setUpBlock()
 }
 
 
-void sumBlock::drawBlock(td::ColorID color)
+void sumBlock::drawBlock(const td::ColorID &color)
 {
+	static gui::DrawableString plusZnak = "+";
 	squareBlock::drawBlock(color);
-	znak.draw(_r, &blockFont, color, td::TextAlignment::Center, td::VAlignment::Center);
+	for(int i = 0; i<getInputCnt(); ++i){
+		if(i == 0)
+			plusZnak.draw({_r.left + 5, getInput(i).y - _textHeight/2}, &blockFont, color);
+		else
+			znak.draw({_r.left + 5, getInput(i).y - _textHeight/2}, &blockFont, color);
+	}
 
 
 	squareBlockSO::drawBlock(color);

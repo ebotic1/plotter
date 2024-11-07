@@ -176,7 +176,7 @@ void baseNode::prettyPrint(td::String& text) const
 		while (true) {
 			ptr = std::find(begin, node->_comment.end(), BACK_COMMENT_CHAR[0]);
 			if (ptr != node->_comment.end()) {
-				str << indent << "//";
+				str << indent << " //";
 				str.appendString(begin, ptr - begin);
 				str << "\n";
 				begin = ptr + 1;
@@ -184,7 +184,7 @@ void baseNode::prettyPrint(td::String& text) const
 			else
 				break;
 		}
-		str << indent << "//";
+		str << indent << " //";
 		str.appendString(begin, node->_comment.end() - begin);
 		str << "\n";
 		
@@ -210,7 +210,7 @@ void baseNode::prettyPrint(td::String& text) const
 				ptr = std::find(begin, bc, '\n');
 				if (ptr != bc) {
 					if (begin != ptr) {
-						str << "//";
+						str << " //";
 						str.appendString(begin, ptr - begin);
 						
 					}
@@ -222,7 +222,7 @@ void baseNode::prettyPrint(td::String& text) const
 			}
 
 			if (bc != begin) {
-				str << "//";
+				str << " //";
 				str.appendString(begin, bc - begin);
 			}
 		}

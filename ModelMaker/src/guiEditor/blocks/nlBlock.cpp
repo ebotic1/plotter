@@ -1,5 +1,5 @@
 #include "nlBlock.h"
-#include "gui/Font.h"
+#include <gui/Font.h>
 
 
 NLBlock::NLBlock(const gui::Point& position, kanvas* parent):
@@ -28,7 +28,7 @@ void NLBlock::setUpBlock()
 
 }
 
-void NLBlock::drawBlock(td::ColorID color)
+void NLBlock::drawBlock(const td::ColorID &color)
 {
 	eqDraw.draw(_r, &blockFont, color, td::TextAlignment::Center, td::VAlignment::Center);
 

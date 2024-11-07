@@ -1,5 +1,5 @@
 #include "tBlock.h"
-
+#include "../../GlobalEvents.h"
 
 
 void TFBlock::setNumerator(const td::String& nominator){
@@ -28,8 +28,8 @@ void TFBlock::setUpBlock()
 
 	if (drawNom.isInitialized() && drawDem.isInitialized()) {
 		gui::Size s1, s2;
-		drawNom.measure(FONT_ID, s1);
-		drawDem.measure(FONT_ID, s2);
+		drawNom.measure(&blockFont, s1);
+		drawDem.measure(&blockFont, s2);
 
 		gui::CoordType& bigWidth = (s1.width > s2.width) ? s1.width : s2.width;
 
@@ -67,7 +67,7 @@ void TFBlock::setUpBlock()
 
 
 
-void TFBlock::drawBlock(td::ColorID color) {
+void TFBlock::drawBlock(const td::ColorID &color) {
 	
 	if (drawNom.isInitialized() && drawDem.isInitialized()) {
 		drawNom.draw(rectangleNominator, &blockFont, color, td::TextAlignment::Center);
@@ -151,6 +151,7 @@ td::String TFBlock::getID()
 {
 	return "TFBlock";
 }
+
 void TFBlock::saveToFile(arch::ArchiveOut& f)
 {
 	f << TFBlock::getID() << getLocation().x << getLocation().y << getInputName(0) << getOutputName(0) << nom << dem << switchOutput;
@@ -187,34 +188,34 @@ void TFBlock::writeToModel(modelNode& model, Nodes& nodes)
 	auto& tfs = *nodes.nodes[(int)Nodes::name::tf];
 	auto& nle = *nodes.nodes[(int)Nodes::name::nl];
 
-	td::String inputName = getInputName(0);
+td::String inputName = getInputName(0);
 	td::String outputName = getOutputName(0);
-
-	bool isConnectedFrom = getIsConnectedFrom();
-
-	var.processCommands(inputName);
-	if (!isConnectedFrom) {
+    td::String upstreamOutput;
+    if(getIsConnectedFrom())
+        upstreamOutput = getConnectedFromBlocks()[0].first->getOutputName(getConnectedFromBlocks()[0].second);
+    
+    var.processCommands(outputName);
+    if (!getIsConnectedTo())
 		var.getNodes().back()->_attribs["out"] = "true";
 
-		if (inputName.find('=') != -1)
-			nle.processCommands(inputName);
-	}
+    int poz = inputName.find("=");
+    if(upstreamOutput.isNull() || poz != -1){
+        var.processCommands(inputName);
+        if (upstreamOutput.isNull()){
+		    var.getNodes().back()->_attribs["out"] = "true";
+			if(poz != -1)
+                nle.processCommands(inputName);
+        }
+    }
+    else
+        inputName = upstreamOutput;
 
-	var.processCommands(outputName);
-	if (!getIsConnectedTo())
-		var.getNodes().back()->_attribs["out"] = "true";
 
-	inputName = inputName.subStr(0, inputName.find("=") - 1);
+    cnt::StringBuilder cmnd;
 	outputName = outputName.subStr(0, outputName.find("=") - 1);
-	cnt::StringBuilder cmnd;
-	
+    inputName = inputName.subStr(0, inputName.find("=") - 1);
 
 
-	if (isConnectedFrom) {
-		cmnd << inputName << " = " << getConnectedFromBlocks()[0].first->getOutputName(getConnectedFromBlocks()[0].second);
-		nle.processCommands(cmnd.toString());
-		cmnd.reset();
-	}
 
 	if (hasLaplaceOperator(nom) || hasLaplaceOperator(dem)) {
 		cmnd << outputName << "/" << inputName << " = " << "(" << nom << ")" << "/(" << dem << ")";

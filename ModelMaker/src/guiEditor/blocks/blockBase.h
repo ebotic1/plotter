@@ -1,12 +1,12 @@
 #pragma once
 #include <vector>
 #include <gui/View.h>
-#include "../../../EquationToXML/inc/nodes.h"
+#include "../../../../EquationToXML/inc/nodes.h"
 #include <utility>
 #include <gui/CheckBox.h>
 #include <gui/Button.h>
 #include <gui/Label.h>
-#include "./../../../common/Property.h"
+#include "./../../../../common/Property.h"
 #include <gui/VerticalLayout.h>
 #include <arch/ArchiveIn.h>
 #include <arch/ArchiveOut.h>
@@ -59,6 +59,7 @@ protected:
 
 	static gui::Font blockFont;
 	static bool fontInit;
+	static inline double _textHeight = 10;
 
 	kanvas* canvasParent;
 
@@ -98,7 +99,7 @@ public:
 
 	void connectTo(BlockBase* block, int pozFrom, int pozTo);
 
-	virtual void drawBlock(td::ColorID color) = 0;
+	virtual void drawBlock(const td::ColorID &color) = 0;
 	void disableLogic(bool disable);
 
 

@@ -1,10 +1,10 @@
 #pragma once
 #include "squareBlock.h"
 #include "blockBase.h"
-#include "blockInterface.h"
-#include "gui/ComboBox.h"
-#include "gui/DrawableString.h"
-#include "canvas.h"
+#include "../blockInterface.h"
+#include <gui/ComboBox.h>
+#include <gui/DrawableString.h>
+#include "../canvas.h"
 
 
 class sumBlock : public squareBlockMInameless, public squareBlockSO, public squareBlock 
@@ -38,14 +38,13 @@ private:
 
 	bool sumOperator;
 	gui::DrawableString znak;
-	
 
 public:
 	sumBlock(gui::Point position, kanvas *parent, bool addition_operator, int cnt = 2);
 	int getCnt() override { return canvasParent->getBlockCnt().getCnt<decltype(*this)>(); }
 
 	void setUpBlock() override;
-	void drawBlock(td::ColorID color) override;
+	void drawBlock(const td::ColorID &color) override;
 	void writeToModel(modelNode& model, Nodes& nodes) override;
 	void saveToFile(arch::ArchiveOut& f) override;
 	static sumBlock* restoreFromFile(arch::ArchiveIn& f, kanvas* parent);

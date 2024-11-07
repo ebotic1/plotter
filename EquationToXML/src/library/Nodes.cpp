@@ -13,7 +13,7 @@
 #define INDENT_CHAR "\t"
 #define IMPLICIT_MULTIPLY false
 
-template <int N>
+template <std::size_t N>
 using ConstExprString = baseNode::ConstExprString<N>;
 
 
@@ -421,7 +421,7 @@ public:
 };
 
 
-typedef containerNode<ConstExprString("Vars"), variableNode<"Var">> varsNode;
+typedef containerNode<"Vars", variableNode<"Var">> varsNode;
 typedef containerNode<"Params", variableNode<"Param">> paramsNode;
 typedef containerNode<"NLEqs", singleEquation> NLEquationsNode;
 typedef containerNode<"ODEqs", singleEquation> ODEquationsNode;

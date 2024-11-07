@@ -8,7 +8,7 @@
 #include "./../../../EquationToXML/inc/nodes.h"
 #include "gui/Transformation.h"
 #include <gui/Transformation.h>
-#include "blockBase.h"
+#include "blocks/blockBase.h"
 #include "../BaseView.h"
 #include "blockInterface.h"
 

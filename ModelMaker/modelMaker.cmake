@@ -7,8 +7,8 @@ include(${WORK_ROOT}/DevEnv/natGUI.cmake)
 #include(${WORK_ROOT}/DevEnv/MatrixLib.cmake)
 include(${WORK_ROOT}/DevEnv/SymbComp.cmake)
 
-file(GLOB MODELMAKER_SRC_GUI  ${CMAKE_CURRENT_LIST_DIR}/src/guiEditor/*.cpp)
-file(GLOB MODELMAKER_INC_GUI  ${CMAKE_CURRENT_LIST_DIR}/src/guiEditor/*.h)
+file(GLOB MODELMAKER_SRC_GUI  ${CMAKE_CURRENT_LIST_DIR}/src/guiEditor/*/*.cpp ${CMAKE_CURRENT_LIST_DIR}/src/guiEditor/*.cpp)
+file(GLOB MODELMAKER_INC_GUI  ${CMAKE_CURRENT_LIST_DIR}/src/guiEditor/*/*.h ${CMAKE_CURRENT_LIST_DIR}/src/guiEditor/*.h)
 
 file(GLOB MODELMAKER_SRC_TEXT  ${CMAKE_CURRENT_LIST_DIR}/src/textEditor/*.cpp)
 file(GLOB MODELMAKER_INC_TEXT  ${CMAKE_CURRENT_LIST_DIR}/src/textEditor/*.h)
