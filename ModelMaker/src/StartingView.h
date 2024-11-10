@@ -66,11 +66,11 @@ public:
 class StartingView: public gui::ViewScroller
 {
     TextEdit _labelStartExplain;
-    TextEdit _labelTextEditor, _labelGraphicalEditor;
+    TextEdit _labelTextEditor, _labelGraphicalEditor, _labelExamples;
 
-    NiceButton buttons[8];
-    gui::HorizontalLayout layoutHorizontal;
-    gui::VerticalLayout layoutMain, layoutGraph, layoutText;
+    NiceButton buttons[12];
+    gui::HorizontalLayout _layoutButtons, _layoutButtonsExamples;
+    gui::VerticalLayout layoutMain, layoutGraph, layoutText, _layoutExamplesText, _layoutExamplesGraph;
     gui::View helperView;
 
 

@@ -71,5 +71,8 @@
 		<Res id="daeModel" tr="Differential-algebaric model" />
 		<Res id="gain" tr="Gain: " />
 		<Res id="gainTooltip" tr="Block input will be multiplied with this value" />
+		<Res id="monospaceNotFound" tr="MonoSpace font not found, this application will not work properly." />
+		<Res id="examples" tr="Examples:" />
+		<Res id="pidRegulator" tr="PID regulator" />
 	</Translations>
 </DevRes>

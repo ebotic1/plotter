@@ -5,6 +5,7 @@ SettingsVars GlobalEvents::settingsVars;
 gui::Application *SettingsVars::app = nullptr;
 
 
+
 void SettingsVars::loadSettingsVars(gui::Application* app)
 {
     if (this->app == nullptr)
@@ -127,3 +128,48 @@ void SettingsVars::saveValues()
 
 
 }
+
+
+
+const std::unordered_set<td::String> SettingsVars::MonospaceFonts = {
+    "Courier",
+    "Courier New",
+    "Lucida Console",
+    "Consolas",
+    "Monaco",
+    "Menlo",
+    "DejaVu Sans Mono",
+    "Liberation Mono",
+    "Inconsolata",
+    "Source Code Pro",
+    "Fira Code",
+    "IBM Plex Mono",
+    "Droid Sans Mono",
+    "Anonymous Pro",
+    "Ubuntu Mono",
+    "Bitstream Vera Sans Mono",
+    "Hack",
+    "JetBrains Mono",
+    "Cascadia Code",
+    "Noto Mono",
+    "SF Mono",
+    "Terminus",
+    "ProFont",
+    "Input Mono",
+    "Andale Mono",
+    "M+ 1m",
+    "Meslo LG",
+    "Envy Code R",
+    "Go Mono",
+    "Share Tech Mono",
+    "Overpass Mono",
+    "Dina",
+    "PragmataPro",
+    "Camingo Code",
+    "Roboto Mono",
+    "Iosevka",
+    "Victor Mono",
+    "Recursive Mono",
+    "Monoid",
+    "Space Mono"
+};

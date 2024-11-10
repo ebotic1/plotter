@@ -3,7 +3,7 @@
 #include <gui/Window.h>
 #include <td/Variant.h>
 #include <td/String.h>
-#include "td/StringConverter.h" //ne znam zasto ovo mora biti ukljuceno
+#include "td/StringConverter.h"
 #include "MainWindow.h"
 #include "GlobalEvents.h"
 
@@ -37,9 +37,11 @@ public:
 
 };
 
+//td::StringBase<char, (td::_StringEncoding)0, 4, false>::calcHashNo;
+
 int main(int argc, const char** argv) {
 	auto app = new application(argc, argv);
-
+	
 	app->init(app->getProperties()->getKeyValue("Laungage", "BA").toString());
 	return app->run();
 

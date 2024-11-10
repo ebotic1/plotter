@@ -12,7 +12,7 @@ inline void setUpTextRect(gui::DrawableString &string, gui::Rect &areaRect, cons
 	areaRect.setWidth(width);
 }
 
-inline void squareBlock::drawArrows(const td::ColorID &color)
+void squareBlock::drawArrows(const td::ColorID &color)
 {
 	for (const auto& arrow : arrows)
 		arrow.drawWire(color);
@@ -166,11 +166,6 @@ void squareBlock::drawBlock(const td::ColorID &color)
 	recShape.drawWire(color);	
 	drawArrows(color);
 }
-
-
-
-
-
 
 
 

@@ -55,7 +55,6 @@ public:
         embededCurrent(GlobalEvents::settingsVars.embedPlot),
         langs(getSupportedLanguages()),
         _lblFont(tr("fontLabel")),
-    
         _settingsImg(":settings")
     {
         
@@ -82,21 +81,27 @@ public:
         _chBoxConfirmClose.setChecked(settings.warnBeforeClose);
         _chBoxConfirmClose.onClick([this, &settings](){settings.warnBeforeClose = _chBoxConfirmClose.isChecked();});
         
+        
         auto fonts = gui::Font::getSystemFamilyNames();
-        fontCombo.addItem("Default");
-        fontCombo.addItems(fonts.begin(), fonts.size());
+        std::vector<td::String> foundFonts;
+        for(int i = 0; i<fonts.size(); ++i)
+            if(GlobalEvents::settingsVars.MonospaceFonts.contains(fonts[i]))
+                foundFonts.emplace_back(fonts[i]);
+
+        fontCombo.addItems(&(foundFonts[0]), foundFonts.size());
         fontCombo.setSizeLimits(fontCombo.getWidthToFitLongestItem(), gui::Control::Limit::Fixed);
         w = std::max(w, fontCombo.getWidthToFitLongestItem());
 
-        fontCombo.selectIndex(0);
-        for(int i = 0; i<fonts.size(); ++i)
-            if(fonts[i] == settings.font){
-                fontCombo.selectIndex(i+1);
+        for(int i = 0; i<foundFonts.size(); ++i)
+            if(foundFonts[i] == settings.font){
+                fontCombo.selectIndex(i);
                 break;
             }
 
 
         width = std::max(width, w);
+        
+
 
         gui::GridComposer gc(layout);
         gc.appendRow(_lblLang) << langCombo;
@@ -138,7 +143,8 @@ public:
 
     ~SettingsView(){
       
-  GlobalEvents::settingsVars.font = fontCombo.getSelectedText();
+        if(fontCombo.getSelectedIndex() >= 0)
+            GlobalEvents::settingsVars.font = fontCombo.getSelectedText();
 
         for(int i = 0; i<colorsCnt; ++i){
             delete _colorLabels[i];

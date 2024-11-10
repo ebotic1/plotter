@@ -290,6 +290,41 @@ bool MainWindow::openFile(const td::String& path)
 void MainWindow::onInitialAppearance()
 {
 
+    auto &font = GlobalEvents::settingsVars.font;
+    if(font.cCompareNoCase("Default") == 0){
+
+        std::vector<td::String> monoSpaceFonts = {"Consolas", "DejaVu Sans Mono", "Menlo"}, foundFonts;
+
+        #ifdef MU_MACOS
+            int prefferedFont = 2;
+        #elif MU_WINDOWS
+            int prefferedFont = 0;
+        #else
+            int prefferedFont = 1;
+        #endif
+
+
+        auto fonts = gui::Font::getSystemFamilyNames();
+    
+        for(int i = 0; i<fonts.size(); ++i){
+            if(GlobalEvents::settingsVars.MonospaceFonts.contains(fonts[i]))
+                foundFonts.emplace_back(fonts[i]);
+        }
+
+        decltype(monoSpaceFonts)::iterator it;
+
+        if(foundFonts.empty()){
+            showAlert(tr("error"), tr("monospaceNotFound"));
+        }else{
+            it = std::find(foundFonts.begin(), foundFonts.end(), monoSpaceFonts[prefferedFont]);
+            if(it != foundFonts.end())
+                font = *it;
+            else
+                font = foundFonts[0];
+        }
+
+    }
+
     int argc;
     const char** argv;
     bool success = false;
@@ -298,6 +333,7 @@ void MainWindow::onInitialAppearance()
         if(openFile(argv[i]))
             success = true;
     }
+
 
     if(!success && GlobalEvents::settingsVars.restoreTabs){
 
@@ -413,6 +449,10 @@ bool MainWindow::prepareForClose()
 
 bool MainWindow::shouldClose()
 {
+
+    if(GlobalEvents::settingsVars.warnBeforeClose == false && GlobalEvents::settingsVars.restoreTabs == false)
+        return true;
+
     if (_closeWindow)
         return true;
 

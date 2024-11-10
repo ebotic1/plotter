@@ -93,20 +93,21 @@ bool TextEditorView::openFile(const td::String &path, td::String &settingsString
     {
 		std::ifstream in(path.c_str());
 		cnt::StringBuilder s;
-		char buffer[400];
+		char buffer[1000];
 
 		if(!in)
 			return false;
 
 		const char *found;
-		const int len = std::strlen("Model");
+		constexpr const char *modelTag = "Model";
+		const int len = std::strlen(modelTag);
 		settingsString = "";
 		bool firstLoop = true;
 		while(in)
         {
             //pronalazenje "model:" tag-a i stavljanje svog sadrzaja prije njega u settingsString
 			in.read(buffer + len, sizeof(buffer) - len);
-			found = std::strstr(buffer + len, "Model");
+			found = std::search(buffer+len, buffer + len + in.gcount(), modelTag, modelTag+ len);
 			if(found)
             {
 				if(firstLoop)

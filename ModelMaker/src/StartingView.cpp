@@ -63,7 +63,13 @@ NiceButton::NiceButton(const td::String &ButtonText, int subMenuID, int actionID
 
     StartingView::StartingView():
         gui::ViewScroller(gui::ViewScroller::Type::ScrollAndAutoHide, gui::ViewScroller::Type::ScrollAndAutoHide),
-        layoutMain(6), layoutHorizontal(2), layoutGraph(5), layoutText(12),
+        layoutMain(8), 
+        _layoutButtons(2), 
+        _layoutButtonsExamples(2),
+        _layoutExamplesText(6 + 1),
+        _layoutExamplesGraph(2 + 1),
+        layoutGraph(3), 
+        layoutText(12),
         buttons{
             {tr("openFromFile"), subMenuNewModel, menuBarActionIDs::OpenFromFile}, 
             {tr("emptyModel"), subMenuNewGraphical , menuBarActionIDs::EmptyModel}, 
@@ -73,12 +79,17 @@ NiceButton::NiceButton(const td::String &ButtonText, int subMenuID, int actionID
             {tr("wlsModel"), subMenuNewText, menuBarActionIDs::WLS},
             {tr("daeModel"), subMenuNewText, menuBarActionIDs::DAE},
             //examples
-             {"test", {gui::getResFileName(":WLS")}}
+             {tr("pidRegulator"), {gui::getResFileName(":example1")}},
+             {"ODE example", {gui::getResFileName(":example2"), gui::getResFileName(":example2sub1")}},
+             {"test", {gui::getResFileName(":example3")}},
+             {"test", {gui::getResFileName(":example4")}},
+             {"test", {gui::getResFileName(":example5")}}
             }
     {   
         setUpTextEdit(_labelStartExplain, tr("startingExplanation"));
         setUpTextEdit(_labelGraphicalEditor, tr("graphicalEditorLabel"));
         setUpTextEdit(_labelTextEditor, tr("textEditorLabel"));
+        setUpTextEdit(_labelExamples, tr("examples"));
 
         
         auto appendButton = [](NiceButton &b, gui::VerticalLayout &v) {
@@ -88,7 +99,6 @@ NiceButton::NiceButton(const td::String &ButtonText, int subMenuID, int actionID
 
         layoutGraph << _labelGraphicalEditor;
         appendButton(buttons[1], layoutGraph);
-        appendButton(buttons[7], layoutGraph);
         layoutGraph.appendSpacer();
         
 
@@ -100,15 +110,28 @@ NiceButton::NiceButton(const td::String &ButtonText, int subMenuID, int actionID
         appendButton(buttons[6], layoutText);
         layoutText.appendSpacer();
 
-       
 
-        layoutHorizontal << layoutText << layoutGraph;
+        _layoutButtons << layoutText << layoutGraph;
+
+
+        appendButton(buttons[8], _layoutExamplesText);
+        appendButton(buttons[9], _layoutExamplesText);
+        appendButton(buttons[10], _layoutExamplesText);
+        appendButton(buttons[11], _layoutExamplesText);
+        _layoutExamplesText.appendSpacer();
+
+        appendButton(buttons[7], _layoutExamplesGraph);
+        _layoutExamplesGraph.appendSpacer();
+
+
+        _layoutButtonsExamples << _layoutExamplesText << _layoutExamplesGraph;
 
         layoutMain << _labelStartExplain;
         layoutMain.appendSpace(15);
         layoutMain << buttons[0];
         layoutMain.appendSpace(29);
-        layoutMain << layoutHorizontal;
+        layoutMain << _layoutButtons;
+        layoutMain << _labelExamples << _layoutButtonsExamples;
         layoutMain.appendSpacer();
         
         helperView.setLayout(&layoutMain);

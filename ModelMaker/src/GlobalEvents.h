@@ -2,6 +2,8 @@
 #include <gui/ActionItemDescriptor.h>
 #include <gui/Window.h>
 #include <gui/Label.h>
+#include <unordered_set>
+#include "td/StringConverter.h"
 
 class MainWindow;
 class GlobalEvents;
@@ -16,7 +18,8 @@ struct SettingsVars
 		return helper.tr(key).c_str();
 	}
 
-	
+	static const std::unordered_set<td::String> MonospaceFonts;
+
 	std::vector<const char*> colorNames;
 	static constexpr int colorCnt = 8;
 

@@ -71,5 +71,8 @@
 		<Res id="daeModel" tr="Diferencijalno algebarski model" />
 		<Res id="gain" tr="Pojačanje: " />
 		<Res id="gainTooltip" tr="Ulaz ovog bloka če biti pomnožen sa ovom vrijednosti" />
+		<Res id="monospaceNotFound" tr="MonoSpace font nije pronađen na računaru. Ova aplikacija neće raditi ispravno." />
+		<Res id="examples" tr="Primjeri:" />
+		<Res id="pidRegulator" tr="PID regulator" />
 	</Translations>
 </DevRes>

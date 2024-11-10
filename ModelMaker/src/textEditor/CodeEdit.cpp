@@ -77,7 +77,6 @@ bool CodeEdit::onKeyPressed(const gui::Key& key)
 	}
 
 	getSelection(_pastRange);
-
 	_disableGuardOnNextChange = true;
 
 	return retVal;
@@ -197,7 +196,8 @@ inline bool CodeEdit::processKeyPress(const gui::Key& key)
 			str << tabString;
 			str.appendString(_text.c_str() + r.location, -1);
 			str.getString(_text);
-			setText(_text);
+			const char * debug = _text.c_str();
+			setText(_text.c_str()); // ne treba ici u c_str() ali krahira randomly bez ovoga
 		}
 		delete[](tabString);
 		gui::Range cPos(r.location + 1 + spaceCnt, 0);
@@ -332,6 +332,7 @@ void CodeEdit::highlightSyntax(const gui::Range& r)
 			commentStart += 2;
 		}
 	}
+
 
 }
 

@@ -14,6 +14,13 @@
 		<Res id="NR" path=":models/nr.modl"/>
 		<Res id="DAE" path=":models/dae.modl"/>
 		<Res id="WLS" path=":models/wls.modl"/>
+
+		<Res id="example1" path=":models/example1.tfstate"/>
+		<Res id="example2" path=":models/example2.modl"/>
+		<Res id="example2sub1" path=":models/example2_1.modl"/>
+		<Res id="example3" path=":models/example3.modl"/>
+		<Res id="example4" path=":models/example4.modl"/>
+		<Res id="example5" path=":models/example5.modl"/>
 	</FileNames>
 
 </DevRes>
