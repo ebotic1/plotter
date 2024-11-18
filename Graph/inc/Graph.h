@@ -25,22 +25,22 @@ class GRAPH_API Graph : public gui::Canvas {
 
 	struct Margins {
 		double marginTop = 100;
-		double marginRight = 200;
-		double marginBottom = 150;
-		double marginLeft = 200;
-	}_margins, _marginsOld;
+		double marginRight = 50;
+		double marginBottom = 50;
+		double marginLeft = 100;
+	}_margins, _marginsZero;
 
-	gui::Point _legendLocation = { -20.0, 20.0 };
 
 	bool _active = false;
 	bool _drawGrid = false;
+	bool _drawButtons = true;
 	gui::DrawableString xAxisName = "", yAxisName = "";
 	void drawAxis();
 	double _numberHeight;
 	td::String to_string(gui::CoordType x);
 	inline bool checkRange(const size_t& number) { return number > _funkcije.size(); }
 
-	enum class Actions { none, select, secondaryClick, drag, pointPeek } action = Actions::none;
+	enum class Actions { none, select, secondaryClick, drag, pointPeek, moveLegend } action = Actions::none;
 
 	void setUpDrawingWindow();
 	void finishAddingFunction(Function& newFun);
@@ -76,8 +76,8 @@ class GRAPH_API Graph : public gui::Canvas {
 
 	std::vector<imageButton> _slike;
 
-	double yAxisNameSeperation = 150;
-    double xAxisNameSeperation = 86;
+	double _yAxisNameSeperation = 150;
+    double _xAxisNameSeperation = 86;
 
 
 protected:
@@ -115,15 +115,17 @@ public:
 	void setBackgroundColor(td::ColorID color);
 	void setAxisColor(td::ColorID boja);
 	td::ColorID getAxisColor() { return _axisColor; }
-	void setxAxisName(const td::String& xName) { xAxisName = xName; reDraw(); }
-	void setyAxisName(const td::String& yName) { yAxisName = yName; reDraw(); }
+	void setxAxisName(const td::String& xName);
+	void setyAxisName(const td::String& yName);
 	const td::String getxAxisName() { return xAxisName.toString(); }
 	const td::String getyAxisName() { return yAxisName.toString(); }
 	void setAxisNameDistance(double xNameDistanceFromAxis, double yNameDistanceFromAxis);
+	void getAxisNameDistance(double &xNameDistanceFromAxis, double &yNameDistanceFromAxis);
 
 	td::ColorID getBackgroundColor() { return backgroundColor; }
-	void setMargins(double top, double left, double right, double bottom);
-	void showLegend(bool draw) { _drawLegend = draw; reDraw(); }
+	void setMargins(double left, double right, double bottom, double top);
+	void getMargins(double &left, double &right, double &bottom, double &top);
+	void showLegend(bool draw);
 	void showGrid(bool draw) { _drawGrid = draw; reDraw(); }
 
 	void addFunction(gui::CoordType* x, gui::CoordType* y, size_t length, td::ColorID color, double lineWidth = 2, td::LinePattern pattern = td::LinePattern::Solid, td::String name = "line");
@@ -140,6 +142,7 @@ public:
 	void changePattern(td::LinePattern pattern, size_t function);
 	void changeColor(td::ColorID color, size_t function);
 	void setLegendLocation(const gui::Point& location);
+	void setLegendCols(int cols);
 
 	void Zoom(const gui::CoordType& scale);
 	void ZoomToArea(gui::CoordType *minX, gui::CoordType *maxX, gui::CoordType *minY, gui::CoordType *maxY);

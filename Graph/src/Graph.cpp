@@ -9,6 +9,9 @@
 #include "xml/DOMParser.h"
 #include "./../../common/ToColor.h"
 #include "gui/Transformation.h"
+#include <gui/Panel.h>
+#include <gui/Dialog.h>
+#include "settings.h"
 
 #define SELECT_COLOR td::ColorID::Green
 #define FONT gui::Font::ID::SystemBold
@@ -23,21 +26,44 @@ const std::initializer_list<gui::InputDevice::Event> Graph::noInputs = {};
 class Graph::legend {
     std::deque<gui::DrawableString> imena;
     std::vector<td::ColorID> colors;
-    gui::CoordType length = 0;
+    gui::Rect _window;
+    int _columns;
+    std::vector<double> _lengths;
+    
 
-    static constexpr double offset = 13;
-    static constexpr double rectSize = 21;
+    static constexpr double offsetToName = 13;
+    static constexpr double offsetColumn = 18;
+    static constexpr double offsetHeight = 10;
+    static constexpr double rectSize = 17;
 
 public:
-    td::ColorID textColor;
-    legend(td::ColorID textColor) : textColor(textColor){};
+    void changeLocation(const gui::Point &location){
+        _window.setOrigin(location);
+    }
 
-    void draw(const gui::Point& topRight) {
-        gui::CoordType height = topRight.y;
+    td::ColorID textColor;
+    legend(td::ColorID textColor, const gui::Point &location) : 
+    textColor(textColor)
+    {
+        changeLocation(location);
+        changeColumnCnt(1);
+    };
+
+    void draw() {
+        int perColumn = 0.5 + colors.size() / _columns;
+        gui::CoordType height = _window.top, length = _window.left;
+
+        int cnt = 0, column = 0;
         for (size_t i = 0; i < colors.size(); ++i) {
-            imena[i].draw({ topRight.x - length, height}, FONT, textColor);
-            gui::Shape::drawRect(gui::Rect({ topRight.x - length - offset - rectSize, height }, gui::Size(rectSize, rectSize)), colors[i]);
-            height += rectSize + 10;
+            imena[i].draw({ length + rectSize + offsetToName, height}, FONT, textColor);
+            gui::Shape::drawRect(gui::Rect({ length, height }, gui::Size(rectSize, rectSize)), colors[i]);
+            height += rectSize + offsetHeight;
+
+            if(++cnt == perColumn){
+                cnt = 0;
+                length += _lengths[column++] + offsetToName + rectSize + offsetColumn;
+                height = _window.top;
+            }
         }
     }
 
@@ -45,21 +71,71 @@ public:
         imena[poz] = name;
         gui::Size sz;
         imena[poz].measure(FONT, sz);
-        if (length < sz.width)
-            length = sz.width;
+
+        const int perColumn = 0.5 + colors.size() / _columns;
+        const int column = poz / perColumn;
+
+
+        if(_lengths.size() < column + 1)
+            _lengths.resize(column + 1);
+        
+        if(_lengths[column] < sz.width){
+            _window.setWidth(_window.width() - _lengths[column] + sz.width);
+            _lengths[column] = sz.width;
+        }
+
     }
+
     void changeColor(td::ColorID color, size_t poz) {
         colors[poz] = color;
     }
 
+    void changeColumnCnt(int columnCnt){
+        _columns = columnCnt;
+        _columns = (_columns > imena.size()) ? imena.size() : _columns;
+        _columns = (_columns < 1) ? 1 : _columns;
+        constexpr double widthSpace = rectSize + offsetToName;
+        _lengths.resize(_columns);
+
+        if(imena.size() == 0){
+            _window.setSize({0,0});
+            return;
+        }
+
+        double width = widthSpace * _columns + offsetColumn * (_columns - 1);
+        gui::Size sz;
+        const int perColumn = 0.5 + imena.size() / _columns;
+        int cnt = 0;
+        int column = 0;
+        double biggestSize = 0;
+        for(int i = 0; i<imena.size(); ++i){
+            imena[i].measure(FONT, sz);
+            biggestSize = std::max(biggestSize, sz.width);
+            if(perColumn == ++cnt){
+                _lengths[column] = biggestSize;
+                width += biggestSize;
+                biggestSize = 0;
+                cnt = 0;
+                ++column;
+            }
+        }
+
+        _window.setSize({width, perColumn * (rectSize + offsetHeight)});
+
+    }
+
     void addFunction(const Function& f) {
-        imena.resize(imena.size() + 1);
-        changeName(*f.name, imena.size() - 1);
+        imena.emplace_back(*f.name);
         colors.emplace_back(f.getColor());
+        changeColumnCnt(_columns);
     };
 
-    gui::CoordType getLength() {
-        return length + offset + rectSize;
+    const gui::Rect &getWindow() {
+        return _window;
+    }
+
+    void setOrigin(const gui::Point &location){
+        _window.setOrigin(location);
     }
    
 };
@@ -551,39 +627,55 @@ bool Graph::save(const td::String& path){
         return true;
     }
 
-   // gui::Geometry g;
-   // getGeometry(g);
-   // gui::Rect rect({0,0}, gui::Size(g.size.width, g.size.height));
+   bool drawButton = false;
+   bool success = false;
+   std::swap(_drawButtons, drawButton);
+   setUpDrawingWindow();
+   reDraw();
 
     if (path.endsWith(".png")) {
         gui::Image img(path);
         this->drawToImage(img, 1, false);
-        return true;
+        success = true;
     }
 
     if (path.endsWith(".svg")) {
         exportToSVG(path, true);
-        return true;
+        success = true;
     }
 
     if (path.endsWith(".pdf")) {
         exportToPDF(path, true);
-        return true;
+        success = true;
     }
 
     if (path.endsWith(".eps")) {
         exportToEPS(path, true);
-        return true;
+        success = true;
     }
-    return false;
+
+    if(success){
+        _drawButtons = drawButton;
+        setUpDrawingWindow();
+        reDraw();
+    }
+
+    return success;
 }
 
-Graph::Graph(bool startWithMargins, bool takeUserInput, td::ColorID backgroundColor) :gui::Canvas(takeUserInput ? inputs : noInputs), backgroundColor(backgroundColor), _drawMargins(startWithMargins)
+
+
+Graph::Graph(bool startWithMargins, bool takeUserInput, td::ColorID backgroundColor) :
+    gui::Canvas(takeUserInput ? inputs : noInputs), 
+    backgroundColor(backgroundColor), 
+    _drawMargins(startWithMargins),
+    _marginsZero{0.0, 0.0, 0.0, 0.0}
 {
     enableResizeEvent(true);
     registerForScrollEvents();
+   
 
-    for (const char *ime : std::vector<const char*>{":fullScreen", ":grid", ":legend", ":meni", ":save", ":reset", ":fitToWindow", ":info"})
+    for (const char *ime : std::vector<const char*>{":fullScreen", ":grid", ":legend", ":meni", ":save", ":reset", ":fitToWindow", ":info", ":graph_settings"})
         _slike.emplace_back(ime, gui::Rect({ 0,0 }, gui::Size(32, 32)));
     
     if (backgroundColor == td::ColorID::SysCtrlBack)
@@ -601,7 +693,7 @@ Graph::Graph(bool startWithMargins, bool takeUserInput, td::ColorID backgroundCo
     test.measure(FONT, sz);
     _numberHeight = sz.height;
 
-    legenda = new legend(_axisColor);
+    legenda = new legend(_axisColor, gui::Point{0,0});
 
 
     double distance = 20;
@@ -620,16 +712,40 @@ void Graph::setUpDrawingWindow(){
     drawingWindow.point.y = 0;
     drawingWindow.point.x = 0;
 
-    if (_drawMargins) {
-        //gui::Point center;
-        //center.x = drawingWindow.point.x + drawingWindow.size.width / 2;
-        //center.y = drawingWindow.point.y + drawingWindow.size.height / 2;
+    const auto &margins = _drawNumbersOutside ? _margins : _marginsZero;
 
-        drawingWindow.size.width -= _margins.marginLeft + _margins.marginRight;
-        drawingWindow.size.height -= _margins.marginTop + _margins.marginBottom;
-        drawingWindow.point.x = _margins.marginLeft;
-        drawingWindow.point.y = _margins.marginTop;
+    if (_drawMargins) {
+        drawingWindow.point.y = margins.marginTop;
+        drawingWindow.point.x = margins.marginLeft;
+
+        if(_drawNumbersOutside){
+            if(yAxisName.toString().length() > 0){
+                drawingWindow.point.x += _yAxisNameSeperation;
+                drawingWindow.size.width -= _yAxisNameSeperation;
+            }
+            if(xAxisName.toString().length() > 0)
+                drawingWindow.size.height -= _xAxisNameSeperation;
+        }
+
+        drawingWindow.size.width -= margins.marginLeft + margins.marginRight;
+        if(!_legendPositionChanged && _drawLegend){
+            double constexpr marginLeftLegend = 20;
+            drawingWindow.size.width -= legenda->getWindow().width() + marginLeftLegend;
+            legenda->setOrigin({drawingWindow.point.x + drawingWindow.size.width + marginLeftLegend, legenda->getWindow().top});
+        }
+        
+        drawingWindow.size.height -= margins.marginTop + margins.marginBottom;
+        
+        if(_drawButtons){
+            constexpr double buttonsHeight = 47; // slika je visine 32, a odvaja se od vrha 5 tako da 37 ukupno
+            drawingWindow.size.height -= buttonsHeight;
+            drawingWindow.point.y += buttonsHeight;
+        }
+
     }
+
+    drawingWindow.size.height = std::max(drawingWindow.size.height, 5.);
+    drawingWindow.size.width = std::max(drawingWindow.size.width, 5.);
 
     ZoomToWindow(past);
     _drawingRect.setOriginAndSize({ drawingWindow.point.x, drawingWindow.point.y }, drawingWindow.size);
@@ -648,8 +764,9 @@ void Graph::reset(){
     _funkcije.clear();
     delete _Limits;
     _Limits = nullptr;
+    gui::Point legendPoz = {legenda->getWindow().left, legenda->getWindow().top};
     delete legenda;
-    legenda = new legend(_axisColor);
+    legenda = new legend(_axisColor, legendPoz);
 }
 
 void Graph::setBackgroundColor(td::ColorID color){
@@ -662,23 +779,62 @@ void Graph::setAxisColor(td::ColorID boja){
     reDraw();
 }
 
-void Graph::setAxisNameDistance(double xNameDistanceFromAxis, double yNameDistanceFromAxis)
+void Graph::setyAxisName(const td::String &yName)
 {
-    double yAxisNameSeperation = xNameDistanceFromAxis;
-    double xAxisNameSeperation = yNameDistanceFromAxis;
-}
-
-void Graph::setMargins(double top, double left, double right, double bottom) 
-{
-    double _marginTop = top;
-    double _marginRight = right;
-    double _marginBottom = bottom;
-    double _marginLeft = left;
+    yAxisName = yName; 
+    _margins.marginLeft = 10; 
     setUpDrawingWindow();
     reDraw();
 }
 
-void Graph::addFunction(gui::CoordType* x, gui::CoordType* y, size_t length, td::ColorID color, double lineWidth, td::LinePattern pattern, td::String name){
+void Graph::setxAxisName(const td::String &xName){
+    xAxisName = xName; 
+    _margins.marginBottom = 10; 
+    setUpDrawingWindow();
+    reDraw();
+}
+
+void Graph::setAxisNameDistance(double xNameDistanceFromAxis, double yNameDistanceFromAxis)
+{
+    _xAxisNameSeperation = xNameDistanceFromAxis;
+    _yAxisNameSeperation = yNameDistanceFromAxis;
+    setUpDrawingWindow();
+    reDraw();
+}
+
+void Graph::getAxisNameDistance(double &xNameDistanceFromAxis, double &yNameDistanceFromAxis)
+{
+    xNameDistanceFromAxis = _xAxisNameSeperation;
+    yNameDistanceFromAxis = _yAxisNameSeperation;
+}
+
+void Graph::setMargins(double left, double right, double bottom, double top)
+{
+    _margins.marginTop = top;
+    _margins.marginRight = right;
+    _margins.marginBottom = bottom;
+    _margins.marginLeft = left;
+    setUpDrawingWindow();
+    reDraw();
+}
+
+void Graph::getMargins(double &left, double &right, double &bottom, double &top)
+{
+    top = _margins.marginTop;
+    left = _margins.marginLeft;
+    right = _margins.marginRight;
+    bottom = _margins.marginBottom;
+}
+
+void Graph::showLegend(bool draw)
+{
+    _drawLegend = draw; 
+    setUpDrawingWindow();
+    reDraw(); 
+}
+
+void Graph::addFunction(gui::CoordType *x, gui::CoordType *y, size_t length, td::ColorID color, double lineWidth, td::LinePattern pattern, td::String name)
+{
     _funkcije.emplace_back(x, y, length, color, name, lineWidth, pattern);
     finishAddingFunction(_funkcije.back());
 }
@@ -839,8 +995,9 @@ void Graph::onDraw(const gui::Rect& rect){
     if (_drawMargins) {
         gui::Shape::drawRect(_drawingRect, _axisColor, 2);
 
-        for(auto & img : _slike)
-            img.image.draw(img.rect);
+        if(_drawButtons)
+            for(auto & img : _slike)
+                img.image.draw(img.rect);
 
     }
 
@@ -849,9 +1006,6 @@ void Graph::onDraw(const gui::Rect& rect){
 
     if (_funkcije.size() == 0)
         return;
-
-    if (_drawLegend)
-        legenda->draw({ (_legendLocation.x < 0) ? rect.right + _legendLocation.x : _legendLocation.x, (_legendLocation.y < 0) ? rect.bottom + _legendLocation.x : _legendLocation.y });
 
     for (size_t i = 0; i < verticals.size(); ++i) {
         gui::CoordType xVal = _funkcije[0].realToTransformedX(verticals[i]);
@@ -864,6 +1018,11 @@ void Graph::onDraw(const gui::Rect& rect){
             gui::Shape::drawLine({ _drawingRect.left, yVal }, { _drawingRect.right, yVal }, _axisColor, 1.8);
     }
     
+
+    if (_drawLegend)
+        legenda->draw();
+
+
 
     if (action == Actions::pointPeek) {
 
@@ -928,11 +1087,21 @@ void Graph::changeColor(td::ColorID color, size_t function){ // todo: modifokova
 
 void Graph::setLegendLocation(const gui::Point& location)
 {
+    if(!_legendPositionChanged){
+        _legendPositionChanged = true;
+        setUpDrawingWindow();
+    }
     _legendPositionChanged = true;
-    _legendLocation = location;
+    legenda->setOrigin(location);
+    reDraw();
 }
 
-
+void Graph::setLegendCols(int cols)
+{
+    legenda->changeColumnCnt(cols);
+    setUpDrawingWindow();
+    reDraw();
+}
 
 
 td::ColorID Graph::nextColor(){
@@ -1084,25 +1253,26 @@ void Graph::drawAxis(){
     }
 
 
-    gui::Rect r({ 0, 0}, gui::Size({ drawingWindow.size.width, 100 }));
+    gui::Rect r({ 0, -100}, gui::Size(drawingWindow.size.width, 100 ));
     //axis names
     {
         gui::Transformation tr;
-        
 
         tr.saveContext();
-        tr.translate(_drawingRect.left, _drawingRect.bottom + xAxisNameSeperation);
+        tr.translate(_drawingRect.left, _drawingRect.bottom + _xAxisNameSeperation);
         tr.setToContext();
-        this->xAxisName.draw(r, FONT, _axisColor, td::TextAlignment::Center);
+        this->xAxisName.draw(r, FONT, _axisColor, td::TextAlignment::Center, td::VAlignment::Bottom);
         tr.restoreContext();
         tr.saveContext();
 
         r.setWidth(drawingWindow.size.height);
         tr.identity();
-        tr.translate(_drawingRect.left - yAxisNameSeperation, _drawingRect.bottom);
+
+        tr.translate(_drawingRect.left - _yAxisNameSeperation + _numberHeight, _drawingRect.bottom);
         tr.rotateDeg(-90);
+        
         tr.setToContext();
-        this->yAxisName.draw(r, FONT, _axisColor, td::TextAlignment::Center);
+        this->yAxisName.draw(r, FONT, _axisColor, td::TextAlignment::Center, td::VAlignment::Bottom);
         tr.restoreContext();
         
     }
@@ -1136,6 +1306,13 @@ bool Graph::onScroll(const gui::InputDevice& inputDevice)
 
 
 void Graph::onPrimaryButtonPressed(const gui::InputDevice& inputDevice) {
+    action = Actions::none;
+
+    if(_drawLegend && legenda->getWindow().contains(inputDevice.getFramePoint())){
+        action = Actions::moveLegend;
+        return;
+    }
+
     if (_drawingRect.contains(inputDevice.getFramePoint())) {
         action = Actions::select;
         _selectRect.setOrigin(inputDevice.getFramePoint());
@@ -1145,22 +1322,11 @@ void Graph::onPrimaryButtonPressed(const gui::InputDevice& inputDevice) {
     }
 
     if (_slike[0].rect.contains(inputDevice.getFramePoint())) {
-        if (!_drawNumbersOutside) {
+        if (!_drawNumbersOutside) 
             _drawNumbersOutside = true;
-            _margins = _marginsOld;
-        }
-        else {
-            _marginsOld = _margins;
-            _margins.marginBottom = 0;
-            _margins.marginTop = 47; // slika je visine 32, a odvaja se od vrha 5 tako da 37 ukupno
-            _margins.marginLeft = 0;
-            if (_legendPositionChanged)
-                _margins.marginRight = 0;
-            else
-                _margins.marginRight = legenda->getLength() + 20 + 10; //legenda se za 20 odvaja od desnog coska po default-u
-
+        else 
             _drawNumbersOutside = false;
-        }
+        
         setUpDrawingWindow();
         reDraw();
     }
@@ -1193,6 +1359,13 @@ void Graph::onPrimaryButtonPressed(const gui::InputDevice& inputDevice) {
 
     if (_slike[7].rect.contains(inputDevice.getFramePoint())) {
         showHelp();
+    }
+
+
+    if (_slike[8].rect.contains(inputDevice.getFramePoint())) {
+        gui::Panel::show<Settings>(this, tr("plotter_settings"), (td::UINT4)9859, \
+        {{gui::Dialog::Button::ID::OK, tr("plotter_zatvori") , gui::Button::Type::Normal}}, \
+        [](gui::Dialog *ptr){}, this);
     }
 
 
@@ -1229,6 +1402,9 @@ void Graph::onPrimaryButtonReleased(const gui::InputDevice& inputDevice){
         ZoomToWindow(g);
 
         reDraw();
+    }
+    if(action == Actions::moveLegend){
+        action = Actions::none;
     }
 
 }
@@ -1276,6 +1452,7 @@ void Graph::onCursorMoved(const gui::InputDevice& inputDevice){
     if(action == Actions::drag){
         moveGraph(inputDevice.getFramePoint().x - _lastMousePos.x, _lastMousePos.y - inputDevice.getFramePoint().y );
     }
+
     _lastMousePos = inputDevice.getFramePoint();
 
 }
@@ -1285,6 +1462,9 @@ void Graph::onCursorDragged(const gui::InputDevice& inputDevice){
         _selectRect.setWidth(inputDevice.getFramePoint().x - _selectRect.left);
         _selectRect.setHeight(inputDevice.getFramePoint().y - _selectRect.top);
         reDraw();
+    }
+    if(action == Actions::moveLegend){
+        setLegendLocation(inputDevice.getFramePoint());
     }
 }
 
@@ -1362,6 +1542,10 @@ bool Graph::onKeyPressed(const gui::Key& key) {
             return false;
        
 
+        reset();
+        openFile(_lastPath, true);
+
+/*
         auto funCnt = _funkcije.size();
 
         delete _Limits;
@@ -1372,9 +1556,10 @@ bool Graph::onKeyPressed(const gui::Key& key) {
         yAxisName = "";
         _pastColors.clear();
 
-        openFile(_lastPath, true);
+        
 
         _funkcije.erase(_funkcije.begin(), _funkcije.begin() + funCnt);
+        */
         reDraw();
 
 

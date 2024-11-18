@@ -1,0 +1,14 @@
+<?xml version='1.0' encoding='utf-8'?>
+<DevRes>
+	<Translations>
+		<Res id="plotter_settings" tr="Plotter settings" />
+		<Res id="plotter_zatvori" tr="Close" />
+		<Res id="plotter_legendCols" tr="Number of columns in plot legend: " />
+		<Res id="plotter_marginLeft" tr="Left margin: " />
+		<Res id="plotter_marginRight" tr="Right margin: " />
+		<Res id="plotter_marginTop" tr="Top Margin: " />
+		<Res id="plotter_marginBottom" tr="Bottom margin: " />
+		<Res id="plotter_xSpace" tr="Space to X axis label: " />
+		<Res id="plotter_ySpace" tr="Space to Y axis label: " />
+	</Translations>
+</DevRes>
