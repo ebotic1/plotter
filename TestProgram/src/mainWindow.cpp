@@ -4,12 +4,23 @@
 
 #include "gui/FileDialog.h"
 
+static gui::Font *getFont(gui::Font &font){
+    if(!font.isOk()){
+        auto fonts = gui::Font::getSystemFamilyNames();
+        font.create(fonts[0], 10, gui::Font::Style::Normal, gui::Font::Unit::LogicalPixel);
+    }
+    return &font;
+}
 
 MainWindow::MainWindow()
-    : gui::Window(gui::Geometry(600, 100, 1500, 1500)), _graph(true, true, td::ColorID::Black), splitter(_graph)
+    : gui::Window(gui::Geometry(600, 100, 1500, 1500)), 
+    _graph(getFont(font), getFont(font), td::ColorID::SysText, false), 
+    splitter(_graph)
 {
+    
     setTitle("Graph");
     _mainMenuBar.setAsMain(this);
+    setToolBar(_toolBar);
 
     int broj = 1001;
     gui::CoordType* x = new gui::CoordType[broj];
@@ -43,6 +54,11 @@ MainWindow::MainWindow()
 
 
 bool MainWindow::onActionItem(gui::ActionItemDescriptor& aiDesc) {
+
+    if(aiDesc._menuID == 100){ //toolbar
+        _graph.buttonAction(aiDesc._actionItemID);
+        return true;
+    }
 
     if (aiDesc._menuID == 1) {
         if (aiDesc._actionItemID > 2)

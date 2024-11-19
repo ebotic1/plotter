@@ -3,6 +3,7 @@
 #include <gui/ComboBox.h>
 #include <gui/GridComposer.h>
 #include <gui/Slider.h>
+#include <gui/Label.h>
 #include "../inc/Graph.h"
 
 class Settings : public gui::View{

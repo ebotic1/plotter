@@ -1,7 +1,9 @@
 #include <gui/Window.h>
 #include "./../../Graph/inc/Graph.h"
 #include <gui/MenuBar.h>
+#include <gui/Font.h>
 #include "splitter.h"
+#include "toolbar.h"
 
 
 class MenuBar : public gui::MenuBar {
@@ -34,9 +36,11 @@ public:
 class MainWindow : public gui::Window
 {
 private:
-protected:
+
+    gui::Font font;
+
     MenuBar _mainMenuBar;
-    //ToolBar _toolBar;
+    ToolBar _toolBar;
     Graph _graph;
     splitterLayout splitter;
 

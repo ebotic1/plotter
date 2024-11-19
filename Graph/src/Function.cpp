@@ -95,6 +95,7 @@ Function::Function(gui::Point* points, size_t length, td::ColorID color, const t
 	this->name = new td::String(name);
 	tacke = new gui::Point[length];
 	memcpy(tacke, points, sizeof(gui::Point)*length);
+	memcpy(_tackeUnmodified, points, sizeof(gui::Point)*length);
 }
 
 
@@ -107,6 +108,7 @@ Function& Function::operator=(Function&& f) noexcept{
 	memcpy(this, &f, sizeof(Function));
 	f.name = nullptr;
 	f.tacke = nullptr;
+	f._tackeUnmodified = nullptr;
 	f.lines = nullptr;
 
 	return *this;
@@ -126,11 +128,15 @@ void Function::getShift(gui::CoordType& shiftX, gui::CoordType& shiftY) const{
 
 void Function::setPoints(gui::CoordType* x, gui::CoordType* y, size_t length){
 	delete[] tacke;
+	delete[] _tackeUnmodified;
 	tacke = new gui::Point[length];
+	_tackeUnmodified = new gui::Point[length];
 
 	for (size_t i = 0; i < length; ++i){
 		tacke[i].x = x[i];
 		tacke[i].y = y[i];
+		_tackeUnmodified[i].x = x[i];
+		_tackeUnmodified[i].y = y[i];
 	}
 
 }
@@ -147,22 +153,22 @@ void Function::setLineWidth(double width){
 
 
 void Function::increaseScaleAndShiftX(const gui::CoordType& scale, const gui::CoordType& shift){
-	for (size_t i = 0; i < length; ++i)
-		tacke[i].x = (tacke[i].x - shiftX) * scale + shiftX + shift;
-
 	scaleX *= scale;
 	shiftX += shift;
+
+	for (size_t i = 0; i < length; ++i)
+		tacke[i].x = _tackeUnmodified[i].x * scaleX + shiftX;
 
 	reDraw = true;
 	
 }
 
 void Function::increaseScaleAndShiftY(const gui::CoordType& scale, const gui::CoordType& shift){
-	for (size_t i = 0; i < length; ++i)
-		tacke[i].y = (tacke[i].y + shiftY) * scale - shiftY - shift;
-
 	scaleY *= scale;
 	shiftY += shift;
+
+	for (size_t i = 0; i < length; ++i)
+		tacke[i].y = _tackeUnmodified[i].y * scaleY - shiftY;
 
 	reDraw = true;
 }
@@ -184,16 +190,18 @@ void Function::increaseShiftY(const gui::CoordType& shift){
 }
 
 void Function::increaseScaleX(const gui::CoordType& scale){
-	for (size_t i = 0; i < length; ++i)
-		tacke[i].x = (tacke[i].x - shiftX) * scale + shiftX;
 	scaleX *= scale;
+	for (size_t i = 0; i < length; ++i)
+		tacke[i].x = _tackeUnmodified[i].x * scaleX + shiftX;
+	
 	reDraw = true;
 }
 
 void Function::increaseScaleY(const gui::CoordType& scale) {
-	for (size_t i = 0; i < length; ++i)
-		tacke[i].y = (tacke[i].y + shiftY) * scale - shiftY;
 	scaleY *= scale;
+	for (size_t i = 0; i < length; ++i)
+		tacke[i].y = _tackeUnmodified[i].y * scaleY - shiftY;
+	
 	reDraw = true;
 }
 

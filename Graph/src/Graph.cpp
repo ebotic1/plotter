@@ -1,6 +1,7 @@
-#include "./../inc/Graph.h"
-#include "gui/Shape.h"
-#include "gui/DrawableString.h"
+#include "../inc/Graph.h"
+#include <gui/Panel.h>
+#include <gui/Dialog.h>
+#include "settings.h"
 #include "AnnotationDialog.h"
 #include "gui/FileDialog.h"
 #include "TxtDiaglog.h"
@@ -8,13 +9,6 @@
 #include <fstream>
 #include "xml/DOMParser.h"
 #include "./../../common/ToColor.h"
-#include "gui/Transformation.h"
-#include <gui/Panel.h>
-#include <gui/Dialog.h>
-#include "settings.h"
-
-#define SELECT_COLOR td::ColorID::Green
-#define FONT gui::Font::ID::SystemBold
 
 const std::initializer_list<gui::InputDevice::Event> Graph::inputs = { gui::InputDevice::Event::PrimaryClicks, gui::InputDevice::Event::SecondaryClicks, 
 gui::InputDevice::Event::Zoom, gui::InputDevice::Event::CursorDrag, gui::InputDevice::Event::CursorMove, gui::InputDevice::Event::Keyboard, 
@@ -23,131 +17,422 @@ gui::InputDevice::Event::CursorEnterLeave, gui::InputDevice::Event::PrimaryDblCl
 const std::initializer_list<gui::InputDevice::Event> Graph::noInputs = {};
 
 
-class Graph::legend {
-    std::deque<gui::DrawableString> imena;
-    std::vector<td::ColorID> colors;
-    gui::Rect _window;
-    int _columns;
-    std::vector<double> _lengths;
-    
-
-    static constexpr double offsetToName = 13;
-    static constexpr double offsetColumn = 18;
-    static constexpr double offsetHeight = 10;
-    static constexpr double rectSize = 17;
-
-public:
-    void changeLocation(const gui::Point &location){
-        _window.setOrigin(location);
-    }
-
-    td::ColorID textColor;
-    legend(td::ColorID textColor, const gui::Point &location) : 
-    textColor(textColor)
-    {
-        changeLocation(location);
-        changeColumnCnt(1);
-    };
-
-    void draw() {
-        int perColumn = 0.5 + colors.size() / _columns;
-        gui::CoordType height = _window.top, length = _window.left;
-
-        int cnt = 0, column = 0;
-        for (size_t i = 0; i < colors.size(); ++i) {
-            imena[i].draw({ length + rectSize + offsetToName, height}, FONT, textColor);
-            gui::Shape::drawRect(gui::Rect({ length, height }, gui::Size(rectSize, rectSize)), colors[i]);
-            height += rectSize + offsetHeight;
-
-            if(++cnt == perColumn){
-                cnt = 0;
-                length += _lengths[column++] + offsetToName + rectSize + offsetColumn;
-                height = _window.top;
-            }
-        }
-    }
-
-    void changeName(const td::String& name, size_t poz) {
-        imena[poz] = name;
-        gui::Size sz;
-        imena[poz].measure(FONT, sz);
-
-        const int perColumn = 0.5 + colors.size() / _columns;
-        const int column = poz / perColumn;
-
-
-        if(_lengths.size() < column + 1)
-            _lengths.resize(column + 1);
-        
-        if(_lengths[column] < sz.width){
-            _window.setWidth(_window.width() - _lengths[column] + sz.width);
-            _lengths[column] = sz.width;
-        }
-
-    }
-
-    void changeColor(td::ColorID color, size_t poz) {
-        colors[poz] = color;
-    }
-
-    void changeColumnCnt(int columnCnt){
-        _columns = columnCnt;
-        _columns = (_columns > imena.size()) ? imena.size() : _columns;
-        _columns = (_columns < 1) ? 1 : _columns;
-        constexpr double widthSpace = rectSize + offsetToName;
-        _lengths.resize(_columns);
-
-        if(imena.size() == 0){
-            _window.setSize({0,0});
-            return;
-        }
-
-        double width = widthSpace * _columns + offsetColumn * (_columns - 1);
-        gui::Size sz;
-        const int perColumn = 0.5 + imena.size() / _columns;
-        int cnt = 0;
-        int column = 0;
-        double biggestSize = 0;
-        for(int i = 0; i<imena.size(); ++i){
-            imena[i].measure(FONT, sz);
-            biggestSize = std::max(biggestSize, sz.width);
-            if(perColumn == ++cnt){
-                _lengths[column] = biggestSize;
-                width += biggestSize;
-                biggestSize = 0;
-                cnt = 0;
-                ++column;
-            }
-        }
-
-        _window.setSize({width, perColumn * (rectSize + offsetHeight)});
-
-    }
-
-    void addFunction(const Function& f) {
-        imena.emplace_back(*f.name);
-        colors.emplace_back(f.getColor());
-        changeColumnCnt(_columns);
-    };
-
-    const gui::Rect &getWindow() {
-        return _window;
-    }
-
-    void setOrigin(const gui::Point &location){
-        _window.setOrigin(location);
-    }
+Graph::Graph(gui::Font *fontAxis, gui::Font *fontLegend, td::ColorID backgroundColor, bool DrawButtons, bool takeUserInput):
+    GraphDrawer(_axisColor, fontAxis, fontLegend, true),
+    gui::Canvas(takeUserInput ? inputs : noInputs), 
+    _backgroundColor(backgroundColor)
+{
+    enableResizeEvent(true);
+    registerForScrollEvents();
    
-};
+    drawButtons(DrawButtons);
 
-td::String Graph::to_string(gui::CoordType x) {
-    td::String s;
-    s.format("%g", x);
-    return s;
+    for (const char *ime : buttonsImages)
+        _slike.emplace_back(ime, gui::Rect({ 0,0 }, gui::Size(32, 32)));
+    
+    double distance = 20;
+    for (size_t i = 0; i < _slike.size(); ++i) {
+        _slike[i].rect.setOrigin(distance, 5);
+        distance += 32 + _slike[i].rect.width();
+    }
+    
+    _axisColor = td::ColorID::Black;
+    if (backgroundColor == td::ColorID::SysCtrlBack)
+        setAxisColor(td::ColorID::SysText);
+    else if (backgroundColor == td::ColorID::SysText)
+        setAxisColor(td::ColorID::SysCtrlBack);
+    else if (backgroundColor == _axisColor)
+       setAxisColor(td::ColorID::Black);
+    else if (backgroundColor == _axisColor)
+       setAxisColor(td::ColorID::White);
+
+    setBackgroundColor(_backgroundColor);
+    
+    removeColorFromAutopicker(_backgroundColor);
+
+}
+
+
+static constexpr double buttonsHeight = 47; // slika je visine 32, a odvaja se od vrha 5 tako da 37 ukupno
+void Graph::onResize(const gui::Size &newSize)
+{
+    _realSize = newSize;
+    static_cast<GraphDrawer *>(this)->setGraphSize({newSize.width, newSize.height - _drawButtons * buttonsHeight});
+}
+
+void Graph::drawButtons(bool draw)
+{
+    _drawButtons = draw;
+    if(_drawButtons){
+        _tr.identity();
+        _trPoint = {0,buttonsHeight};
+        _tr.translate(_trPoint);        
+    }else{
+        _trPoint = {0,0};
+        _tr.identity();
+    }
+    onResize(_realSize);
+    reDraw();
+}
+
+void Graph::onDraw(const gui::Rect &rect)
+{
+
+    if (action == Actions::select) 
+        gui::Shape::drawRect(_selectRect, SELECT_COLOR, 3, td::LinePattern::Dash);
+
+    if(_drawButtons && _drawMargins)
+        for(auto & img : _slike)
+            img.image.draw(img.rect);
+
+    _tr.setToContext();
+
+    static_cast<GraphDrawer *>(this)->draw();
+
+    if (action == Actions::pointPeek) {
+
+        td::String broj;
+        broj.format("{ %g , %g }", _funkcije[0].transformedToRealX(_lastMousePos.x), _funkcije[0].TrasformedToRealY(_lastMousePos.y - _trPoint.y));
+        gui::DrawableString str(broj);
+        gui::Size sz;
+        str.measure(_font, sz);
+
+        gui::Rect pointRect({_lastMousePos.x, _lastMousePos.y - _trPoint.y}, gui::Size(sz.width + 23, sz.height + 23));
+        gui::Shape shape;
+        shape.createRoundedRect(pointRect, 17.5);
+        shape.drawFill(td::ColorID::LightGray);
+        pointRect.setTopAndHeight(pointRect.top + 11.5, 0);
+        str.draw(pointRect, _font, td::ColorID::Black, td::TextAlignment::Center, td::VAlignment::Center, td::TextEllipsize::None);
+        
+    }
+    
+}
+
+
+void Graph::buttonAction(int buttonIndex)
+{
+
+    switch (buttonIndex)
+    {
+    case 0:
+        if (!_drawNumbersOutside) 
+            _drawNumbersOutside = true;
+        else 
+            _drawNumbersOutside = false;
+        
+        setUpDrawingWindow();
+        reDraw();
+        break;
+    case 1:
+        showGrid(!_drawGrid);
+        break;
+    case 2:
+        showLegend(!_drawLegend);
+        break;
+    case 3:
+        showInformation();
+        break;
+    case 4:
+        saveMenu();
+        break;
+    case 5:
+        verticals.clear();
+        horizontals.clear();
+        reDraw();
+        break;
+    case 6:
+        fitToWindow();
+        break;
+    case 7:
+        showHelp();
+        break;
+    case 8:
+        gui::Panel::show<Settings>(this, tr("plotter_settings"), (td::UINT4)9859, \
+        {{gui::Dialog::Button::ID::OK, tr("plotter_zatvori") , gui::Button::Type::Normal}}, \
+        [](gui::Dialog *ptr){}, this);
+        break;
+
+    }
+
+}
+
+
+void Graph::onPrimaryButtonPressed(const gui::InputDevice& inputDevice) {
+    action = Actions::none;
+
+    gui::Point transformedPoint = inputDevice.getFramePoint();
+    transformedPoint.y -= _trPoint.y;
+
+    if(_drawLegend && _legenda.getWindow().contains(transformedPoint)){
+        action = Actions::moveLegend;
+        return;
+    }
+
+    for(int i = 0; i<sizeof(_slike); ++i){
+    
+        if (_slike[i].rect.contains(inputDevice.getFramePoint()))
+            buttonAction(i);
+
+    }
+
+
+    if (_drawingRect.contains(inputDevice.getFramePoint())) {
+        action = Actions::select;
+        _selectRect.setOrigin(inputDevice.getFramePoint());
+        _selectRect.setWidth(0);
+        _selectRect.setHeight(0);
+        return;
+    }
+
+}
+
+void Graph::onPrimaryButtonDblClick(const gui::InputDevice& inputDevice){
+    if(!_drawingRect.contains(inputDevice.getFramePoint()))
+        return;
+    action = Actions::pointPeek;
+    _lastMousePos = inputDevice.getFramePoint();
+    reDraw();
+}
+
+void Graph::setBackgroundColor(td::ColorID color){
+    _backgroundColor = color;
+    static_cast<Canvas *>(this)->setBackgroundColor(_backgroundColor);
+    reDraw();
+}
+
+bool Graph::onScroll(const gui::InputDevice& inputDevice)
+{
+    gui::CoordType x = inputDevice.getScrollDelta().x * 20;
+    gui::CoordType y = inputDevice.getScrollDelta().y * 20;
+    if (inputDevice.getKey().isShiftPressed()) {
+        std::swap(x, y);
+        x *= -1;
+    }
+
+    moveGraph(x,y);
+    return true;
+}
+
+void Graph::onPrimaryButtonReleased(const gui::InputDevice& inputDevice){
+    if (action == Actions::select) {
+        action = Actions::none;
+        _selectRect.setOrigin(_selectRect.left, _selectRect.top - _trPoint.y);
+        gui::Geometry g({ _selectRect.left, _selectRect.top }, gui::Size(_selectRect.width(), _selectRect.height()));
+        if (_selectRect.width() < 0) {
+            g.point.x += g.size.width;
+            g.size.width *= -1;
+        }
+        if (_selectRect.height() < 0) {
+            g.point.y += g.size.height;
+            g.size.height *= -1;
+        }
+
+        ZoomToWindow(g);
+
+        reDraw();
+    }
+    if(action == Actions::moveLegend){
+        action = Actions::none;
+    }
+
+}
+
+
+void Graph::onSecondaryButtonPressed(const gui::InputDevice& inputDevice){
+    if (action == Actions::pointPeek)
+        action = Actions::none;
+    if (action != Actions::none)
+        return;
+
+    action = Actions::secondaryClick;
+    _lastMousePos = inputDevice.getFramePoint();
+
+}
+
+void Graph::onSecondaryButtonReleased(const gui::InputDevice& inputDevice){
+    if (action == Actions::drag) {
+        action = Actions::none;
+        return;
+    }
+    if (action == Actions::secondaryClick) {
+        action = Actions::none;
+        Zoom(0.5);
+        return;
+    }
+
+}
+
+void Graph::onCursorMoved(const gui::InputDevice& inputDevice){
+    if (action == Actions::secondaryClick) {
+        action = Actions::drag;
+        return; // moze i bez returna
+    }
+    if(action == Actions::drag){
+        moveGraph(inputDevice.getFramePoint().x - _lastMousePos.x, _lastMousePos.y - inputDevice.getFramePoint().y );
+    }
+
+    _lastMousePos = inputDevice.getFramePoint();
+
+}
+
+void Graph::onCursorDragged(const gui::InputDevice& inputDevice){
+    if (action == Actions::select) {
+        _selectRect.setWidth(inputDevice.getFramePoint().x - _selectRect.left);
+        _selectRect.setHeight(inputDevice.getFramePoint().y - _selectRect.top);
+        reDraw();
+    }
+    if(action == Actions::moveLegend){
+        setLegendLocation({inputDevice.getFramePoint().x, inputDevice.getFramePoint().y - _trPoint.y});
+    }
+}
+
+bool Graph::onZoom(const gui::InputDevice& inputDevice){
+    auto x = (inputDevice.getScale());
+    Zoom((x));
+    return true;
+}
+
+void Graph::onCursorExited(const gui::InputDevice& inputDevice) {
+    _active = false;
+
+}
+
+void Graph::onCursorEntered(const gui::InputDevice& inputDevice) {
+    _active = true;
+}
+
+
+bool Graph::onKeyPressed(const gui::Key& key) {
+    char c = key.getChar();
+
+    if (c == 'f' || c == 'F') {
+        fitToWindow();
+        return true;
+    }
+
+    if (c == 's' || c == 'S') {
+        saveMenu();
+        return true;
+    }
+
+    if (c == 'l' || c == 'L') {
+        showLegend(!_drawLegend);
+        return true;
+    }
+
+    if (c == '+') {
+        Zoom(2);
+        return true;
+    }
+
+    if (c == '-') {
+        Zoom(0.5);
+        return true;
+    }
+
+    if (c == 'i' || c == 'I') {
+        showInformation();
+        return true;
+    }
+
+    if (c == 'g' || c == 'G') {
+        showGrid(!_drawGrid);
+        return true;
+    }
+
+    if (key.getVirtual() == gui::Key::Virtual::F1) {
+        showHelp();
+        return true;
+    }
+
+    if (key.getVirtual() == gui::Key::Virtual::F5) {
+        if (_lastPath.isNull())
+            return false;
+       
+
+        reset();
+        openFile(_lastPath, true);
+
+/*
+        auto funCnt = _funkcije.size();
+
+        delete _Limits;
+        _Limits = nullptr;
+        delete legenda;
+        legenda = new legend(_axisColor);
+        xAxisName = "";
+        yAxisName = "";
+        _pastColors.clear();
+
+        
+
+        _funkcije.erase(_funkcije.begin(), _funkcije.begin() + funCnt);
+        */
+        reDraw();
+
+
+        return true;
+    }
+
+
+    if (key.getVirtual() == gui::Key::Virtual::F11) {
+        _drawMargins = !_drawMargins;
+        setUpDrawingWindow();
+        reDraw();
+        return true;
+    }
+
+    if (_funkcije.size() == 0)
+        return false;
+
+    if (c == 'v' || c == 'V' || c == 'h' || c == 'H') {
+        if (!gui::Rect({ drawingWindow.point.x, drawingWindow.point.y }, gui::Size(drawingWindow.size.width, drawingWindow.size.height)).contains(_lastMousePos))
+            return true;
+        if (!_active)
+            return false;
+
+        if (c == 'v' || c == 'V')
+            verticals.emplace_back(_funkcije[0].transformedToRealX(_lastMousePos.x));
+        else
+            horizontals.emplace_back(_funkcije[0].TrasformedToRealY(_lastMousePos.y - _trPoint.y));
+
+        reDraw();
+        return true;
+    }
+
+
+    return false;
 }
 
 
 
+void Graph::showHelp(){
+
+    showAlert("Manual", "F11 - toggle fullscreen\nf - fit to window\nv - add vertical annotaion\nh - add horizontal annotation\ni - show annotations"
+        "\ng - toggle grid\n'-' - zoom out\n'+' - zoom in\nL - toggle legend"
+        "\nRight click - zoom out\nRight drag (mouse) - move plot\nLeft drag (mouse) - zoom to window\nDouble right click - read point\nF5 - reload from file");
+
+    /*
+    showAlert("Uputstvo", "F11 - toggle fullscreen\nf - fit to window\nv - dodaj vertikalnu liniju\nh - dodaj horizontalnu liniju\ni - prikazi informacije o vertiklanim i horizontalnim linijama"
+        "\ng - toggle grid\n'-' - zoom out\n'+' - zoom in\nL - toggle legend"
+        "\nDesni klik - zoom out\nDesni drag (mis) - pomjeranje grafika\nLijevi drag (mis) - povecavanje na zabiljezeni prozor\nDupli desni klik - ocitanje tacke");
+        */
+}
+
+void Graph::showInformation(){
+    auto d = new annotDiag(this, verticals, horizontals);
+    d->setResizable(false);
+    d->open();
+}
+
+void Graph::saveMenu(){
+    auto f = new gui::SaveFileDialog(this, "Save plot", { {"Encapsulated PostScript vector graphics format", "*.eps"}, {"Joint Photographic Experts Group image format", "*.jpg"},
+        /*{"Portable Network Graphics image format", "*.png"},*/ {"Scalable Vector Graphics image format", "*.svg"},
+        {"Plain text file format", "*.txt"}, {"Extensible Markup Language data format", "*.xml"}, {"Portable Document Format document format", "*.pdf"} });
+    f->openModal([this](gui::FileDialog* pDlg) {
+            return save(pDlg->getFileName());
+        });
+}
 
 bool Graph::saveXML(const td::String& path){
     if (_funkcije.size() == 0)
@@ -174,7 +459,7 @@ bool Graph::saveXML(const td::String& path){
     w.attribute("xLabel", xAxisName.toString());
     w.attribute("yLabel", yAxisName.toString());
 
-    w.attributeC("background", toString(backgroundColor));
+    w.attributeC("background", toString(_backgroundColor));
     w.attributeC("axis", toString(_axisColor));
     
 
@@ -210,8 +495,6 @@ bool Graph::saveXML(const td::String& path){
        
     }
 
-
-    
 
         for (auto& an : verticals) {
             w.startNode("annotation");
@@ -527,8 +810,8 @@ void Graph::readXML(const td::String& path, bool onlyData){
             if (att.getName().cCompareNoCase("color") == 0)
                 color = to_color(att.getValue().c_str());
             if (att.getName().cCompareNoCase("background") == 0) {
-                backgroundColor = to_color(att.getValue().c_str());
-                setBackgroundColor(backgroundColor);
+                _backgroundColor = to_color(att.getValue().c_str());
+                setBackgroundColor(_backgroundColor);
             }
             if (att.getName().cCompareNoCase("axis") == 0)
                 setAxisColor(to_color(att.getValue().c_str()));
@@ -662,983 +945,3 @@ bool Graph::save(const td::String& path){
 
     return success;
 }
-
-
-
-Graph::Graph(bool startWithMargins, bool takeUserInput, td::ColorID backgroundColor) :
-    gui::Canvas(takeUserInput ? inputs : noInputs), 
-    backgroundColor(backgroundColor), 
-    _drawMargins(startWithMargins),
-    _marginsZero{0.0, 0.0, 0.0, 0.0}
-{
-    enableResizeEvent(true);
-    registerForScrollEvents();
-   
-
-    for (const char *ime : std::vector<const char*>{":fullScreen", ":grid", ":legend", ":meni", ":save", ":reset", ":fitToWindow", ":info", ":graph_settings"})
-        _slike.emplace_back(ime, gui::Rect({ 0,0 }, gui::Size(32, 32)));
-    
-    if (backgroundColor == td::ColorID::SysCtrlBack)
-        _axisColor = td::ColorID::SysText;
-    else if (backgroundColor == td::ColorID::SysText)
-        _axisColor = td::ColorID::SysCtrlBack;
-    else if (backgroundColor == _axisColor)
-        _axisColor = td::ColorID::Black;
-    else if (backgroundColor == _axisColor)
-        _axisColor = td::ColorID::White;
-    setBackgroundColor(backgroundColor);
-
-    gui::DrawableString test("1234567890.1234567890e^(1234567890.1234567890)");
-    gui::Size sz;
-    test.measure(FONT, sz);
-    _numberHeight = sz.height;
-
-    legenda = new legend(_axisColor, gui::Point{0,0});
-
-
-    double distance = 20;
-    for (size_t i = 0; i < _slike.size(); ++i) {
-        _slike[i].rect.setOrigin(distance, 5);
-        distance += 32 + _slike[i].rect.width();
-    }
-
-    if (startWithMargins)
-        setUpDrawingWindow();
-}
-
-void Graph::setUpDrawingWindow(){
-    auto past = drawingWindow;
-    getGeometry(drawingWindow);
-    drawingWindow.point.y = 0;
-    drawingWindow.point.x = 0;
-
-    const auto &margins = _drawNumbersOutside ? _margins : _marginsZero;
-
-    if (_drawMargins) {
-        drawingWindow.point.y = margins.marginTop;
-        drawingWindow.point.x = margins.marginLeft;
-
-        if(_drawNumbersOutside){
-            if(yAxisName.toString().length() > 0){
-                drawingWindow.point.x += _yAxisNameSeperation;
-                drawingWindow.size.width -= _yAxisNameSeperation;
-            }
-            if(xAxisName.toString().length() > 0)
-                drawingWindow.size.height -= _xAxisNameSeperation;
-        }
-
-        drawingWindow.size.width -= margins.marginLeft + margins.marginRight;
-        if(!_legendPositionChanged && _drawLegend){
-            double constexpr marginLeftLegend = 20;
-            drawingWindow.size.width -= legenda->getWindow().width() + marginLeftLegend;
-            legenda->setOrigin({drawingWindow.point.x + drawingWindow.size.width + marginLeftLegend, legenda->getWindow().top});
-        }
-        
-        drawingWindow.size.height -= margins.marginTop + margins.marginBottom;
-        
-        if(_drawButtons){
-            constexpr double buttonsHeight = 47; // slika je visine 32, a odvaja se od vrha 5 tako da 37 ukupno
-            drawingWindow.size.height -= buttonsHeight;
-            drawingWindow.point.y += buttonsHeight;
-        }
-
-    }
-
-    drawingWindow.size.height = std::max(drawingWindow.size.height, 5.);
-    drawingWindow.size.width = std::max(drawingWindow.size.width, 5.);
-
-    ZoomToWindow(past);
-    _drawingRect.setOriginAndSize({ drawingWindow.point.x, drawingWindow.point.y }, drawingWindow.size);
-
-}
-
-
-
-void Graph::reset(){
-    _pastColors.clear();
-    verticals.clear();
-    horizontals.clear();
-    action = Actions::none;
-    xAxisName = "";
-    yAxisName = "";
-    _funkcije.clear();
-    delete _Limits;
-    _Limits = nullptr;
-    gui::Point legendPoz = {legenda->getWindow().left, legenda->getWindow().top};
-    delete legenda;
-    legenda = new legend(_axisColor, legendPoz);
-}
-
-void Graph::setBackgroundColor(td::ColorID color){
-    ((gui::Canvas*)this)->setBackgroundColor(color);
-    backgroundColor = color;
-}
-
-void Graph::setAxisColor(td::ColorID boja){
-    _axisColor = boja;
-    reDraw();
-}
-
-void Graph::setyAxisName(const td::String &yName)
-{
-    yAxisName = yName; 
-    _margins.marginLeft = 10; 
-    setUpDrawingWindow();
-    reDraw();
-}
-
-void Graph::setxAxisName(const td::String &xName){
-    xAxisName = xName; 
-    _margins.marginBottom = 10; 
-    setUpDrawingWindow();
-    reDraw();
-}
-
-void Graph::setAxisNameDistance(double xNameDistanceFromAxis, double yNameDistanceFromAxis)
-{
-    _xAxisNameSeperation = xNameDistanceFromAxis;
-    _yAxisNameSeperation = yNameDistanceFromAxis;
-    setUpDrawingWindow();
-    reDraw();
-}
-
-void Graph::getAxisNameDistance(double &xNameDistanceFromAxis, double &yNameDistanceFromAxis)
-{
-    xNameDistanceFromAxis = _xAxisNameSeperation;
-    yNameDistanceFromAxis = _yAxisNameSeperation;
-}
-
-void Graph::setMargins(double left, double right, double bottom, double top)
-{
-    _margins.marginTop = top;
-    _margins.marginRight = right;
-    _margins.marginBottom = bottom;
-    _margins.marginLeft = left;
-    setUpDrawingWindow();
-    reDraw();
-}
-
-void Graph::getMargins(double &left, double &right, double &bottom, double &top)
-{
-    top = _margins.marginTop;
-    left = _margins.marginLeft;
-    right = _margins.marginRight;
-    bottom = _margins.marginBottom;
-}
-
-void Graph::showLegend(bool draw)
-{
-    _drawLegend = draw; 
-    setUpDrawingWindow();
-    reDraw(); 
-}
-
-void Graph::addFunction(gui::CoordType *x, gui::CoordType *y, size_t length, td::ColorID color, double lineWidth, td::LinePattern pattern, td::String name)
-{
-    _funkcije.emplace_back(x, y, length, color, name, lineWidth, pattern);
-    finishAddingFunction(_funkcije.back());
-}
-
-void Graph::addFunction(gui::CoordType* x, gui::CoordType* y, size_t length, double lineWidth, td::LinePattern pattern, td::String name){
-    _funkcije.emplace_back(x, y, length, nextColor(), name, lineWidth, pattern);
-    finishAddingFunction(_funkcije.back());
-}
-
-
-void Graph::addFunction(Function&& fun){
-    _funkcije.emplace_back(std::move(fun));
-    finishAddingFunction(_funkcije.back());
-}
-
-void Graph::finishAddingFunction(Function& newFun) {
-    _pastColors.push_back(newFun.getColor());
-    updateLimits(newFun);
-    if (_funkcije.size() == 1) {
-        newFun.increaseScaleAndShiftY(-1, 0);
-    }
-    else {
-        gui::CoordType scaleX, scaleY, shiftX, shiftY;
-        _funkcije[0].getScale(scaleX, scaleY);
-        _funkcije[0].getShift(shiftX, shiftY);
-        newFun.increaseScaleAndShiftX(scaleX, shiftX);
-        newFun.increaseScaleAndShiftY(scaleY, shiftY);
-    }
-
-    legenda->addFunction(newFun);
-}
-
-void Graph::updateLimits(const Function& newFun){
-    size_t length = newFun.getLength();
-    if (length == 0)
-        return;
-
-    const gui::Point *tacke = newFun.getPoints();
-
-    if (_Limits == nullptr) {
-        _Limits = new gui::CoordType[4];
-        _Limits[int(limits::xMin)] = tacke[0].x;
-        _Limits[int(limits::xMax)] = tacke[0].x;
-        _Limits[int(limits::yMin)] = tacke[0].y;
-        _Limits[int(limits::yMax)] = tacke[0].y;
-    }
-
-    for (size_t i = 0; i < length; ++i) {
-        if (_Limits[int(limits::xMax)] < tacke[i].x)
-            _Limits[int(limits::xMax)] = tacke[i].x;
-
-        if (_Limits[int(limits::yMax)] < tacke[i].y)
-            _Limits[int(limits::yMax)] = tacke[i].y;
-
-        if (_Limits[int(limits::xMin)] > tacke[i].x)
-            _Limits[int(limits::xMin)] = tacke[i].x;
-
-        if (_Limits[int(limits::yMin)] > tacke[i].y)
-            _Limits[int(limits::yMin)] = tacke[i].y;
-    }
-}
-
-void Graph::onResize(const gui::Size& newSize) {
-    setUpDrawingWindow();
-
-    if (!_initalDraw)
-        fitToWindow();
-}
-
-void Graph::fitToWindow(){
-    if (_Limits == nullptr)
-        return;
-    if (drawingWindow.size.width < 1 || drawingWindow.size.height < 1)
-        return;
-
-    _initalDraw = true;
-    gui::CoordType scaleX, scaleY, shiftX, shiftY;
-    _funkcije[0].getScale(scaleX, scaleY);
-    _funkcije[0].getShift(shiftX, shiftY);
-
-    gui::Geometry g;
-    g.point.x = _Limits[int(limits::xMin)] * scaleX + shiftX;
-    g.point.y = _Limits[int(limits::yMax)] * scaleY - shiftY;
-    g.size.width = (_Limits[int(limits::xMax)] - _Limits[int(limits::xMin)]) * scaleX;
-    g.size.height = (_Limits[int(limits::yMin)] - _Limits[int(limits::yMax)]) * scaleY;
-
-
-    ZoomToWindow(g);
-    reDraw();
-}
-
-void Graph::ZoomToWindow(const gui::Geometry& window){
-    if (_funkcije.size() == 0)
-        return;
-    if (window.size.width < 0.1 || window.size.height < 0.1) {
-        return;
-    }
-    if (drawingWindow.size.width < 1 || drawingWindow.size.height < 1)
-        return;
-
-    gui::CoordType shiftY = window.point.y + window.size.height - drawingWindow.point.y - drawingWindow.size.height;
-    gui::CoordType shiftX = drawingWindow.point.x - window.point.x;
-    
-    gui::CoordType scaleX = drawingWindow.size.width / window.size.width;
-    gui::CoordType scaleY = drawingWindow.size.height / window.size.height;
-
-    gui::CoordType accumShiftX, accumShiftY;
-    _funkcije[0].getShift(accumShiftX, accumShiftY);
-    accumShiftX -= drawingWindow.point.x;
-    accumShiftY += drawingWindow.point.y + drawingWindow.size.height;
-
-    for (int i = 0; i < _funkcije.size(); ++i){
-        _funkcije[i].increaseScaleAndShiftX(scaleX, shiftX * scaleX + accumShiftX * (scaleX-1));
-        _funkcije[i].increaseScaleAndShiftY(scaleY, shiftY * scaleY + accumShiftY * (scaleY-1));
-    }
-
-}
-
-
-void Graph::ZoomToArea(gui::CoordType* minX, gui::CoordType* maxX, gui::CoordType* minY, gui::CoordType* maxY){
-    if (_funkcije.size() == 0)
-        return;
-    if (drawingWindow.size.width < 1 || drawingWindow.size.height < 1)
-        return;
-
-    gui::CoordType left, right, top, bottom;
-
-    left = (minX == nullptr) ? drawingWindow.point.x : _funkcije[0].realToTransformedX(*minX);
-    right = (maxX == nullptr) ? (drawingWindow.point.x + drawingWindow.size.width) : _funkcije[0].realToTransformedX(*maxX);
-
-    if (left > right)
-        std::swap(left, right);
-
-    bottom = (minY == nullptr) ? (drawingWindow.point.y + drawingWindow.size.height) : _funkcije[0].realToTransformedY(*minY);
-    top = (maxY == nullptr) ? drawingWindow.point.y : _funkcije[0].realToTransformedY(*maxY);
-
-    if (top > bottom)
-        std::swap(top, bottom);
-
-    
-
-    gui::Geometry g(left, top, right-left, bottom-top);
-    ZoomToWindow(g);
-    reDraw();
-
-}
-
-
-
-void Graph::onDraw(const gui::Rect& rect){
-
-    for (int i = 0; i < _funkcije.size(); ++i)
-        _funkcije[i].draw(_drawingRect);
-
-    if (action == Actions::select) 
-        gui::Shape::drawRect(_selectRect, SELECT_COLOR, 3, td::LinePattern::Dash);
-
-    if (_drawMargins) {
-        gui::Shape::drawRect(_drawingRect, _axisColor, 2);
-
-        if(_drawButtons)
-            for(auto & img : _slike)
-                img.image.draw(img.rect);
-
-    }
-
-    drawAxis();
-
-
-    if (_funkcije.size() == 0)
-        return;
-
-    for (size_t i = 0; i < verticals.size(); ++i) {
-        gui::CoordType xVal = _funkcije[0].realToTransformedX(verticals[i]);
-        if(xVal >= _drawingRect.left && xVal <= _drawingRect.right)
-            gui::Shape::drawLine({ xVal, _drawingRect.bottom }, { xVal, _drawingRect.top }, _axisColor, 1.8);
-    }
-    for (size_t i = 0; i < horizontals.size(); ++i) {
-        gui::CoordType yVal = _funkcije[0].realToTransformedY(horizontals[i]);
-        if(yVal <= _drawingRect.bottom && yVal >= _drawingRect.top)
-            gui::Shape::drawLine({ _drawingRect.left, yVal }, { _drawingRect.right, yVal }, _axisColor, 1.8);
-    }
-    
-
-    if (_drawLegend)
-        legenda->draw();
-
-
-
-    if (action == Actions::pointPeek) {
-
-        td::String broj;
-        broj.format("{ %g , %g }", _funkcije[0].transformedToRealX(_lastMousePos.x), _funkcije[0].TrasformedToRealY(_lastMousePos.y));
-        gui::DrawableString str(broj);
-        gui::Size sz;
-        str.measure(FONT, sz);
-
-        gui::Rect pointRect(_lastMousePos, gui::Size(sz.width + 23, sz.height + 23));
-        gui::Shape shape;
-        shape.createRoundedRect(pointRect, 17.5);
-        shape.drawFill(td::ColorID::LightGray);
-        pointRect.setTopAndHeight(pointRect.top + 11.5, 0);
-        str.draw(pointRect, FONT, td::ColorID::Black, td::TextAlignment::Center, td::VAlignment::Center, td::TextEllipsize::None);
-        
-    }
-
-
-
-}
-
-void Graph::changeWidth(double width, size_t function){
-    if (checkRange(function))
-        return;
-
-    _funkcije[function].setLineWidth(width);
-    reDraw();
-}
-
-void Graph::changeName(const td::String& name, size_t function){
-    if (checkRange(function))
-        return;
-
-    *_funkcije[function].name = name;
-    if (legenda == nullptr)
-        return;
-    legenda->changeName(name, function);
-    reDraw();
-}
-
-void Graph::changePattern(td::LinePattern pattern, size_t function){
-    if (checkRange(function))
-        return;
-
-    _funkcije[function].setPattern(pattern);
-    reDraw();
-
-}
-
-void Graph::changeColor(td::ColorID color, size_t function){ // todo: modifokovati pastColors da reflektuje promjenu
-    if (checkRange(function))
-        return;
-
-    _funkcije[function].setColor(color);
-    if (legenda == nullptr)
-        return;
-
-    legenda->changeColor(color, function);
-    reDraw();
-}
-
-void Graph::setLegendLocation(const gui::Point& location)
-{
-    if(!_legendPositionChanged){
-        _legendPositionChanged = true;
-        setUpDrawingWindow();
-    }
-    _legendPositionChanged = true;
-    legenda->setOrigin(location);
-    reDraw();
-}
-
-void Graph::setLegendCols(int cols)
-{
-    legenda->changeColumnCnt(cols);
-    setUpDrawingWindow();
-    reDraw();
-}
-
-
-td::ColorID Graph::nextColor(){
-    td::ColorID boja;
-if (_pastColors.size() == 0) {
-            
-        switch (backgroundColor){
-        case td::ColorID::Black:
-            boja = td::ColorID::White;
-            break;
-        case td::ColorID::SysCtrlBack:
-            boja = td::ColorID::SysText;
-            break;
-        case td::ColorID::SysText:
-            boja = td::ColorID::SysCtrlBack;
-            break;
-        default:
-            boja = td::ColorID::Black;
-        }
-    }
-    else {
-        bool repeat;
-        int current = int(_pastColors.back());
-        int infiniteLoopCheck = current;
-        do {
-            repeat = false;
-            current += 23;
-            current = current % 137; //otprilike sve boje su obuhvacene i svaka boja ce se izabrati prije nego sto se pocnu ponavljati
-            for (td::ColorID boja : _pastColors)
-                if (current == int(boja) || current == int(backgroundColor)) {
-                    repeat = true;
-                    break;
-                }
-            if (infiniteLoopCheck == current)
-                _pastColors.clear();
-        } while (repeat);
-        boja = td::ColorID(current);
-    }
-
-    //pastColors.push_back(boja);
-    return boja;
-}
-
-void Graph::drawAxis(){
-    if (_funkcije.size() == 0)
-        return;
-
-
-        gui::Point zero(_funkcije[0].realToTransformedX(0), _funkcije[0].realToTransformedY(0)); //drawing x and y axis
-        if (_drawingRect.left <= zero.x && zero.x <= _drawingRect.right)
-            gui::Shape::drawLine({ zero.x, _drawingRect.bottom }, { zero.x, _drawingRect.top }, _axisColor, 1.8);
-        if (_drawingRect.top <= zero.y && zero.y <= _drawingRect.bottom)
-            gui::Shape::drawLine({ _drawingRect.left, zero.y }, { _drawingRect.right, zero.y }, _axisColor, 1.8);
-   
-
-
-    gui::CoordType scaleX, scaleY;
-    _funkcije[0].getScale(scaleX, scaleY);
-
-    static double gridLineSpaceX = std::log(7000.0 / gui::Display::getDefaultLogicalPixelToMmVRatio());  //200 mm za svaku grid liniju
-    static double gridLineSpaceY = std::log(5000.0 / gui::Display::getDefaultLogicalPixelToMmHRatio());
-
-    gui::CoordType len = drawingWindow.size.width / scaleX;
-    gui::CoordType razmak = gridLineSpaceX + std::log2(1 / scaleX);
-    razmak = std::round(razmak);
-    razmak = std::pow(2.0, razmak);
-    gui::CoordType startVal = std::ceil(_funkcije[0].transformedToRealX(drawingWindow.point.x) / razmak) * razmak;
-    gui::CoordType line = _funkcije[0].realToTransformedX(startVal);
-
-
-
-    gui::CoordType razmakY = gridLineSpaceY + std::log2(-1 / scaleY);
-    razmakY = std::round(razmakY);
-    razmakY = std::pow(2.0, razmakY);
-    gui::CoordType startValY = std::ceil(_funkcije[0].TrasformedToRealY(drawingWindow.point.y + drawingWindow.size.height) / razmakY) * razmakY;
-    gui::CoordType lineY = _funkcije[0].realToTransformedY(startValY);
-
-
-
-
-
-   
-
-    gui::CoordType xAxisHeight;
-    gui::CoordType yAxisWidth;
-
-    if(_funkcije[0].TrasformedToRealY(_drawingRect.top) < 0)
-        xAxisHeight = _drawingRect.top;
-    else if(_funkcije[0].TrasformedToRealY(_drawingRect.bottom) > 0)
-        xAxisHeight = _drawingRect.bottom;
-    else
-        xAxisHeight = _funkcije[0].realToTransformedY(0);
-
-    
-    if(_funkcije[0].transformedToRealX(_drawingRect.right) < 0)
-        yAxisWidth = _drawingRect.right;
-    else if(_funkcije[0].transformedToRealX(_drawingRect.left) > 0)
-        yAxisWidth = _drawingRect.left;
-    else
-        yAxisWidth = _funkcije[0].realToTransformedX(0);
-    
-
-    while (line < drawingWindow.point.x + drawingWindow.size.width || lineY >= drawingWindow.point.y){
-
-        constexpr double markLen = 7;
-        if (lineY >= drawingWindow.point.y) { // Y osa
-            gui::Shape::drawLine({ yAxisWidth - markLen, lineY }, { yAxisWidth + markLen,  lineY }, _axisColor, 2);
-
-            gui::DrawableString broj(to_string(startValY));
-
-            gui::Size sz;
-            broj.measure(FONT, sz);
-
-            if ((_drawNumbersOutside && yAxisWidth <= _drawingRect.left + 10) || (!_drawNumbersOutside && yAxisWidth >= _drawingRect.right - sz.width - 10)) {
-                broj.draw({ yAxisWidth - markLen - 10 - sz.width,  lineY - _numberHeight / 2 }, FONT, _axisColor);
-            }
-            else 
-                broj.draw({ yAxisWidth + markLen + 5,  lineY}, FONT, _axisColor);
-            
-            if (_drawGrid) 
-                gui::Shape::drawLine({ drawingWindow.point.x, lineY }, { drawingWindow.point.x + drawingWindow.size.width,  lineY }, _axisColor, 1, td::LinePattern::Dash); 
-
-        }
-
-        if (line < drawingWindow.point.x + drawingWindow.size.width) { // X osa
-            gui::Shape::drawLine({ line, xAxisHeight - markLen }, { line,  xAxisHeight + markLen }, _axisColor, 2); 
-
-            gui::DrawableString broj(to_string(startVal));
-            gui::Size sz;
-            broj.measure(FONT, sz);
-
-            if ((_drawNumbersOutside && xAxisHeight >= _drawingRect.top + 10) || ( !_drawNumbersOutside && xAxisHeight <= _drawingRect.top + _numberHeight + 20))
-                broj.draw({ line - sz.width / 2, xAxisHeight + _numberHeight + 5 }, FONT, _axisColor);
-            else 
-                broj.draw({ line - sz.width / 2 + 9, xAxisHeight - _numberHeight - 22 }, FONT, _axisColor);
-
-            if (_drawGrid) 
-                gui::Shape::drawLine({ line, _drawingRect.bottom }, { line,  drawingWindow.point.y }, _axisColor, 1, td::LinePattern::Dash);
-
-        }
-
-
-
-        startVal += razmak;
-        startValY += razmakY;
-        line += razmak * scaleX;
-        lineY += razmakY * scaleY;
-
-    }
-
-
-    gui::Rect r({ 0, -100}, gui::Size(drawingWindow.size.width, 100 ));
-    //axis names
-    {
-        gui::Transformation tr;
-
-        tr.saveContext();
-        tr.translate(_drawingRect.left, _drawingRect.bottom + _xAxisNameSeperation);
-        tr.setToContext();
-        this->xAxisName.draw(r, FONT, _axisColor, td::TextAlignment::Center, td::VAlignment::Bottom);
-        tr.restoreContext();
-        tr.saveContext();
-
-        r.setWidth(drawingWindow.size.height);
-        tr.identity();
-
-        tr.translate(_drawingRect.left - _yAxisNameSeperation + _numberHeight, _drawingRect.bottom);
-        tr.rotateDeg(-90);
-        
-        tr.setToContext();
-        this->yAxisName.draw(r, FONT, _axisColor, td::TextAlignment::Center, td::VAlignment::Bottom);
-        tr.restoreContext();
-        
-    }
-
-}
-
-
-
-
-void Graph::onPrimaryButtonDblClick(const gui::InputDevice& inputDevice){
-    if(!_drawingRect.contains(inputDevice.getFramePoint()))
-        return;
-    action = Actions::pointPeek;
-    _lastMousePos = inputDevice.getFramePoint();
-    reDraw();
-}
-
-bool Graph::onScroll(const gui::InputDevice& inputDevice)
-{
-    gui::CoordType x = inputDevice.getScrollDelta().x * 20;
-    gui::CoordType y = inputDevice.getScrollDelta().y * 20;
-    if (inputDevice.getKey().isShiftPressed()) {
-        std::swap(x, y);
-        x *= -1;
-    }
-
-    moveGraph(x,y);
-    return true;
-}
-
-
-
-void Graph::onPrimaryButtonPressed(const gui::InputDevice& inputDevice) {
-    action = Actions::none;
-
-    if(_drawLegend && legenda->getWindow().contains(inputDevice.getFramePoint())){
-        action = Actions::moveLegend;
-        return;
-    }
-
-    if (_drawingRect.contains(inputDevice.getFramePoint())) {
-        action = Actions::select;
-        _selectRect.setOrigin(inputDevice.getFramePoint());
-        _selectRect.setWidth(0);
-        _selectRect.setHeight(0);
-        return;
-    }
-
-    if (_slike[0].rect.contains(inputDevice.getFramePoint())) {
-        if (!_drawNumbersOutside) 
-            _drawNumbersOutside = true;
-        else 
-            _drawNumbersOutside = false;
-        
-        setUpDrawingWindow();
-        reDraw();
-    }
-
-    if (_slike[1].rect.contains(inputDevice.getFramePoint())) {
-        showGrid(!_drawGrid);
-    }
-
-    if (_slike[2].rect.contains(inputDevice.getFramePoint())) {
-        showLegend(!_drawLegend);
-    }
-
-    if (_slike[3].rect.contains(inputDevice.getFramePoint())) {
-        showInformation();
-    }
-
-    if (_slike[4].rect.contains(inputDevice.getFramePoint())) {
-        saveMenu();
-    }
-
-    if (_slike[5].rect.contains(inputDevice.getFramePoint())) {
-        verticals.clear();
-        horizontals.clear();
-        reDraw();
-    }
-
-    if (_slike[6].rect.contains(inputDevice.getFramePoint())) {
-        fitToWindow();
-    }
-
-    if (_slike[7].rect.contains(inputDevice.getFramePoint())) {
-        showHelp();
-    }
-
-
-    if (_slike[8].rect.contains(inputDevice.getFramePoint())) {
-        gui::Panel::show<Settings>(this, tr("plotter_settings"), (td::UINT4)9859, \
-        {{gui::Dialog::Button::ID::OK, tr("plotter_zatvori") , gui::Button::Type::Normal}}, \
-        [](gui::Dialog *ptr){}, this);
-    }
-
-
-}
-
-void Graph::showInformation(){
-    auto d = new annotDiag(this, verticals, horizontals);
-    d->open();
-}
-
-void Graph::saveMenu(){
-    auto f = new gui::SaveFileDialog(this, "Save plot", { {"Encapsulated PostScript vector graphics format", "*.eps"}, {"Joint Photographic Experts Group image format", "*.jpg"},
-        /*{"Portable Network Graphics image format", "*.png"},*/ {"Scalable Vector Graphics image format", "*.svg"},
-        {"Plain text file format", "*.txt"}, {"Extensible Markup Language data format", "*.xml"}, {"Portable Document Format document format", "*.pdf"} });
-    f->openModal([this](gui::FileDialog* pDlg) {
-            return save(pDlg->getFileName());
-        });
-}
-
-void Graph::onPrimaryButtonReleased(const gui::InputDevice& inputDevice){
-    if (action == Actions::select) {
-        action = Actions::none;
-        
-        gui::Geometry g({ _selectRect.left, _selectRect.top }, gui::Size(_selectRect.width(), _selectRect.height()));
-        if (_selectRect.width() < 0) {
-            g.point.x += g.size.width;
-            g.size.width *= -1;
-        }
-        if (_selectRect.height() < 0) {
-            g.point.y += g.size.height;
-            g.size.height *= -1;
-        }
-
-        ZoomToWindow(g);
-
-        reDraw();
-    }
-    if(action == Actions::moveLegend){
-        action = Actions::none;
-    }
-
-}
-
-void Graph::onSecondaryButtonPressed(const gui::InputDevice& inputDevice){
-    if (action == Actions::pointPeek)
-        action = Actions::none;
-    if (action != Actions::none)
-        return;
-
-    action = Actions::secondaryClick;
-    _lastMousePos = inputDevice.getFramePoint();
-
-}
-
-void Graph::onSecondaryButtonReleased(const gui::InputDevice& inputDevice){
-    if (action == Actions::drag) {
-        action = Actions::none;
-        return;
-    }
-    if (action == Actions::secondaryClick) {
-        action = Actions::none;
-        Zoom(0.5);
-        return;
-    }
-
-}
-
-
-inline void Graph::moveGraph(const gui::CoordType& x, const gui::CoordType& y)
-{
-    for (int i = 0; i < _funkcije.size(); ++i) {
-        _funkcije[i].increaseShiftX(x);
-        _funkcije[i].increaseShiftY(y);
-    }
-    reDraw();
-}
-
-
-void Graph::onCursorMoved(const gui::InputDevice& inputDevice){
-    if (action == Actions::secondaryClick) {
-        action = Actions::drag;
-        return; // moze i bez returna
-    }
-    if(action == Actions::drag){
-        moveGraph(inputDevice.getFramePoint().x - _lastMousePos.x, _lastMousePos.y - inputDevice.getFramePoint().y );
-    }
-
-    _lastMousePos = inputDevice.getFramePoint();
-
-}
-
-void Graph::onCursorDragged(const gui::InputDevice& inputDevice){
-    if (action == Actions::select) {
-        _selectRect.setWidth(inputDevice.getFramePoint().x - _selectRect.left);
-        _selectRect.setHeight(inputDevice.getFramePoint().y - _selectRect.top);
-        reDraw();
-    }
-    if(action == Actions::moveLegend){
-        setLegendLocation(inputDevice.getFramePoint());
-    }
-}
-
-bool Graph::onZoom(const gui::InputDevice& inputDevice){
-    auto x = (inputDevice.getScale());
-    Zoom((x));
-    return true;
-}
-
-void Graph::Zoom(const gui::CoordType &scale){
-    if (scale < 0.0001)
-        return;
-
-  
-    gui::CoordType y = drawingWindow.size.height * (1 - 1 / scale) / 2;
-    gui::CoordType x = drawingWindow.size.width * (1 - 1 / scale) / 2;
-
-    auto g = drawingWindow;
-    g.point.x += x;
-    g.point.y += y;
-    g.size.height /= scale;
-    g.size.width /= scale;
-
-    ZoomToWindow(g);
-
-    reDraw();
-}
-
-
-bool Graph::onKeyPressed(const gui::Key& key) {
-    char c = key.getChar();
-
-    if (c == 'f' || c == 'F') {
-        fitToWindow();
-        return true;
-    }
-
-    if (c == 's' || c == 'S') {
-        saveMenu();
-        return true;
-    }
-
-    if (c == 'l' || c == 'L') {
-        showLegend(!_drawLegend);
-        return true;
-    }
-
-    if (c == '+') {
-        Zoom(2);
-        return true;
-    }
-
-    if (c == '-') {
-        Zoom(0.5);
-        return true;
-    }
-
-    if (c == 'i' || c == 'I') {
-        showInformation();
-        return true;
-    }
-
-    if (c == 'g' || c == 'G') {
-        showGrid(!_drawGrid);
-        return true;
-    }
-
-    if (key.getVirtual() == gui::Key::Virtual::F1) {
-        showHelp();
-        return true;
-    }
-
-    if (key.getVirtual() == gui::Key::Virtual::F5) {
-        if (_lastPath.isNull())
-            return false;
-       
-
-        reset();
-        openFile(_lastPath, true);
-
-/*
-        auto funCnt = _funkcije.size();
-
-        delete _Limits;
-        _Limits = nullptr;
-        delete legenda;
-        legenda = new legend(_axisColor);
-        xAxisName = "";
-        yAxisName = "";
-        _pastColors.clear();
-
-        
-
-        _funkcije.erase(_funkcije.begin(), _funkcije.begin() + funCnt);
-        */
-        reDraw();
-
-
-        return true;
-    }
-
-
-    if (key.getVirtual() == gui::Key::Virtual::F11) {
-        _drawMargins = !_drawMargins;
-        setUpDrawingWindow();
-        reDraw();
-        return true;
-    }
-
-    if (_funkcije.size() == 0)
-        return false;
-
-    if (c == 'v' || c == 'V' || c == 'h' || c == 'H') {
-        if (!gui::Rect({ drawingWindow.point.x, drawingWindow.point.y }, gui::Size(drawingWindow.size.width, drawingWindow.size.height)).contains(_lastMousePos))
-            return true;
-        if (!_active)
-            return false;
-
-        if (c == 'v' || c == 'V')
-            verticals.emplace_back(_funkcije[0].transformedToRealX(_lastMousePos.x));
-        else
-            horizontals.emplace_back(_funkcije[0].TrasformedToRealY(_lastMousePos.y));
-
-        reDraw();
-        return true;
-    }
-
-
-    return false;
-}
-
-void Graph::showHelp(){
-
-    showAlert("Manual", "F11 - toggle fullscreen\nf - fit to window\nv - add vertical annotaion\nh - add horizontal annotation\ni - show annotations"
-        "\ng - toggle grid\n'-' - zoom out\n'+' - zoom in\nL - toggle legend"
-        "\nRight click - zoom out\nRight drag (mouse) - move plot\nLeft drag (mouse) - zoom to window\nDouble right click - read point\nF5 - reload from file");
-
-    /*
-    showAlert("Uputstvo", "F11 - toggle fullscreen\nf - fit to window\nv - dodaj vertikalnu liniju\nh - dodaj horizontalnu liniju\ni - prikazi informacije o vertiklanim i horizontalnim linijama"
-        "\ng - toggle grid\n'-' - zoom out\n'+' - zoom in\nL - toggle legend"
-        "\nDesni klik - zoom out\nDesni drag (mis) - pomjeranje grafika\nLijevi drag (mis) - povecavanje na zabiljezeni prozor\nDupli desni klik - ocitanje tacke");
-        */
-}
-
-void Graph::onCursorExited(const gui::InputDevice& inputDevice) {
-    _active = false;
-
-}
-
-void Graph::onCursorEntered(const gui::InputDevice& inputDevice) {
-    _active = true;
-}
-
-
-void Graph::measure(gui::CellInfo& cell)
-{
-    gui::Canvas::measure(cell);
-    cell.nResHor = 1;
-    cell.nResVer = 1;
-}
-
-void Graph::reMeasure(gui::CellInfo& cell)
-{
-    gui::Canvas::measure(cell);
-    cell.nResHor = 1;
-    cell.nResVer = 1;
-}
-
-Graph::~Graph()
-{
-    delete[] _Limits;
-    delete legenda;
-}
-
-
-
-

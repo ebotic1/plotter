@@ -10,7 +10,7 @@
 class GRAPH_API Function
 {
 	td::ColorID color = td::ColorID::Black;
-	gui::Point *tacke = nullptr;
+	gui::Point *tacke = nullptr, *_tackeUnmodified = nullptr;
 	size_t length = 0;
 	td::LinePattern pattern = td::LinePattern::Solid;
 	double debljina = 1;
@@ -81,6 +81,7 @@ public:
 
 	~Function() {
 		delete[] tacke;
+		delete[] _tackeUnmodified;
 		delete name;
 		delete lines;
 	}

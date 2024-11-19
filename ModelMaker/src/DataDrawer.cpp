@@ -1,5 +1,6 @@
 #include "DataDrawer.h"
 #include "Table.h"
+#include "GlobalEvents.h"
 
 
 
@@ -46,7 +47,13 @@ void DataDraw::addData(const td::String& name, const std::vector<FunctionDesc>& 
 		return;
 
 	if (tip == Type::graph) {
-		auto g = new Graph(true, true, td::ColorID::SysCtrlBack);
+		static gui::Font *f = new gui::Font();
+		static bool init = false;
+		if(!init){
+			init = true;
+			f->create(GlobalEvents::settingsVars.font, 10, gui::Font::Style::Normal, gui::Font::Unit::Point);
+		}
+		auto g = new Graph(f, f);
 		td::String xname = functions[0].xname, yname;
 		int ynameCnt = 0;
 
