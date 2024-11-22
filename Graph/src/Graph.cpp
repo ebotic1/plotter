@@ -169,8 +169,10 @@ void Graph::onPrimaryButtonPressed(const gui::InputDevice& inputDevice) {
     }
 
     for(int i = 0; i<_slike.size(); ++i){
-        if (_slike[i].rect.contains(inputDevice.getFramePoint()))
+        if (_slike[i].rect.contains(inputDevice.getFramePoint())){
             buttonAction(i);
+            return;
+        }
     }
 
 
