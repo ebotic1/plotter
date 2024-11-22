@@ -34,8 +34,12 @@ public:
         changeColumnCnt(1);
     };
 
+    int getPerColumn(){
+        return 0.5 + colors.size() / double(_columns);
+    }
+
     void draw() {
-        int perColumn = 0.5 + colors.size() / _columns;
+        int perColumn = getPerColumn();
         gui::CoordType height = _window.top, length = _window.left;
 
         int cnt = 0, column = 0;
@@ -57,7 +61,7 @@ public:
         gui::Size sz;
         imena[poz].measure(_font, sz);
 
-        const int perColumn = 0.5 + colors.size() / _columns;
+        const int perColumn = getPerColumn();
         const int column = poz / perColumn;
 
 
@@ -89,7 +93,7 @@ public:
 
         double width = widthSpace * _columns + offsetColumn * (_columns - 1);
         gui::Size sz;
-        const int perColumn = 0.5 + imena.size() / _columns;
+        const int perColumn = getPerColumn();
         int cnt = 0;
         int column = 0;
         double biggestSize = 0;
