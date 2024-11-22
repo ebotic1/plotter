@@ -14,7 +14,7 @@ static gui::Font *getFont(gui::Font &font){
 
 MainWindow::MainWindow()
     : gui::Window(gui::Geometry(600, 100, 1500, 1500)), 
-    _graph(getFont(font), getFont(font), td::ColorID::SysText, false), 
+    _graph(getFont(font), getFont(font), td::ColorID::SysCtrlBack, false), 
     splitter(_graph)
 {
     

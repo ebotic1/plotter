@@ -44,15 +44,17 @@ public:
         gc.appendRow(_legendColsLabel) << _comboCols;
 
         parent->getMargins(_margins[0], _margins[1], _margins[3], _margins[2]);
-        _marginLeftSlider.setValue(_margins[0], false);
-        _marginRightSlider.setValue(_margins[1], false);
-        _marginTopSlider.setValue(_margins[2], false);
-        _marginBottomSlider.setValue(_margins[3], false);
+
 
         _marginLeftSlider.setRange(0, 200);
         _marginRightSlider.setRange(0, 200);
         _marginTopSlider.setRange(0, 200);
         _marginBottomSlider.setRange(0, 200);
+
+        _marginLeftSlider.setValue(_margins[0], false);
+        _marginRightSlider.setValue(_margins[1], false);
+        _marginTopSlider.setValue(_margins[2], false);
+        _marginBottomSlider.setValue(_margins[3], false);
 
         _marginLeftSlider.onChangedValue([this, parent](){td::Variant v;_marginLeftSlider.getValue(v); _margins[0] = v.r8Val(); parent->setMargins(_margins[0], _margins[1], _margins[3], _margins[2]);});
         _marginRightSlider.onChangedValue([this, parent](){td::Variant v;_marginRightSlider.getValue(v);  _margins[1] = v.r8Val(); parent->setMargins(_margins[0], _margins[1], _margins[3], _margins[2]);});
@@ -68,11 +70,11 @@ public:
 
         parent->getAxisNameDistance(_axisSpace[0], _axisSpace[1]);
 
-        _xSpaceSlider.setValue(_axisSpace[0], false);
-        _ySpaceSlider.setValue(_axisSpace[1], false);
-
         _xSpaceSlider.setRange(20, 200);
         _ySpaceSlider.setRange(20, 200);
+
+        _xSpaceSlider.setValue(_axisSpace[0], false);
+        _ySpaceSlider.setValue(_axisSpace[1], false);
 
         _xSpaceSlider.onChangedValue([this, parent](){td::Variant v; _xSpaceSlider.getValue(v); _axisSpace[0] = v.r8Val(); parent->setAxisNameDistance(_axisSpace[0], _axisSpace[1]);});
         _ySpaceSlider.onChangedValue([this, parent](){td::Variant v; _ySpaceSlider.getValue(v); _axisSpace[1] = v.r8Val(); parent->setAxisNameDistance(_axisSpace[0], _axisSpace[1]);});
