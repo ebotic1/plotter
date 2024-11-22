@@ -23,7 +23,7 @@ GraphDrawer::GraphDrawer(td::ColorID axisColor, gui::Font *axisFont, gui::Font *
 {  
 
     _disallowedColors.emplace(td::ColorID::Transparent);
-    gui::DrawableString test("1234567890.1234567890e^(1234567890.1234567890)");
+    gui::DrawableString test("1234567890.1234567890e+(1234567890.1234567890)");
     gui::Size sz;
     test.measure(_font, sz);
     test.measure(_font, sz);
@@ -507,12 +507,13 @@ void GraphDrawer::drawAxis(){
 
             
             broj.measure(_font, sz);
+            constexpr double yAxisNumberOffset = 7 + markLen;
 
-            if ((_drawNumbersOutside && yAxisWidth <= _drawingRect.left + 10) || (!_drawNumbersOutside && yAxisWidth >= _drawingRect.right - sz.width - 10)) {
-                broj.draw({ yAxisWidth - markLen - 10 - sz.width,  lineY - _numberHeight / 2 }, _font, _axisColor);
+            if ((_drawNumbersOutside && yAxisWidth <= _drawingRect.left + yAxisNumberOffset) || (!_drawNumbersOutside && yAxisWidth >= _drawingRect.right - sz.width - yAxisNumberOffset)) {
+                broj.draw({ yAxisWidth - yAxisNumberOffset - sz.width,  lineY - _numberHeight / 2 }, _font, _axisColor);
             }
             else 
-                broj.draw({ yAxisWidth + markLen + 5,  lineY}, _font, _axisColor);
+                broj.draw({ yAxisWidth + yAxisNumberOffset,  lineY}, _font, _axisColor);
             
             if (_drawGrid) 
                 gui::Shape::drawLine({ drawingWindow.point.x, lineY }, { drawingWindow.point.x + drawingWindow.size.width,  lineY }, _axisColor, 1, td::LinePattern::Dash); 
@@ -524,11 +525,12 @@ void GraphDrawer::drawAxis(){
 
             gui::DrawableString broj(to_string(startVal));
             broj.measure(_font, sz);
+            constexpr double xAxisNumberOffset = 7 + markLen;
 
-            if ((_drawNumbersOutside && xAxisHeight >= _drawingRect.top + 10) || ( !_drawNumbersOutside && xAxisHeight <= _drawingRect.top + _numberHeight + 20))
-                broj.draw({ line - sz.width / 2, xAxisHeight + _numberHeight + 5 }, _font, _axisColor);
+            if ((_drawNumbersOutside && xAxisHeight >= _drawingRect.top + xAxisNumberOffset) || ( !_drawNumbersOutside && xAxisHeight <= _drawingRect.top + _numberHeight + xAxisNumberOffset*2))
+                broj.draw({ line - sz.width / 2, xAxisHeight + xAxisNumberOffset }, _font, _axisColor);
             else 
-                broj.draw({ line - sz.width / 2 + 9, xAxisHeight - _numberHeight - 22 }, _font, _axisColor);
+                broj.draw({ line - sz.width / 2 + 9, xAxisHeight - _numberHeight/2 - xAxisNumberOffset }, _font, _axisColor);
 
             constexpr double gridLineWidth = 0.9;
 

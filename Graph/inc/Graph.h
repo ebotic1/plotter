@@ -67,7 +67,7 @@ public:
 	void readXML(const td::String& path, bool onlyData);
 
 	void buttonAction(int buttonIndex);
-	static inline const std::vector<const char *> buttonsImages = \
+	static inline const char * buttonsImages[] = \
 	{":fullScreen", ":grid", ":legend", ":meni", ":save", ":reset", ":fitToWindow", ":info", ":graph_settings"};
 	
 	bool saveXML(const td::String& path);
