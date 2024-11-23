@@ -427,12 +427,12 @@ void Graph::showInformation(){
 
 void Graph::saveMenu(){
     auto f = new gui::SaveFileDialog(this, "Save plot", \
-    { /*{"Encapsulated PostScript vector graphics format", "*.eps"}, {"Joint Photographic Experts Group image format", "*.jpg"},*/\
-    {"Portable Network Graphics image format", "*.png"}, \
-    {"Portable Document Format document format", "*.pdf"}, \
-    /*{"Scalable Vector Graphics image format", "*.svg"},*/\
-    {"Plain text file format", "*.txt"}, \
-    {"Extensible Markup Language data format", "*.xml"} });
+    { /*{"plotter_epsDesc", "*.eps"}, {"Joint Photographic Experts Group image format", "*.jpg"},*/\
+    {"plotter_pngDesc", "*.png"}, \
+    {"plotter_pdfDesc", "*.pdf"}, \
+    /*{"plotter_svgDesc", "*.svg"},*/\
+    {"plotter_txtDesc", "*.txt"}, \
+    {"plotter_xmlDesc", "*.xml"} });
     f->openModal([this](gui::FileDialog* pDlg) {
             return save(pDlg->getFileName());
         });

@@ -10,5 +10,11 @@
 		<Res id="plotter_marginBottom" tr="Bottom margin: " />
 		<Res id="plotter_xSpace" tr="Space to X axis label: " />
 		<Res id="plotter_ySpace" tr="Space to Y axis label: " />
+		<Res id="plotter_pngDesc" tr=" " />
+		<Res id="plotter_epsDesc" tr=" " />
+		<Res id="plotter_pdfDesc" tr=" " />
+		<Res id="plotter_svgDesc" tr=" " />
+		<Res id="plotter_txtDesc" tr="C style points" />
+		<Res id="plotter_xmlDesc" tr="save plot colors, points and position" />
 	</Translations>
 </DevRes>

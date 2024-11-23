@@ -10,5 +10,11 @@
 		<Res id="plotter_marginBottom" tr="Margina dole: " />
 		<Res id="plotter_xSpace" tr="Razmak imena X ose: " />
 		<Res id="plotter_ySpace" tr="Razmak imena Y ose: " />
+		<Res id="plotter_pngDesc" tr=" " />
+		<Res id="plotter_epsDesc" tr=" " />
+		<Res id="plotter_pdfDesc" tr=" " />
+		<Res id="plotter_svgDesc" tr=" " />
+		<Res id="plotter_txtDesc" tr="tačke u C stilu ili vertikalno" />
+		<Res id="plotter_xmlDesc" tr="linije, pozicija i boje grafa" />
 	</Translations>
 </DevRes>
