@@ -426,9 +426,13 @@ void Graph::showInformation(){
 }
 
 void Graph::saveMenu(){
-    auto f = new gui::SaveFileDialog(this, "Save plot", { {"Encapsulated PostScript vector graphics format", "*.eps"}, {"Joint Photographic Experts Group image format", "*.jpg"},
-        /*{"Portable Network Graphics image format", "*.png"},*/ {"Scalable Vector Graphics image format", "*.svg"},
-        {"Plain text file format", "*.txt"}, {"Extensible Markup Language data format", "*.xml"}, {"Portable Document Format document format", "*.pdf"} });
+    auto f = new gui::SaveFileDialog(this, "Save plot", \
+    { /*{"Encapsulated PostScript vector graphics format", "*.eps"}, {"Joint Photographic Experts Group image format", "*.jpg"},*/\
+    {"Portable Network Graphics image format", "*.png"}, \
+    {"Portable Document Format document format", "*.pdf"}, \
+    /*{"Scalable Vector Graphics image format", "*.svg"},*/\
+    {"Plain text file format", "*.txt"}, \
+    {"Extensible Markup Language data format", "*.xml"} });
     f->openModal([this](gui::FileDialog* pDlg) {
             return save(pDlg->getFileName());
         });
@@ -919,7 +923,7 @@ bool Graph::save(const td::String& path){
     if (path.endsWith(".png")) {
         gui::Image img(path);
         this->drawToImage(img, 1, false);
-        success = true;
+        
     }
 
     if (path.endsWith(".svg")) {
@@ -937,11 +941,11 @@ bool Graph::save(const td::String& path){
         success = true;
     }
 
-    if(success){
-        _drawButtons = drawButton;
-        setUpDrawingWindow();
-        reDraw();
-    }
+
+    _drawButtons = drawButton;
+    setUpDrawingWindow();
+    reDraw();
+    
 
     return success;
 }
