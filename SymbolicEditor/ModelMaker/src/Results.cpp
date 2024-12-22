@@ -2,6 +2,7 @@
 
 Results::Results()
 : _layout(1)
+, _table(td::Ownership::Intern)
 {
     _layout << _table;
 	setLayout(&_layout);
@@ -20,6 +21,11 @@ dp::IDataSet* Results::getDataSet()
 
 void Results::show(dp::IDataSet* pDS)
 {
+    pDS->onRemoveAll([this](dp::IDataSet* pDS)
+    {
+        _table.clean();
+    });
+
     dp::IDataSet* currDataSet = getDataSet();
     if (currDataSet == nullptr || currDataSet != pDS)
     {

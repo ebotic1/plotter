@@ -10,6 +10,7 @@
 #include <td/Timer.h>
 #include <dp/IDatabase.h>
 
+/*
 //double NR solver (for NL and WLS)
 inline int solveNR(sc::IDblSolver* pSolver, const td::String& modelStr)
 {
@@ -139,6 +140,8 @@ td::String getCmplxXMLData(const char* fn)
 
 #endif //TEST_SIMULATION
 #endif //MU_DEBUG
+
+*/
 
 using LogType = LogView::LogType;
 
