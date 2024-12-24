@@ -418,7 +418,7 @@ td::ColorID Renderer::nextColor(){
     {
         auto boja = _defaultColors.front();
         _defaultColors.pop();
-        if(!_disallowedColors.contains(boja))
+        //if(!_disallowedColors.contains(boja))
             return boja;        
     }
 

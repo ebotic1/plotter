@@ -445,10 +445,15 @@ void View::showHelp(){
 }
 
 void View::showInformation(){
-    //assert(false);
-//    auto d = new annotDiag(this, verticals, horizontals);
-//    d->setResizable(false);
-//    d->open();
+      /*gui::Panel::show<Settings>(this, tr("@Plot_settings"), (td::UINT4)9859, \ primjer
+            {{gui::Dialog::Button::ID::OK, tr("@Plot_zatvori") , gui::Button::Type::Normal}}, \
+            [](gui::Dialog *ptr){}, this);
+       */
+    /*
+    auto d = new annotDiag(this, verticals, horizontals);
+    d->setResizable(false);
+    d->open();
+    */
 }
 
 void View::saveMenu()
