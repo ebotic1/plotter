@@ -51,7 +51,8 @@ private:
     static std::vector<FileModels> _loadedModels;
 
     void simulate();
-    void addTab(ViewForTab::BaseClass* tab, const td::String& settingsStr, const td::String &path = td::String());
+    template<typename tabType>
+    void addTab(const td::String &path = td::String());
 
 //    std::set<gui::BaseView*> _tabsToProcess;
     td::String _paths;

@@ -22,6 +22,13 @@ file(GLOB MODELMAKER_INC_TEXT  ${CMAKE_CURRENT_LIST_DIR}/src/textEditor/*.h)
 
 file(GLOB INC ${CMAKE_CURRENT_LIST_DIR}/../common/*.cpp)
 
+set(MODELMAKER_PLIST  ${CMAKE_CURRENT_LIST_DIR}/res/appIcon/AppIcon.plist)
+if(WIN32)
+	set(MODELMAKER_WINAPP_ICON ${CMAKE_CURRENT_LIST_DIR}/res/appIcon/winAppIcon.rc)
+else()
+	set(MODELMAKER_WINAPP_ICON ${CMAKE_CURRENT_LIST_DIR}/res/appIcon/winAppIcon.cpp)
+endif()
+
 source_group("inc"           	FILES ${MODELMAKER_INC})
 source_group("inc\\td"           	FILES ${MODELMAKER_INC_TD})
 source_group("inc\\gui"           FILES ${MODELMAKER_INC_GUI})
@@ -57,7 +64,8 @@ target_link_libraries(${MODELMAKER_NAME}
 					optimized ${DP_LIB_RELEASE}
 					${EqToXML_LIB_NAME})
 
-setTargetPropertiesForGUIApp(${MODELMAKER_NAME} ${CMAKE_CURRENT_LIST_DIR}/src/Info.plist) 
+setTargetPropertiesForGUIApp(${MODELMAKER_NAME} ${MODELMAKER_PLIST})
+setAppIcon(${MODELMAKER_NAME} ${CMAKE_CURRENT_LIST_DIR}) 
 setIDEPropertiesForGUIExecutable(${MODELMAKER_NAME} ${CMAKE_CURRENT_LIST_DIR})
 setIDEPropertiesForExecutable(${MODELMAKER_NAME})
 

@@ -16,20 +16,10 @@ enum class DocumentType : td::BYTE {Unknown = 0, ModelTxtEditor, ModelTFEditor, 
 
 struct SettingsVars
 {
-    //IDz: Koristiti gui::tr Nema potrebe za kreiranjem dummy objekata
-//	static const char *tr(const char *key){
-//		static gui::Label helper("");
-//		return helper.tr(key).c_str();
-//	}
 
-	//static const std::unordered_set<td::String> MonospaceFonts;
-
-    //IDz: Ako se koriste const expr
-	//std::vector<const char*> colorNames;
     static constexpr int colorCnt = (int) ColorType::NONE;
     cnt::Array<td::String, colorCnt> colorNames;
 
-//	td::ColorID colorAttribute, colorVariable, colorImports, colorKeyword, colorFunctions, colorParam, colorComment, colorConstants, colorText;
 
 	td::ColorID colorsLight[colorCnt], colorsDark[colorCnt];
     td::ColorID colors[colorCnt]; //used in code to match those in settings

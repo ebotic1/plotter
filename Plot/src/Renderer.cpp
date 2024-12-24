@@ -33,6 +33,7 @@ Renderer::Renderer(td::ColorID axisColor, gui::Font *axisFont, gui::Font *legend
 
     if (startWithMargins)
         setUpDrawingWindow();
+        
 }
 
 void Renderer::setUpDrawingWindow(){
@@ -410,10 +411,19 @@ td::ColorID Renderer::nextColor(){
             _disallowedColors.emplace(td::ColorID::SysText);
             _disallowedColors.emplace(td::ColorID::SysCtrlBack);
         }
-
         boja = _axisColor;
     }
-    else {
+
+    while(!_defaultColors.empty())
+    {
+        auto boja = _defaultColors.front();
+        _defaultColors.pop();
+        if(!_disallowedColors.contains(boja))
+            return boja;        
+    }
+
+    if(boja == td::ColorID::Transparent)
+    {
         bool repeat;
         int current = int(_pastColors.back());
         int infiniteLoopCheck = current;

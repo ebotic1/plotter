@@ -8,24 +8,19 @@
 #include <td/String.h>
 #include <gui/Image.h>
 #include <gui/GridLayout.h>
+#include <map>
 
 #include <gui/plot/View.h>
 
 
-//IDz: Very strange
-class DataDraw : public gui::View { //IDz: Why do we need this one??
+class DataDraw : public gui::View 
+{
 	gui::TabView *_tabView;
 	gui::HorizontalLayout _hl;
 	gui::Image imgGraph, imgTable;
 	bool _tabViewOwnership;
-public:
-	struct Tab : public gui::View { //IDz: when this one goes in the tabView!!
-		td::String name;
-		gui::BaseView* view;  //IDz: Actually this one should go in the tab
-		gui::GridLayout gl;
-		Tab(const td::String& name, gui::BaseView *);
-		virtual ~Tab();
-	};
+	std::map<gui::BaseView *, td::String> _graphNames;
+
 
 public:
 	struct FunctionDesc {

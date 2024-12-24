@@ -5,6 +5,7 @@
 #include "textEditor/View.h"
 #include <xml/DOMParser.h>
 #include <tuple>
+#include "SimulatorView.h"
 
 #include <gui/TableEdit.h>
 #include "SaveDlg.h"
@@ -92,30 +93,20 @@ void MainWindow::closeTab(gui::BaseView *tab)
 //        showStartScreen(true);
 }
 
-void MainWindow::addTab(ViewForTab::BaseClass *tab, const td::String &settingsStr, const td::String &path){
-    ViewForTab *wholeTab = nullptr;
-//    _tabsToProcess.clear();
-    if(GraphicalEditorView *ptr = dynamic_cast<GraphicalEditorView *>(tab); ptr != nullptr)
-    {
-        wholeTab = new ViewForTab(ptr, settingsStr);
-        int pos = _tabView.addView(wholeTab, "", &_guiEditorIcon, (td::BYTE) DocumentType::ModelTFEditor);
-        changeTabName(wholeTab->getName().isNull()  ? tr("newGraphTab") : wholeTab->getName(), wholeTab);
-        wholeTab->setPath(path);
-    }
-    else if(TextEditorView *ptr = dynamic_cast<TextEditorView *>(tab); ptr != nullptr)
-    {
-        wholeTab = new ViewForTab(ptr, settingsStr);
-        int pos = _tabView.addView(wholeTab, "", &_textEditorIcon, (td::BYTE) DocumentType::ModelTxtEditor);
-        changeTabName(wholeTab->getName().isNull()  ? tr("newTextTab") : wholeTab->getName(), wholeTab);
-        if (path.endsWith(".modl"))
-            wholeTab->setPath(path);
-    }
-
-    if(wholeTab == nullptr){
-        throw "addTab method from MainWindow failed to recognize tab type";
-    }
+template<typename tabType>
+void MainWindow::addTab(const td::String &path){
     
-//    onChangedSelection(&_tabView);
+    static_assert(std::is_base_of_v<ViewForTab::BaseClass, tabType>, "tabType must derive from ViewForTab::BaseClass");
+
+    if constexpr (std::is_same_v<tabType, GraphicalEditorView>) {
+        auto ptr = new SimulatorView<GraphicalEditorView>(tr("newGraphTab"), path);
+        _tabView.addView(ptr, ptr->getName(), &_guiEditorIcon, (td::BYTE) DocumentType::ModelTFEditor);
+    } else if constexpr (std::is_same_v<tabType, TextEditorView>) {
+        auto ptr = new SimulatorView<TextEditorView>(tr("newTextTab"), path);
+        _tabView.addView(ptr, ptr->getName(), &_textEditorIcon, (td::BYTE) DocumentType::ModelTxtEditor);
+    } else {
+        static_assert(false, "addTab() tabType not recognized");
+    }
         
 }
 
@@ -164,7 +155,7 @@ bool MainWindow::onActionItem(gui::ActionItemDescriptor& aiDesc)
         switch (action)
         {
             case MenuBar::ActionID::EmptyModel:
-                addTab(new TextEditorView, "");
+                addTab<TextEditorView>();
                 return true;
             case MenuBar::ActionID::OpenTextModel:
             {
@@ -418,12 +409,10 @@ bool MainWindow::onToolbarsPopoverSelectionChange(gui::PopoverView* pPOView, td:
         if (dt != DocumentType::Graph)
             return true;
         auto view = _tabView.getView(pos);
-        //IDz: This has to be fixed
-        DataDraw::Tab* pDataDraw = dynamic_cast<DataDraw::Tab*>(view);
-        assert(view);
-        gui::plot::View* pView = dynamic_cast<gui::plot::View*>(pDataDraw->view);
-        assert(pView);
-        pView->handleAction((gui::plot::View::Action) selection);
+        gui::plot::View* pView = dynamic_cast<gui::plot::View*>(view);
+        //assert(pView);
+        if(pView != nullptr)
+            pView->handleAction((gui::plot::View::Action) selection);
         return true;
     }
     
@@ -474,27 +463,13 @@ bool MainWindow::onChangedSelection(gui::TabView* pNavigator)
 
 bool MainWindow::openFile(const td::String& path)
 {
-   const char *ok = path.c_str();
-    const auto openF = [this, &path](auto ptr) {
-        td::String settings;
-        if (ptr->openFile(path, settings)) {
-            addTab(ptr, settings, path);
-            return true;
-        }
-        else
-            delete ptr;
-        return false;
-    };
 
-    if (path.endsWith(".modl") || path.endsWith(".xml")) {
-        auto ptr = new TextEditorView;
-        return openF(ptr);
-    }
+    if (path.endsWith(".modl") || path.endsWith(".xml"))
+        addTab<TextEditorView>(path);
 
-    if (path.endsWith(".tfstate")) {
-        auto ptr = new GraphicalEditorView;
-        return openF(ptr);
-    }
+    if (path.endsWith(".tfstate"))
+        addTab<GraphicalEditorView>(path);
+    
 
 
     return false;
@@ -508,17 +483,12 @@ void MainWindow::onInitialAppearance()
     if(font.cCompareNoCase("Default") == 0)
     {
 
-//        std::vector<td::String> monoSpaceFonts = {"Consolas", "DejaVu Sans Mono", "Menlo"}, foundFonts;
-
 #ifdef MU_MACOS
-//            int prefferedFont = 2;
         td::String preferedFont("Menlo");
 #elif MU_WINDOWS
         td::String preferedFont("Consolas");
-//            int prefferedFont = 0;
 #else
         td::String preferedFont("DejaVu Sans Mono");
-//            int prefferedFont = 1;
 #endif
         auto monospacedFonts = gui::Font::getSystemMonospacedFamilyNames();
         bool foundDefault = false;
@@ -536,27 +506,9 @@ void MainWindow::onInitialAppearance()
         else
             font = preferedFont;
             
-//        auto fonts = gui::Font::getSystemFamilyNames();
-//    
-//        for(int i = 0; i<fonts.size(); ++i){
-//            if(GlobalEvents::settingsVars.MonospaceFonts.contains(fonts[i]))
-//                foundFonts.emplace_back(fonts[i]);
-//        }
-//
-//        decltype(monoSpaceFonts)::iterator it;
-//
-//        if(foundFonts.empty()){
-//            showAlert(tr("error"), tr("monospaceNotFound"));
-//        }else{
-//            it = std::find(foundFonts.begin(), foundFonts.end(), monoSpaceFonts[prefferedFont]);
-//            if(it != foundFonts.end())
-//                font = *it;
-//            else
-//                font = foundFonts[0];
-//        }
 
     }
-    else
+    else //provjera da li je izabrani font monospace. Mada ovo se ne moze nikad desiti jer se samo monospace fontovi mogu izabrati
     {
         auto monospacedFonts = gui::Font::getSystemMonospacedFamilyNames();
         bool foundRequired = false;

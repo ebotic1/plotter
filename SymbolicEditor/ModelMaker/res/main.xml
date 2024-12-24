@@ -44,7 +44,9 @@
 		<Res id="example4" path=":models/example4.modl"/>
 		<Res id="example5" path=":models/example5.modl"/>
 	</FileNames>
-
+	<SampleDocs>
+		<Res type="imports" path="$HOME/other_bin/TestData/SymbComp"/>
+		<Res type="txtModels" path="$HOME/other_bin/TestData/modelMaker/txtModels"/> 
+		<Res type="graphModels" path="$HOME/other_bin/TestData/modelMaker/graphModels"/> 
+	</SampleDocs>
 </DevRes>
-
-

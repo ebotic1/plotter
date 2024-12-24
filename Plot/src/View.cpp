@@ -54,6 +54,26 @@ View::View(gui::Font *fontAxis, gui::Font *fontLegend, td::ColorID backgroundCol
     
     removeColorFromAutopicker(_backgroundColor);
 
+    auto props = getAppProperties();
+    setMargins(props->getValue<float>("@Plotter_margin0", _margins.marginLeft), props->getValue<float>("@Plotter_margin1", _margins.marginRight),\
+    props->getValue<float>("@Plotter_margin2", _margins.marginTop), props->getValue<float>("@Plotter_margin3", _margins.marginBottom));
+
+    setAxisNameDistance(props->getValue<float>("@Plotter_AxisSpace0", _xAxisNameSeperation), props->getValue<float>("@Plotter_AxisSpace1", _yAxisNameSeperation));
+
+    td::ColorID color;
+    td::String keyVal;
+    int ind = 0;
+    for(int i = 0; i<16; ind+=23, ++i){
+        keyVal.format("@Plotter_defaultColor%d", i);
+        color = (td::ColorID)props->getValue<int>(keyVal, ind % 137);
+        props->setValue<int>(keyVal, (int)color);
+        _defaultColors.emplace(color);
+    }
+
+    _imageSaveSettings._mode = (ImageSaveSettings::ImageSaveStyle)props->getValue<int>(td::String("@Plotter_resolutionIndex"), 0);
+    _imageSaveSettings._width = props->getValue<float>(td::String("@Plotter_resolutionWidth"), 500);
+    _imageSaveSettings._height = props->getValue<float>(td::String("@Plotter_resolutionHeight"), 500);
+
 }
 
 
@@ -435,7 +455,8 @@ void View::saveMenu()
 {
     td::UINT4 dlgID = 999999;
     gui::SaveFileDialog::show(this, "Save plot", \
-                              { /*{"@Plot_epsDesc", "*.eps"}, {"Joint Photographic Experts Group image format", "*.jpg"},*/\
+                              { /*{"@Plot_epsDesc", "*.eps"},*/ 
+                              {"@Plot_jpgDesc", "*.jpg"},\
                               {"@Plot_pngDesc", "*.png"}, \
                               {"@Plot_pdfDesc", "*.pdf"}, \
                               /*{"@Plot_svgDesc", "*.svg"},*/\
@@ -444,16 +465,7 @@ void View::saveMenu()
     {
         return save(pDlg->getFileName());
     });
-//    auto f = new gui::SaveFileDialog(this, "Save plot", \
-//    { /*{"@Plot_epsDesc", "*.eps"}, {"Joint Photographic Experts Group image format", "*.jpg"},*/\
-//    {"@Plot_pngDesc", "*.png"}, \
-//    {"@Plot_pdfDesc", "*.pdf"}, \
-//    /*{"@Plot_svgDesc", "*.svg"},*/\
-//    {"@Plot_txtDesc", "*.txt"}, \
-//    {"@Plot_xmlDesc", "*.xml"} });
-//    f->openModal([this](gui::FileDialog* pDlg) {
-//            return save(pDlg->getFileName());
-//        });
+
 }
 
 bool View::saveXML(const td::String& path){
@@ -934,33 +946,75 @@ bool View::save(const td::String& path){
    bool drawButton = false;
    bool success = false;
    std::swap(_drawButtons, drawButton);
-   setUpDrawingWindow();
-   reDraw();
+   auto oldSize = _size;
+   auto newSize = gui::Size(_imageSaveSettings._width, _imageSaveSettings._height);
+    if(_imageSaveSettings._mode == ImageSaveSettings::ImageSaveStyle::fixedHeight)
+        newSize.width = oldSize.width;
+    if(_imageSaveSettings._mode == ImageSaveSettings::ImageSaveStyle::fixedWidth)
+        newSize.height = oldSize.height;
 
-    if (path.endsWith(".png")) {
-        gui::Image img(path);
-        this->drawToImage(img, 1, false);
-        
+
+   gui::Rect r(gui::Point(0,0), newSize);
+   
+    if(_imageSaveSettings._mode != ImageSaveSettings::ImageSaveStyle::windowSize){
+        setGraphSize(newSize);
     }
+    else{
+        setUpDrawingWindow();
+        reDraw();
+    }
+    
 
     if (path.endsWith(".svg")) {
-        exportToSVG(path, true);
+        if(_imageSaveSettings._mode == ImageSaveSettings::ImageSaveStyle::windowSize)
+            exportToSVG(path, false);
+        else
+            exportToSVG(r, path);
         success = true;
     }
 
     if (path.endsWith(".pdf")) {
-        exportToPDF(path, true);
+        if(_imageSaveSettings._mode == ImageSaveSettings::ImageSaveStyle::windowSize)
+            exportToPDF(path, false);
+        else
+            exportToPDF(r, path);
         success = true;
     }
 
     if (path.endsWith(".eps")) {
-        exportToEPS(path, true);
+        if(_imageSaveSettings._mode == ImageSaveSettings::ImageSaveStyle::windowSize)
+            exportToEPS(path, false);
+        else
+            exportToEPS(r, path);
+        success = true;
         success = true;
     }
 
 
+    gui::Image::Type tip = (gui::Image::Type)-100;
+
+    if (path.endsWith(".png"))
+        tip = gui::Image::Type::PNG;
+
+    if (path.endsWith(".jpg"))
+        tip = gui::Image::Type::JPG;
+
+    if((int)tip != -100){
+        gui::Image img;
+
+        if(_imageSaveSettings._mode == ImageSaveSettings::ImageSaveStyle::windowSize)
+            this->drawToImage(img, 1, false);
+        else
+            this->drawToImage(img, r, 1);
+
+         img.saveToFile(path, tip);
+         success = true;
+    }
+
+
+
     _drawButtons = drawButton;
-    setUpDrawingWindow();
+    setGraphSize(oldSize);
     reDraw();
     
 

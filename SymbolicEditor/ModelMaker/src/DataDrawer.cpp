@@ -94,23 +94,30 @@ void DataDraw::addData(const td::String& name, const std::vector<FunctionDesc>& 
         img = &imgTable;
     }
     
-        Tab* searchTab;
+        decltype(_graphNames)::iterator it;
         for (int i = 0; i < _tabView->getNumberOfViews(); ++i){
-            searchTab = dynamic_cast<Tab*>(_tabView->getView(i));
-            if (searchTab != nullptr && searchTab->name == name) {
+            it = _graphNames.find(_tabView->getView(i));
+            if(it == _graphNames.end())
+                continue;
+
+            if (it->second == name) {
                 _tabView->removeView(i);
+                if(_tabView->getNumberOfViews() == 0)
+                    _graphNames.clear();
                 break;
             }
         }
     
     
-    _tabView->addView(new Tab(name, tab), name, img, (td::BYTE) DocumentType::Graph);
+    _graphNames[tab] = name;
+    _tabView->addView(tab, name, img, (td::BYTE) DocumentType::Graph);
 }
 
 void DataDraw::removeTabs()
 {
 	for (int i = 0; i < _tabView->getNumberOfViews(); ++i) 
 		_tabView->removeAll();
+    _graphNames.clear();
 }
 
 DataDraw::~DataDraw()
@@ -119,16 +126,4 @@ DataDraw::~DataDraw()
 		delete _tabView;
 }
 
-DataDraw::Tab::Tab(const td::String& name, gui::BaseView* view):
-	name(name),
-	view(view),
-	gl(1,1)
-{
-	gl.insert(0, 0, *view);
-	setLayout(&gl);
-}
 
-DataDraw::Tab::~Tab()
-{
-	delete view;
-}

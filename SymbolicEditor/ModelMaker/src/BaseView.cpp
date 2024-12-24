@@ -73,84 +73,103 @@ void LogView::measure(gui::CellInfo &c)
 	c.minVer = 127;
 }
 
-ViewForTab::ViewForTab(BaseClass* tabView, const td::String &settingsStr)
-: tabView(tabView)
-, _logImg(":txtIcon")
+ViewForTab::ViewForTab():
+  _logImg(":txtIcon")
 , _settingsImg(":settings")
 , _resultsImg(":results")
 , tabAndLogSplitter(gui::SplitterLayout::Orientation::Vertical, gui::SplitterLayout::AuxiliaryCell::Second)
-, logView(new LogView)  //IDz: Why new LogView??
+, logView(new LogView)
+, _results(new Results)
 {
 
+	
+}
+
+void ViewForTab::init(BaseClass *simView, const td::String &defaultName, const td::String &path)
+{
+	_simView = simView;
 	_tabView.addView(logView.get(), tr("log") , &_logImg);
 	_tabView.addView(&settings, tr("attributes") , &_settingsImg);
-    _tabView.addView(&_results, tr("Results"), &_resultsImg);
-	tabAndLogSplitter.setContent(*tabView, _tabView);
+    _tabView.addView(_results.get(), tr("Results"), &_resultsImg);
+	tabAndLogSplitter.setContent(*simView, _tabView);
 
-	settings.loadFromString(settingsStr);
+	if(!path.isNull()){
+		td::String settingsStr;
+		bool success = simView->openFile(path, settingsStr);
+		if(success){
+			settings.loadFromString(settingsStr);
+			setPath(path);
+		}
+	}
+
 	_lastSavedSettings = settings.getVersion();
-	_lastSavedModel = tabView->getVersion();
+	_lastSavedModel = simView->getVersion();
 	bool error;
 	getModelNode(error, true);
 
+	if(_name.isNull()){
+		_name = defaultName;
+	}
+
 	setLayout(&tabAndLogSplitter);
 }
+
 
 const std::shared_ptr<LogView> ViewForTab::getLog()
 {
     return logView;
 }
 
-Results* ViewForTab::getResults()
+std::shared_ptr<Results> ViewForTab::getResults()
 {
-    return &_results;
+    return _results;
 }
 
 const ViewForTab::BaseClass &ViewForTab::getMainView()
 {
-    return *tabView;
+    return *_simView;
 }
 
 ViewForTab::BaseClass* ViewForTab::getContentView()
 {
-    return tabView;
+    return _simView;
 }
 
 void ViewForTab::handleColorSettings()
 {
-    if (tabView)
-        tabView->refreshVisuals();
+    if (_simView)
+        _simView->refreshVisuals();
 }
 
 const td::String &ViewForTab::getName(){
-    return name;
+    return _name;
 }
 
 void ViewForTab::setName(const td::String &name){
-	this->name = name;
+	this->_name = name;
 }
 
 bool ViewForTab::loadFile(const td::String &path)
 {
     td::String settingsString;
-	bool retVal = tabView->openFile(path, settingsString);
+	bool retVal = _simView->openFile(path, settingsString);
 	if (retVal) {
 		settings.loadFromString(settingsString);
 		_lastSavedSettings = settings.getVersion();
-		_lastSavedModel = tabView->getVersion();
+		_lastSavedModel = _simView->getVersion();
 	}
 	return retVal;
 }
 
 void ViewForTab::save()
 {
-	if(path.isNull()){
+	if(_path.isNull()){
 		saveAs();
 		return;
 	}
 
-	if (tabView->save(path, settings.getString())) {
-		_lastSavedModel = tabView->getVersion();
+	if (_simView->save(_path, settings.getString())) {
+		_lastSavedModel = _simView->getVersion();
 		_lastSavedSettings = settings.getVersion();
 		logView->appendLog("Model saved", LogType::Info);
 	}
@@ -162,9 +181,9 @@ void ViewForTab::saveAs()
 {
 	bool error;
 	getModelNode(error, true);
-	path.clean();
-	tabView->saveAs(settings.getString(), &path);
-	_lastSavedModel = tabView->getVersion(); // u sustini mozda serviranje ne bude uspjesno trebalo bi se u prethodnoj funkciji i pointer na _lastSavedModel poslati ali u 99.99% slucajeva nije bitno, bice servirano
+	_path.clean();
+	_simView->saveAs(settings.getString(), &_path);
+	_lastSavedModel = _simView->getVersion(); // u sustini mozda serviranje ne bude uspjesno trebalo bi se u prethodnoj funkciji i pointer na _lastSavedModel poslati ali u 99.99% slucajeva nije bitno, bice servirano
 }
 
 void ViewForTab::exportToXML(td::String path)
@@ -181,12 +200,12 @@ void ViewForTab::getTimes(double& startTime, double& endTime, double& stepTime, 
 }
 
 void ViewForTab::setPath(const td::String &path){
-	this->path = path;
+	this->_path = path;
 }
 
 const td::String &ViewForTab::getPath()
 {
-    return path;
+    return _path;
 }
 
 
@@ -195,7 +214,7 @@ bool ViewForTab::promptSaveIfNecessary(bool exitProgram)
 	if(!GlobalEvents::settingsVars.warnBeforeClose)
 		return false;
 
-	if ((_lastSavedSettings == settings.getVersion() && _lastSavedModel == tabView->getVersion()) || tabView->getVersion() == 0)
+	if ((_lastSavedSettings == settings.getVersion() && _lastSavedModel == _simView->getVersion()) || _simView->getVersion() == 0)
 		return false;
 	auto diag = new SaveDlg(this);
 
@@ -237,12 +256,12 @@ bool ViewForTab::promptSaveIfNecessary(bool exitProgram)
 
 void ViewForTab::updateModelNode()
 {
-	if (lastModelExtract == tabView->getVersion())
+	if (lastModelExtract == _simView->getVersion())
 		return;
 
-	tabView->getModel(modelTab);
+	_simView->getModel(modelTab);
 
-	lastModelExtract = tabView->getVersion();
+	lastModelExtract = _simView->getVersion();
 }
 
 void ViewForTab::updateSettings()
@@ -296,7 +315,7 @@ const ModelNode& ViewForTab::getModelNode(bool &error, bool supressLogs)
 		updateModelNode();
 	}catch(ModelNode::exceptionInvalidBlockName &blName){
 		td::String log("Cant generate model ");
-		log += name;
+		log += _name;
 		log += ", unrecognized block ";
 		log += blName.message;
 		logView->appendLog(log, LogType::Error, supressLogs);
@@ -378,7 +397,7 @@ const ModelNode& ViewForTab::getModelNode(bool &error, bool supressLogs)
 				vars.insert(param->_attribs["name"]);
 	}
 
-	tabView->setVariabesAndParams(std::move(vars), std::move(params));
+	_simView->setVariabesAndParams(std::move(vars), std::move(params));
 
 	if(auto it = model._attribs.find("type"); it != model._attribs.end()){
 		if(it->second.cCompareNoCase("NR") == 0 || it->second.cCompareNoCase("WLS") == 0)
@@ -399,7 +418,7 @@ bool ViewForTab::shouldClose()
 
 ViewForTab::~ViewForTab()
 {
-	delete tabView;
+	
 }
 
 const std::vector<ModelSettings::FunctionDesc> &ViewForTab::getFunctions()

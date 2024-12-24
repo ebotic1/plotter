@@ -90,17 +90,6 @@ public:
         _chBoxConfirmClose.onClick([this, &settings](){settings.warnBeforeClose = _chBoxConfirmClose.isChecked();});
         
         auto foundFonts = gui::Font::getSystemMonospacedFamilyNames();
-//        std::vector<td::String> foundFonts;
-//        for(int i = 0; i<fonts.size(); ++i)
-//            if(GlobalEvents::settingsVars.MonospaceFonts.contains(fonts[i]))
-//                foundFonts.emplace_back(fonts[i]);
-        
-//        auto fonts = gui::Font::getSystemFamilyNames();
-//        std::vector<td::String> foundFonts;
-//        for(int i = 0; i<fonts.size(); ++i)
-//            if(GlobalEvents::settingsVars.MonospaceFonts.contains(fonts[i]))
-//                foundFonts.emplace_back(fonts[i]);
-
         fontCombo.addItems(&(foundFonts[0]), foundFonts.size());
         fontCombo.setSizeLimits(fontCombo.getWidthToFitLongestItem(), gui::Control::Limit::Fixed);
         w = std::max(w, fontCombo.getWidthToFitLongestItem());
@@ -129,7 +118,6 @@ public:
 
         gui::ColorPicker *ptr;
         for(int j = 0; j<colorsCnt; ++j){
-            //_colorLabels[j] = new gui::Label(GlobalEvents::settingsVars.colorNames[j]);
             td::String strTitle = GlobalEvents::settingsVars.colorNames[j];
             _colorLabels[j].setTitle(strTitle);
             ptr = _colorPickers + j;
@@ -179,10 +167,6 @@ public:
       
         if(fontCombo.getSelectedIndex() >= 0)
             GlobalEvents::settingsVars.font = fontCombo.getSelectedText();
-
-//        for(int i = 0; i<colorsCnt; ++i){
-//            delete _colorLabels[i];
-//        }
       
 
         GlobalEvents::settingsVars.saveValues();

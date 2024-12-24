@@ -50,21 +50,17 @@ public:
 	public:
 		void modelChanged()
         {
-            //IDz: Need to send setModified flag to tabView.
-            //     Very difficult with this pattern
             ++_version;
             setModified(true);
         }
         void setModified(bool bModified)
         {
-            //IDz: Make class structure properly and send modified flag
-            //if (_parent)
-            {
-                gui::Application* pApp = getApplication();
-                gui::Window* pMainWnd = pApp->getInitialWindow();
-                td::Variant var(bModified);
-                pMainWnd->handleUserEvent((td::UINT4) UserEvent::SetModifiedFlag, var);
-            }
+            
+            gui::Application* pApp = getApplication();
+            gui::Window* pMainWnd = pApp->getInitialWindow();
+            td::Variant var(bModified);
+            pMainWnd->handleUserEvent((td::UINT4) UserEvent::SetModifiedFlag, var);
+            
         }
 		virtual bool save(const td::String& path, const td::String& settingsString) = 0;
 		virtual void saveAs(const td::String& settingsString, td::String* newPath) = 0;
@@ -78,7 +74,7 @@ public:
 private:
 	std::shared_ptr<LogView> logView;
 	ModelSettings settings;
-    Results _results;
+    std::shared_ptr<Results> _results;
 	std::vector<ModelSettings::FunctionDesc> funcionsDesc;
 	std::vector<ModelSettings::DependencyDesc> depenends;
 
@@ -86,21 +82,21 @@ private:
 	gui::StandardTabView _tabView;
 	gui::Image _logImg, _settingsImg, _resultsImg;
     
-	td::String path, name;
+	td::String _path, _name;
 	unsigned int _lastSavedModel = 0, _lastSavedSettings = 0, lastModelExtract = 0, lastSettingsVer = 0;
 	ModelNode model, modelTab, emptyModel;
 	bool includeGuard = false;
 
-	BaseClass* tabView = nullptr;
-
 	void updateModelNode();
 	void updateSettings();
 
+	BaseClass* _simView = nullptr;
+protected:
+	ViewForTab();
+	void init(BaseClass* simView, const td::String &defaultName, const td::String &path);
 public:
-	ViewForTab(BaseClass *, const td::String &settingsStr = td::String());
-
 	const std::shared_ptr<LogView> getLog();
-    Results* getResults();
+    std::shared_ptr<Results> getResults();
     
 	const BaseClass& getMainView();
     BaseClass* getContentView();
@@ -121,10 +117,10 @@ public:
     bool isModified() const
     {
         //IDz: ova metoda vise nije potrebna, moze se ici preko gui::TabView->isModified
-        if (!tabView)
+        if (!_simView)
             return false;
         
-        if ((_lastSavedSettings == settings.getVersion() && _lastSavedModel == tabView->getVersion()) || tabView->getVersion() == 0)
+        if ((_lastSavedSettings == settings.getVersion() && _lastSavedModel == _simView->getVersion()) || _simView->getVersion() == 0)
             return false;
         return true;
     }
