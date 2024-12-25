@@ -9,7 +9,7 @@
 		<Res id="&lt;Ctrl&gt;," tr="&lt;Ctrl&gt;p" />
 		<Res id="Cancel" tr="Poništi" />
 		<Res id="settings" tr="Podešenja ..." />
-		<Res id="settingsTT" tr="Podešenja aplikacije"/>
+		<Res id="settingsTT" tr="Podešenja aplikacije" />
 		<Res id="RestartRequired" tr="Restartovanje aplikacije" />
 		<Res id="RestartRequiredInfo" tr="Da bi ste promijenili jezik aplikacije potrebno je ugasiti program" />
 		<Res id="DoNoRestart" tr="Kasnije" />
@@ -58,8 +58,8 @@
 		<Res id="appSettings" tr="Glavne postavke" />
 		<Res id="colorsSettings" tr="Boje" />
 		<Res id="whiteColors" tr="Boje za bijelu pozadinu:" />
-		<Res id="log" tr="Info"/>
-		<Res id="attributes" tr="Atributi"/>
+		<Res id="log" tr="Info" />
+		<Res id="attributes" tr="Atributi" />
 		<Res id="constants" tr="Konstantne:" />
 		<Res id="functions" tr="Funkcije:" />
 		<Res id="attributes" tr="Atributi:" />
@@ -70,40 +70,32 @@
 		<Res id="importColor" tr="Importi:" />
 		<Res id="textColor" tr="Tekst:" />
 		<Res id="nrModel" tr="Nelinearni model" />
-		<Res id="wlsModel" tr="Metoda najmanjih kvadrata sa težinskim faktorima"/>
-		<Res id="nrModelCmplx" tr="Nelinearni model u kompleksnoj domeni"/>
-		<Res id="wlsModelCmplx" tr="Metoda najmanjih kvadrata u kompleksnoj domeni"/>
+		<Res id="wlsModel" tr="Metoda najmanjih kvadrata sa težinskim faktorima" />
+		<Res id="nrModelCmplx" tr="Nelinearni model u kompleksnoj domeni" />
+		<Res id="wlsModelCmplx" tr="Metoda najmanjih kvadrata u kompleksnoj domeni" />
 		<Res id="daeModel" tr="Diferencijalno algebarski model" />
 		<Res id="gain" tr="Pojačanje: " />
 		<Res id="gainTooltip" tr="Ulaz ovog bloka če biti pomnožen sa ovom vrijednosti" />
 		<Res id="monospaceNotFound" tr="MonoSpace font nije pronađen na računaru. Ova aplikacija neće raditi ispravno." />
 		<Res id="examples" tr="Primjeri:" />
 		<Res id="pidRegulator" tr="PID regulator" />
-
-		<Res id="newDocumentTB" tr="Novi"/>
-		<Res id="newDocumentTT" tr="Novi prazan dokument"/>
-
-		<Res id="newFromTemplate" tr="Urnek"/>
-		<Res id="newFromTemplateTT" tr="Novi dokument koristeći postojeći mali model koji je korektan i sadrži većinu elemenata"/>
-
-		<Res id="openTB" tr="Otvori"/>
-		<Res id="openTT" tr="Otvori ranije kreiran model"/>
-
-		<Res id="saveTB" tr="Snimi"/>
-		<Res id="saveTT" tr="Snimi model"/>
-
-		<Res id="importTB" tr="Import"/>
-		<Res id="importTT" tr="Import model iz xml formata"/>
-
-		<Res id="exportTB" tr="Export"/>
-		<Res id="exportTT" tr="Eksportovanje modela u xml format"/>
-
-		<Res id="plotTBI" tr="Plot"/>
-		<Res id="plotTBITT" tr="Podešenja prikaza dijagrama"/>
-
-		<Res id="startTB" tr="Riješi"/>
-		<Res id="startTT" tr="Riješi problem (pokreni prcoduru proračuna)"/>
-
-		<Res id="chbTBIcsAndLbls" tr="Prikaži labele ispod ikona na glavnoj alatnoj traci"/>
+		<Res id="newDocumentTB" tr="Novi" />
+		<Res id="newDocumentTT" tr="Novi prazan dokument" />
+		<Res id="newFromTemplate" tr="Urnek" />
+		<Res id="newFromTemplateTT" tr="Novi dokument koristeći postojeći mali model koji je korektan i sadrži većinu elemenata" />
+		<Res id="openTB" tr="Otvori" />
+		<Res id="openTT" tr="Otvori ranije kreiran model" />
+		<Res id="saveTB" tr="Snimi" />
+		<Res id="saveTT" tr="Snimi model" />
+		<Res id="importTB" tr="Import" />
+		<Res id="importTT" tr="Import model iz xml formata" />
+		<Res id="exportTB" tr="Export" />
+		<Res id="exportTT" tr="Eksportovanje modela u xml format" />
+		<Res id="plotTBI" tr="Plot" />
+		<Res id="plotTBITT" tr="Podešenja prikaza dijagrama" />
+		<Res id="startTB" tr="Riješi" />
+		<Res id="startTT" tr="Riješi problem (pokreni prcoduru proračuna)" />
+		<Res id="chbTBIcsAndLbls" tr="Prikaži labele ispod ikona na glavnoj alatnoj traci" />
+		<Res id="openModelTF" tr="Otvori grafički model" />
 	</Translations>
 </DevRes>

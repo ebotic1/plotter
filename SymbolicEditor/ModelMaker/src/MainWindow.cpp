@@ -124,19 +124,6 @@ void MainWindow::removePath()
 bool MainWindow::onActionItem(gui::ActionItemDescriptor& aiDesc)
 {
 
-//    if(aiDesc._menuID == toolBarID){ //ako je izvor toolbar
-//
-//        auto action = toolBarActionIDs(aiDesc._actionItemID);
-//
-//        if(action == toolBarActionIDs::Simulate){
-//            simulate();
-//            return true;
-//        }
-//
-//        return false;
-//    }
-
-    //izvor mora biti menu bar ili poziv preko global events
     MenuBar::ActionID action = (MenuBar::ActionID) aiDesc._actionItemID;
     MenuBar::SubMenuID subMenuID = (MenuBar::SubMenuID) aiDesc._firstSubmenuID;
     MenuBar::SubMenuID menuID = (MenuBar::SubMenuID) aiDesc._menuID;
@@ -165,14 +152,20 @@ bool MainWindow::onActionItem(gui::ActionItemDescriptor& aiDesc)
                         return;
                     openFile(path);
                 });
-//                auto dlg = new gui::OpenFileDialog(this, tr("openModel"), "*.modl");
-//
-//                dlg->openModal([this](gui::FileDialog* d){
-//                    auto path = d->getFileName();
-//                    if(path.isNull())
-//                        return;
-//                    openFile(path);
-//                });
+
+                return true;
+            }
+
+            case MenuBar::ActionID::OpenTFModel:
+            {
+
+                gui::OpenFileDialog::show(this, tr("openModelTF"), "*.tfstate", MenuBar::ActionID::OpenTFModel, [this](gui::FileDialog* d){
+                    auto path = d->getFileName();
+                    if(path.isNull())
+                        return;
+                    openFile(path);
+                });
+
                 return true;
             }
                 
@@ -185,16 +178,9 @@ bool MainWindow::onActionItem(gui::ActionItemDescriptor& aiDesc)
                     openFile(path);
                 });
                 
-//                auto dlg = new gui::OpenFileDialog(this, tr("openModel"), "*.xml");
-//
-//                dlg->openModal([this](gui::FileDialog* d){
-//                    auto path = d->getFileName();
-//                    if(path.isNull())
-//                        return;
-//                    openFile(path);
-//                });
                 return true;
             }
+
                 
             case MenuBar::ActionID::Export:
             {
@@ -206,13 +192,7 @@ bool MainWindow::onActionItem(gui::ActionItemDescriptor& aiDesc)
                     if(!path.isNull())
                         currentView->exportToXML(path);
                 }, tr("Export"), currentView->getName().c_str());
-//                auto path = new gui::SaveFileDialog(this, tr("ExporttoXML"), ".xml", tr("Export"), currentView->getName().c_str());
-//                path->openModal([currentView](gui::FileDialog* pDlg) {
-//                    td::String path(pDlg->getFileName());
-//                    if(!path.isNull()){
-//                        currentView->exportToXML(path);
-//                    }
-//                });
+
                 return true;
             }
                 
@@ -298,67 +278,7 @@ bool MainWindow::onActionItem(gui::ActionItemDescriptor& aiDesc)
         return onToolbarsPopoverSelectionChange(nullptr, (td::UINT2) ToolBar::PopOverID::GraphCtrl, selection);
     }
     
-//    if(action == MenuBar::ActionID::EmptyModel && subMenuID == MenuBar::SubMenuID::NewGraphical){
-////        showStartScreen(false);
-//        addTab(new GraphicalEditorView, "");
-//        return true;
-//    }
-//
-//
-//    if(action == MenuBar::ActionID::EmptyModel && subMenuID == MenuBar::SubMenuID::NewText){
-////        showStartScreen(false);
-//        addTab(new TextEditorView, "");
-//        return true;
-//    }
 
-
-    
-    //ViewForTab *currentView = dynamic_cast<ViewForTab*>(this->_tabView.getCurrentView());
-
-//    if(action == MenuBar::ActionID::OpenFromFile){
-//        auto &o = *new gui::OpenFileDialog(this, tr("openModel"), {{"Text model editor", "*.modl"}, {"XML model", "*.xml"}, {tr("tfFile"), "*.tfstate"} }, tr("open"));
-//        if(menuID == MenuBar::SubMenuID::Model){
-//           if(currentView == nullptr)
-//                return true;
-//            o.openModal([currentView](gui::FileDialog* d){
-//                auto path = d->getFileName();
-//                if(path.isNull())
-//                    return;
-//                currentView->loadFile(path);
-//            });
-//        }
-//        if(menuID == MenuBar::SubMenuID::NewModel){
-//                 o.openModal([this](gui::FileDialog* d){
-//            auto path = d->getFileName();
-//            if(path.isNull())
-//                return;
-//            
-//            openFile(path);
-//
-//        });   
-//            return true;
-//        }
-//    }
-
-
-//   if(currentView == nullptr) //ostale akcije nemaju smisla ako nema ni jedan tab otvoren
-//        return true;
-
-
-
-//    if(action == MenuBar::ActionID::Export){
-//        auto path = new gui::SaveFileDialog(this, tr("ExporttoXML"), ".xml", tr("Export"), currentView->getName().c_str());
-//        path->openModal([currentView](gui::FileDialog* pDlg) {
-//            td::String path(pDlg->getFileName());
-//            if(!path.isNull()){
-//                currentView->exportToXML(path);
-//            }
-//        });
-//        return true;
-//    }
-
-
-  
     return false;
 }
 

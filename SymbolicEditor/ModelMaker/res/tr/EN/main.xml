@@ -9,7 +9,7 @@
 		<Res id="&lt;Ctrl&gt;," tr="&lt;Ctrl&gt;," />
 		<Res id="Cancel" tr="Cancel" />
 		<Res id="settings" tr="Settings..." />
-		<Res id="settingsTT" tr="Application settings"/>
+		<Res id="settingsTT" tr="Application settings" />
 		<Res id="RestartRequired" tr="Restart required" />
 		<Res id="RestartRequiredInfo" tr="To change application laungage a restart is required" />
 		<Res id="DoNoRestart" tr="Restart later" />
@@ -59,7 +59,7 @@
 		<Res id="colorsSettings" tr="Colors" />
 		<Res id="whiteColors" tr="White theme colors:" />
 		<Res id="log" tr="Log" />
-		<Res id="attributes" tr="Attributes"/>
+		<Res id="attributes" tr="Attributes" />
 		<Res id="constants" tr="Constants:" />
 		<Res id="functions" tr="Functions:" />
 		<Res id="attributes" tr="Attributes:" />
@@ -70,41 +70,32 @@
 		<Res id="importColor" tr="Imports:" />
 		<Res id="textColor" tr="Text:" />
 		<Res id="nrModel" tr="Nonlinear model" />
-		<Res id="wlsModel" tr="Weighted least squares"/>
-		<Res id="nrModelCmplx" tr="Nonlinear problem (model) in complex domain"/>
-		<Res id="wlsModelCmplx" tr="Weighted least squares in complex domain"/>
+		<Res id="wlsModel" tr="Weighted least squares" />
+		<Res id="nrModelCmplx" tr="Nonlinear problem (model) in complex domain" />
+		<Res id="wlsModelCmplx" tr="Weighted least squares in complex domain" />
 		<Res id="daeModel" tr="Differential-algebaric model" />
 		<Res id="gain" tr="Gain: " />
 		<Res id="gainTooltip" tr="Block input will be multiplied with this value" />
 		<Res id="monospaceNotFound" tr="MonoSpace font not found, this application will not work properly." />
-		<Res id="examples" tr="Examples:"/>
-		<Res id="pidRegulator" tr="PID regulator"/>
-
-		<Res id="newDocumentTB" tr="Novi"/>
-		<Res id="newDocumentTT" tr="Novi prazan dokument"/>
-
-		<Res id="newFromTemplate" tr="Template"/>
-		<Res id="newFromTemplateTT" tr="New document from template that comprises most important elements"/>
-
-		<Res id="openTB" tr="Otvori"/>
-		<Res id="openTT" tr="Otvori ranije kreiran model"/>
-
-		<Res id="saveTB" tr="Snimi"/>
-		<Res id="saveTT" tr="Snimi model"/>
-
-		<Res id="importTB" tr="Import"/>
-		<Res id="importTT" tr="Import model iz xml formata"/>
-
-		<Res id="exportTB" tr="Export"/>
-		<Res id="exportTT" tr="Eksportovanje modela u xml format"/>
-
-		<Res id="plotTBI" tr="Plot"/>
-		<Res id="plotTBITT" tr="Podešenja prikaza dijagrama"/>
-
-		<Res id="startTB" tr="Riješi"/>
-		<Res id="startTT" tr="Riješi problem (pokreni prcoduru proračuna)"/>
-		
-		<Res id="chbTBIcsAndLbls" tr="Show labels below icons on the main toolbar"/>
-		
+		<Res id="examples" tr="Examples:" />
+		<Res id="pidRegulator" tr="PID regulator" />
+		<Res id="newDocumentTB" tr="Novi" />
+		<Res id="newDocumentTT" tr="Novi prazan dokument" />
+		<Res id="newFromTemplate" tr="Template" />
+		<Res id="newFromTemplateTT" tr="New document from template that comprises most important elements" />
+		<Res id="openTB" tr="Otvori" />
+		<Res id="openTT" tr="Otvori ranije kreiran model" />
+		<Res id="saveTB" tr="Snimi" />
+		<Res id="saveTT" tr="Snimi model" />
+		<Res id="importTB" tr="Import" />
+		<Res id="importTT" tr="Import model iz xml formata" />
+		<Res id="exportTB" tr="Export" />
+		<Res id="exportTT" tr="Eksportovanje modela u xml format" />
+		<Res id="plotTBI" tr="Plot" />
+		<Res id="plotTBITT" tr="Podešenja prikaza dijagrama" />
+		<Res id="startTB" tr="Riješi" />
+		<Res id="startTT" tr="Riješi problem (pokreni prcoduru proračuna)" />
+		<Res id="chbTBIcsAndLbls" tr="Show labels below icons on the main toolbar" />
+		<Res id="openModelTF" tr="Open graphical model" />
 	</Translations>
 </DevRes>

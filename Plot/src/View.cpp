@@ -954,9 +954,9 @@ bool View::save(const td::String& path){
    auto oldSize = _size;
    auto newSize = gui::Size(_imageSaveSettings._width, _imageSaveSettings._height);
     if(_imageSaveSettings._mode == ImageSaveSettings::ImageSaveStyle::fixedHeight)
-        newSize.width = oldSize.width;
+        newSize.width = newSize.height * oldSize.width/oldSize.height; //keeping aspect ratio the same as window
     if(_imageSaveSettings._mode == ImageSaveSettings::ImageSaveStyle::fixedWidth)
-        newSize.height = oldSize.height;
+        newSize.height = newSize.width * oldSize.height / oldSize.width;
 
 
    gui::Rect r(gui::Point(0,0), newSize);
