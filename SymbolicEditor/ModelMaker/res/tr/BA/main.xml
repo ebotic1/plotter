@@ -104,5 +104,7 @@
 		<Res id="newNonlinearBlock" tr="Novi nelinearni blok" />
 		<Res id="newSumBlock" tr="Novi zbirni blok" />
 		<Res id="newTFBlock" tr="Novi prijenosni blok" />
+		<Res id="OpenTxtModel" tr="Otvori tekstualni model" />
+		<Res id="OpenTFModel" tr="Otvori grafički model" />
 	</Translations>
 </DevRes>

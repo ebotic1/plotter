@@ -104,5 +104,7 @@
 		<Res id="newNonlinearBlock" tr="New nonlinear block" />
 		<Res id="newSumBlock" tr="New sum block" />
 		<Res id="newTFBlock" tr="New TF block" />
+		<Res id="OpenTxtModel" tr="Open text model" />
+		<Res id="OpenTFModel" tr="Open graphical model" />
 	</Translations>
 </DevRes>
