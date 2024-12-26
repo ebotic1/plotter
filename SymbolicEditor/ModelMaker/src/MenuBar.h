@@ -12,13 +12,13 @@ class MenuBar : public gui::MenuBar {
 public:
     enum class SubMenuID : td::BYTE {None = 0, App, Model, Plot, NewExampleModel};
     
-    enum class ActionID : td::BYTE {None=0, New, OpenTextModel, OpenTFModel, Save, SaveAs, Simulate, Import, Export, Settings, EmptyModel, OpenFromFile, ODE, NR, WLS, NRCmplx, WLSCmplx, DAE, PlotFullScreen, PlotGrid, PlotLegend, PlotSave, PlotReset, PlotSettings};
+    enum class ActionID : td::BYTE {None=0, New, OpenTextModel, OpenTFModel, Save, SaveAs, Simulate, Import, Export, Settings, EmptyModel, EmptyModelTF, OpenFromFile, ODE, NR, WLS, NRCmplx, WLSCmplx, DAE, PlotFullScreen, PlotGrid, PlotLegend, PlotSave, PlotReset, PlotSettings};
 
 public:
 	MenuBar()
     : gui::MenuBar(3)
     , _appDropDown((td::BYTE) SubMenuID::App, tr("app"), 3)
-    , _modelDropDown((td::BYTE) SubMenuID::Model, tr("Model"), 13)
+    , _modelDropDown((td::BYTE) SubMenuID::Model, tr("Model"), 14)
     , _plotDropDown((td::BYTE) SubMenuID::Plot, tr("Plot"), 6)
 	{
 //        _txtOptions.toZero();
@@ -26,6 +26,7 @@ public:
 			auto &items = _modelDropDown.getItems();
             int i = 0;
             items[i++].initAsActionItem(tr("emptyModel"), (td::BYTE) ActionID::EmptyModel, "<Cmd>n");
+            items[i++].initAsActionItem(tr("emptyModelTF"), (td::BYTE) ActionID::EmptyModelTF);
             items[i].initAsSubMenu((td::BYTE)SubMenuID::NewExampleModel, tr("NewSimpleModel"), 10);
             {
                 auto &exampleItems = items[i].getItems();

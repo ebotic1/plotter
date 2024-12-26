@@ -3,6 +3,7 @@
 #include "blocks/sumBlock.h"
 #include "blocks/nlBlock.h"
 #include "blocks/ProductBlock.h"
+#include "blocks/outputBlock.h"
 #include "propertySwitcher.h"
 #include "view.h"
 #include <gui/Application.h>
@@ -122,8 +123,7 @@ inline void kanvas::onPrimaryButtonDblClick(const gui::InputDevice& inputDevice)
 
 
 inline bool kanvas::onZoom(const gui::InputDevice& inputDevice) {
-	auto s = inputDevice.getScale() > 1 ? 1.15 : 0.8695652173913043;
-	zoom(s);
+	zoom(inputDevice.getScale());
 
 	return true;
 }
@@ -276,6 +276,8 @@ bool kanvas::restoreState(const td::String& file, td::String& settingsString)
 				kopija[i] = NLBlock::restoreFromFile(in, this);
 			else if (ID == ProductBlock::getID())
 				kopija[i] = ProductBlock::restoreFromFile(in, this);
+			else if (ID == OutputBlock::getID())
+				kopija[i] = OutputBlock::restoreFromFile(in, this);
 			else
 				throw std::logic_error("unknown block");
 
@@ -429,16 +431,20 @@ inline bool kanvas::onActionItem(gui::ActionItemDescriptor& aiDesc) {
 			_blocks.push_back(new TFBlock(getModelPoint(lastMousePos), this));
 			return true;
 		}
-		if (aiDesc._actionItemID == 11) {
+		else if (aiDesc._actionItemID == 11) {
 			_blocks.push_back(new sumBlock(getModelPoint(lastMousePos), this, true));
 			return true;
 		}
-		if (aiDesc._actionItemID == 12) {
+		else if (aiDesc._actionItemID == 12) {
 			_blocks.push_back(new NLBlock(getModelPoint(lastMousePos), this));
 			return true;
 		}
-		if (aiDesc._actionItemID == 13) {
+		else if (aiDesc._actionItemID == 13) {
 			_blocks.push_back(new ProductBlock(getModelPoint(lastMousePos), this));
+			return true;
+		}
+		else if (aiDesc._actionItemID == 14) {
+			_blocks.push_back(new OutputBlock(getModelPoint(lastMousePos), this));
 			return true;
 		}
 	}

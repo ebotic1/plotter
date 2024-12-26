@@ -56,7 +56,7 @@ View::View(gui::Font *fontAxis, gui::Font *fontLegend, td::ColorID backgroundCol
 
     auto props = getAppProperties();
     setMargins(props->getValue<float>("@Plotter_margin0", _margins.marginLeft), props->getValue<float>("@Plotter_margin1", _margins.marginRight),\
-    props->getValue<float>("@Plotter_margin2", _margins.marginTop), props->getValue<float>("@Plotter_margin3", _margins.marginBottom));
+    props->getValue<float>("@Plotter_margin3", _margins.marginBottom), props->getValue<float>("@Plotter_margin2", _margins.marginTop));
 
     setAxisNameDistance(props->getValue<float>("@Plotter_AxisSpace0", _xAxisNameSeperation), props->getValue<float>("@Plotter_AxisSpace1", _yAxisNameSeperation));
 

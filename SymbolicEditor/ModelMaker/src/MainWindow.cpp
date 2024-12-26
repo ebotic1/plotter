@@ -144,6 +144,11 @@ bool MainWindow::onActionItem(gui::ActionItemDescriptor& aiDesc)
             case MenuBar::ActionID::EmptyModel:
                 addTab<TextEditorView>();
                 return true;
+
+            case MenuBar::ActionID::EmptyModelTF:
+                addTab<GraphicalEditorView>();
+                return true;
+
             case MenuBar::ActionID::OpenTextModel:
             {
                 gui::OpenFileDialog::show(this, tr("openModel"), "*.modl", MenuBar::ActionID::OpenTextModel, [this](gui::FileDialog* d){
@@ -361,6 +366,7 @@ bool MainWindow::onChangedSelection(gui::TabView* pNavigator)
     
     switch(docType)
     {
+        case DocumentType::ModelTFEditor:
         case DocumentType::ModelTxtEditor:
             _mainMenuBar.enableTxtOptions(true);
             _toolBar.enableTxtOptions(true);

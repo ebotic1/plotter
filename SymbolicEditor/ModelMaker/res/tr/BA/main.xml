@@ -97,5 +97,12 @@
 		<Res id="startTT" tr="Riješi problem (pokreni prcoduru proračuna)" />
 		<Res id="chbTBIcsAndLbls" tr="Prikaži labele ispod ikona na glavnoj alatnoj traci" />
 		<Res id="openModelTF" tr="Otvori grafički model" />
+		<Res id="emptyModelTF" tr="Prazan grafički model" />
+		<Res id="output" tr="Izlaz:" />
+		<Res id="newOutputBlock" tr="Novi izlazlni blok" />
+		<Res id="newGainBlock" tr="Novi blok pojačanja" />
+		<Res id="newNonlinearBlock" tr="Novi nelinearni blok" />
+		<Res id="newSumBlock" tr="Novi zbirni blok" />
+		<Res id="newTFBlock" tr="Novi prijenosni blok" />
 	</Translations>
 </DevRes>

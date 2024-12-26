@@ -72,7 +72,8 @@ void sumBlock::writeToModel(ModelNode& model, Nodes& nodes)
 		if (par.first != nullptr) {
 			if (!first) 
 				cmnd << " " << znak << " ";
-			cmnd << par.first->getOutputName(par.second);
+			td::String name = par.first->getOutputName(par.second);
+			cmnd << name.subStr(0, name.find("=") - 1);
 			first = false;
 		}
 

@@ -349,6 +349,9 @@ void squareBlockMI::updateSettingsView(BlockBase::settingsView* view)
 	pogled->currentBlock = this;
 	auto& poveznik = pogled->currentBlock;
 
+	while(pogled->inputs.size() > names.size())
+		pogled->inputs.pop_back();
+
 	td::String label;
 	for (int i = int(pogled->inputs.size()); i < names.size(); ++i) {
 		label.format("input %d name:", i);
@@ -406,3 +409,6 @@ void squareBlockMI::setInputName(const td::String& name, int pos)
 	names.at(pos) = name;
 }
 
+squareBlockNI::squareBlockNI()
+{
+}

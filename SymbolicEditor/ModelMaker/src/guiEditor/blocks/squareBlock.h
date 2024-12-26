@@ -185,3 +185,11 @@ public:
 	void saveToFile(arch::ArchiveOut& f) override;
 	void restoreFromFile(arch::ArchiveIn& f);
 };
+
+class squareBlockNI : virtual public BlockBase{
+	td::String name = "";
+public:
+	squareBlockNI();
+	int getInputCnt() const override { return 0; }
+	const td::String& getInputName(int pos) const override{ return name; }
+};

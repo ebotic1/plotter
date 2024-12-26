@@ -279,8 +279,6 @@ public:
 
 	void finalize(Status status) override
 	{
-        _results->show(_pDS);
-
 
 		cnt::StringBuilderSmall str;
 		td::String log;
@@ -293,6 +291,7 @@ public:
 		else {
 			std::chrono::duration<double> d = std::chrono::duration_cast<std::chrono::duration<double>>(std::chrono::steady_clock::now() - startTime);
 			str << "Simulation finished sucessfully in " << d.count() << " seconds.";
+			_results->show(_pDS);
 			str.getString(log);
 			logger->appendLog(log, LogType::Info);
 		}
@@ -386,7 +385,7 @@ public:
 				if constexpr (!isComplex)
                 {
 					if (funD.type == ModelSettings::FunctionDesc::Type::graph)
-						outFuncs.push_back(DataDraw::FunctionDesc(funD.name, solver->getParamsPtr() + paramIntX, nullptr, 1, funD.yAxis, ""));
+						outFuncs.push_back(DataDraw::FunctionDesc(funD.name, solver->getParamsPtr() + paramIntY, nullptr, 1, funD.yAxis, ""));
 					else
 						outDataSet.push_back(DataDraw::FunctionDesc(funD.name, nullptr, nullptr, 0, "", getCmplxString(solver->getParamsPtr()[paramIntY])));
 				}
@@ -398,20 +397,6 @@ public:
 				continue;
 			}
 
-			/*
-			if (itY == end && paramIntY >= 0 && funD.xAxis.cCompare("0") == 0) { // parametar u y
-				if constexpr (!isComplex) {
-					if (funD.type == ModelSettings::FunctionDesc::Type::graph)
-						outFuncs.push_back(DataDraw::FunctionDesc(funD.name, nullptr, solver->getParamsPtr() + paramIntY, 1, "", funD.yAxis));
-					else
-						outDataSet.push_back(DataDraw::FunctionDesc(funD.name, nullptr, solver->getParamsPtr() + paramIntY, 1, "", funD.yAxis));
-				}
-				else {
-					outDataSet.push_back(DataDraw::FunctionDesc(funD.name, nullptr, nullptr, 0, "", getCmplxString(solver->getParamsPtr()[paramIntY]))); 
-				}
-				continue;
-			}
-			*/
 
 			if (itY != end && funD.xAxis.cCompare("0") == 0) { // jedan niz
 

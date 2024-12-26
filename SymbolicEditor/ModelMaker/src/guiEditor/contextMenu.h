@@ -6,13 +6,14 @@ class contextMenuModel : public gui::ContextMenu{
 private:
 	gui::SubMenu sub;
 public:
-	contextMenuModel(): sub(100, "cm1", 4)
+	contextMenuModel(): sub(100, "cm1", 5)
 	{
 		auto& items = sub.getItems();
-		items[0].initAsActionItem("new tf block", 10);
-		items[1].initAsActionItem("new sum block", 11);
-		items[2].initAsActionItem("new nonlinear block", 12);
-		items[3].initAsActionItem("new gain block", 13);
+		items[0].initAsActionItem(tr("newTFBlock"), 10);
+		items[1].initAsActionItem(tr("newSumBlock"), 11);
+		items[2].initAsActionItem(tr("newNonlinearBlock"), 12);
+		items[3].initAsActionItem(tr("newGainBlock"), 13);
+		items[4].initAsActionItem(tr("newOutputBlock"), 14);
 
 		setItem(&sub);
 	}

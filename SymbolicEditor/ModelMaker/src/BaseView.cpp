@@ -98,7 +98,8 @@ void ViewForTab::init(BaseClass *simView, const td::String &defaultName, const t
 		bool success = simView->openFile(path, settingsStr);
 		if(success){
 			settings.loadFromString(settingsStr);
-			setPath(path);
+			if(!path.endsWith(".xml"))
+				setPath(path);
 		}
 	}
 
