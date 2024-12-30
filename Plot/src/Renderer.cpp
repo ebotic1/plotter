@@ -255,7 +255,7 @@ void Renderer::fitToWindow(){
 void Renderer::ZoomToWindow(const gui::Geometry& window){
     if (_funkcije.size() == 0)
         return;
-    if (window.size.width < 0.1 || window.size.height < 0.1) {
+    if (window.size.width < 0.001 || window.size.height < 0.001) {
         return;
     }
     if (drawingWindow.size.width < 1 || drawingWindow.size.height < 1)

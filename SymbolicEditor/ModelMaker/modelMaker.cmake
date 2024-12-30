@@ -7,6 +7,13 @@ file(GLOB MODELMAKER_INC_GUI ${MY_INC}/gui/*.h)
 file(GLOB MODELMAKER_INC_GUI_PLOT ${MY_INC}/gui/plot/*.h)
 file(GLOB MODELMAKER_INC_XML ${MY_INC}/xml/*.h)
 
+include(${WORK_ROOT}/DevEnv/natGUI.cmake)
+
+#include(${WORK_ROOT}/DevEnv/MatrixLib.cmake)
+include(${WORK_ROOT}/DevEnv/SymbComp.cmake)
+#include(${WORK_ROOT}/DevEnv/natPlot.cmake)
+include(../../Plot/natPlot.cmake)
+
 file(GLOB MODELMAKER_SRC_GUI  ${CMAKE_CURRENT_LIST_DIR}/src/guiEditor/*/*.cpp ${CMAKE_CURRENT_LIST_DIR}/src/guiEditor/*.cpp)
 file(GLOB MODELMAKER_SRC_GUI_INC  ${CMAKE_CURRENT_LIST_DIR}/src/guiEditor/*/*.h ${CMAKE_CURRENT_LIST_DIR}/src/guiEditor/*.h)
 
@@ -46,18 +53,19 @@ target_link_libraries(${MODELMAKER_NAME}
 					debug ${MU_LIB_DEBUG}
 					debug ${NATGUI_LIB_DEBUG} 
 					debug ${SYMBCOMP_LIB_DEBUG}
-					debug ${NATPLOT_LIB_DEBUG}
+					#debug ${NATPLOT_LIB_DEBUG}
+					debug ${NATPLOT_NAME}
 					debug ${DP_LIB_DEBUG}
 					optimized ${NATGUI_LIB_RELEASE}
 					optimized ${SYMBCOMP_LIB_RELEASE}
 					optimized ${MU_LIB_RELEASE}
-					optimized ${NATPLOT_LIB_RELEASE}
+					#optimized ${NATPLOT_LIB_RELEASE}
+					optimized ${NATPLOT_NAME}
 					optimized ${DP_LIB_RELEASE}
 					${EqToXML_LIB_NAME})
 
-
 setTargetPropertiesForGUIApp(${MODELMAKER_NAME} ${MODELMAKER_PLIST})
-setAppIcon(${MODELMAKER_NAME} ${CMAKE_CURRENT_LIST_DIR})
+setAppIcon(${MODELMAKER_NAME} ${CMAKE_CURRENT_LIST_DIR}) 
 setIDEPropertiesForGUIExecutable(${MODELMAKER_NAME} ${CMAKE_CURRENT_LIST_DIR})
 setIDEPropertiesForExecutable(${MODELMAKER_NAME})
 

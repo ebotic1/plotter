@@ -9,6 +9,7 @@
 #include "DataDrawer.h"
 #include <td/Timer.h>
 #include <dp/IDatabase.h>
+#include <complex>
 
 using LogType = LogView::LogType;
 
@@ -27,9 +28,10 @@ class SolutionBuffer : public sc::ISolutionBuffer
 	
 
 	const td::String& modelName;
-	std::vector<std::pair<T*, td::String>> _valuePtrAndName;
+	std::vector<std::pair<double*, td::String>> _valuePtrAndName;
 	int _indexOfTimeParameter;
     bool _timeDomain = false;
+	double _precision;
 
 	inline td::String addCmplxTag(const td::String& name, const bool& isComplex) {
 		if (isComplex)
@@ -45,6 +47,7 @@ class SolutionBuffer : public sc::ISolutionBuffer
 		str.getString(result);
 		return result;
 	}
+
 
 public:
     SolutionBuffer(const td::String &modelName, const std::shared_ptr<LogView> logger, std::shared_ptr<Results> resultTable, \
@@ -72,18 +75,25 @@ public:
         solver->getOutSymbols(outSymbols);
 	
 
-        _indexOfTimeParameter = solver->getParamIndex("t");
-        if (_indexOfTimeParameter >= 0)
+        
+        if (_timeDomain)
+		_indexOfTimeParameter = solver->getParamIndex("t");
+		if(_indexOfTimeParameter >= 0 && _timeDomain){
 			if constexpr(isComplex)
-				_valuePtrAndName.emplace_back(&std::real(*(solver->getParamsPtr() + _indexOfTimeParameter)), "t");
+				_valuePtrAndName.emplace_back(&(reinterpret_cast<T::value_type(&)[2]>(*(solver->getParamsPtr() + _indexOfTimeParameter))[0]), "t");
 			else
 				_valuePtrAndName.emplace_back(solver->getParamsPtr() + _indexOfTimeParameter, "t");
+		}
+
+		if (!_timeDomain){
+			//_valuePtrAndName.emplace_back(&solver->getSolvedPrecision(), "eps"); ovo bi trebalo da bude
+			_valuePtrAndName.emplace_back(&_precision, "eps");
+		}
 
 		for (const auto& index : outSymbols){
 			if constexpr(isComplex){
-				std::complex<double> comp;
-				_valuePtrAndName.emplace_back(&std::real(comp), addCmplxTag(solver->getSymbolName(index), false));
-				_valuePtrAndName.emplace_back(&std::imag(*(_pSymbolValues + index)), addCmplxTag(solver->getSymbolName(index), true));
+				_valuePtrAndName.emplace_back(reinterpret_cast<T::value_type(&)[2]>(*(_pSymbolValues + index)), addCmplxTag(solver->getSymbolName(index), false));
+				_valuePtrAndName.emplace_back(reinterpret_cast<T::value_type(&)[2]>(*(_pSymbolValues + index)) + 1, addCmplxTag(solver->getSymbolName(index), true));
 			}
 			else
 				_valuePtrAndName.emplace_back(_pSymbolValues + index, solver->getSymbolName(index));
@@ -114,19 +124,16 @@ public:
             //create DataSet
             _pDS = dp::createConnectionlessDataSet(dp::IDataSet::Size::Medium);
             size_t nCols = columnCnt;
-            if (!_timeDomain)
-                nCols++;
-            dp::DSColumns cols(_pDS->allocBindColumns(nCols));
-            if (!_timeDomain)
-                cols << "eps" << td::real8;
             
+			dp::DSColumns cols(_pDS->allocBindColumns(nCols));
+
 			for(int i = 0; i<columnCnt; ++i)
 				cols << _valuePtrAndName[i].second.c_str() << td::real8;
 
             _pDS->execute();
             
             
-            if (_timeDomain)
+            if (_timeDomain)//????
             {
                 td::LUINT8 lVal(1);
                 td::Variant userInfo(lVal);
@@ -149,36 +156,13 @@ public:
 	{
 		
 		auto& row = _pDS->getEmptyRow();
-        int shift = 0;
-        
-        if (!_timeDomain)
-        {
-            double eps = solver->getSolvedPrecision();
-            row[0] = eps;
-            shift = 1;
-        }
+		
+		if(!_timeDomain)
+			_precision = solver->getSolvedPrecision();
 
-		if constexpr(isComplex)
-        {
-			int i = 0;
-			if(_indexOfTimeParameter > 0)
-            {
-				row[i+shift] = _valuePtrAndName[i].first->real();
-				++i;
-			}
-
-			for(; i<_valuePtrAndName.size(); ++i)
-            {
-				row[i+shift] = _valuePtrAndName[i].first->real();
-				++i;
-				row[i+shift] = _valuePtrAndName[i].first->imag();
-			}
-				
-		}
-		else{
-			for(int i = 0; i<_valuePtrAndName.size(); ++i)
-				row[i+shift] = *(_valuePtrAndName[i].first);
-		}
+		for(int i = 0; i<_valuePtrAndName.size(); ++i)
+			row[i] = *(_valuePtrAndName[i].first);
+		
 		_pDS->push_back();
 		
 	}
@@ -214,8 +198,15 @@ public:
 		_pDS->getFPValues(names, data);
 
 		std::map<td::String, double*> NameAndDataPtr; //za lakse pretrazivanje. Moglo bi se izbaciti
-		for(int i = 0; i<_valuePtrAndName.size(); ++i)
-			NameAndDataPtr[_valuePtrAndName[i].second] = &(data[i][0]);
+		for(int i = 0; i<_valuePtrAndName.size(); ++i){
+			if(_valuePtrAndName[i].second.cCompare("eps") == 0)
+			{
+				//sve varijable koje korisnik navede dodaje im se .real ili .imag tag. Sa obzirom da u tabeli eps se zove eps a ne eps.real onda se mora dodati ovdje tag
+				NameAndDataPtr[addCmplxTag(_valuePtrAndName[i].second, false)] = &(data[i][0]);
+			}
+			else
+				NameAndDataPtr[_valuePtrAndName[i].second] = &(data[i][0]);
+		}
 
 		size_t size = (data.size() > 0) ? data[0].size() : 0;
 
