@@ -222,12 +222,12 @@ public:
             }
             else
             {
-				int i = 0;
-				for(; i<columnCnt; ++i){
-					if(_valuePtrAndName[i].second != _pDS->getColName(i))
+				for(int i = 0; i<columnCnt; ++i){
+					if(_valuePtrAndName[i].second != _pDS->getColName(i)){
+						_pDS = nullptr;
 						break;
+					}
 				}
-				_pDS = (i == columnCnt) ? _pDS : nullptr;
 			}
 		}
                          
@@ -257,7 +257,7 @@ public:
 
 		if constexpr(isComplex){
 			int i = 0;
-			if(_indexOfTimeParameter > 0){ //ovo je poprilicno lose rijesenje ali std::complex nije namjenjen za ove svrhe 
+			if(_indexOfTimeParameter > 0){ //ovo je poprilicno lose rijesenje ali std::complex nije namijenjen za ove svrhe 
 				row[i] = _valuePtrAndName[i].first->real();
 				++i;
 			}
