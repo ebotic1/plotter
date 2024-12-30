@@ -96,12 +96,12 @@ public:
             }
             else
             {
-				int i = 0;
-				for(; i<columnCnt; ++i){
-					if(_valuePtrAndName[i].second != _pDS->getColName(i))
+				for(int i = 0; i<columnCnt; ++i){
+					if(_valuePtrAndName[i].second != _pDS->getColName(i)){
+						_pDS = nullptr;
 						break;
+					}
 				}
-				_pDS = (i == columnCnt) ? _pDS : nullptr;
 			}
 		}
                          
