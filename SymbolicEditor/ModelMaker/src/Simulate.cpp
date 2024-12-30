@@ -199,7 +199,7 @@ public:
 
 		std::map<td::String, double*> NameAndDataPtr; //za lakse pretrazivanje. Moglo bi se izbaciti
 		for(int i = 0; i<_valuePtrAndName.size(); ++i){
-			if(_valuePtrAndName[i].second.cCompare("eps") == 0)
+			if(isComplex && _valuePtrAndName[i].second.cCompare("eps") == 0)
 			{
 				//sve varijable koje korisnik navede dodaje im se .real ili .imag tag. Sa obzirom da u tabeli eps se zove eps a ne eps.real onda se mora dodati ovdje tag
 				NameAndDataPtr[addCmplxTag(_valuePtrAndName[i].second, false)] = &(data[i][0]);
@@ -454,7 +454,7 @@ int MainWindow::simulate(ViewForTab *tab)
 
 		bool useAutoFuncs = false;
 		std::vector<ModelSettings::FunctionDesc> autoFuncs;
-		int size = (equationType == EquationTypes::NR || equationType == EquationTypes::WLS) ? 1 : 1 + std::abs(startTime - endTime) / stepTime;
+		//int size = (equationType == EquationTypes::NR || equationType == EquationTypes::WLS) ? 1 : 1 + std::abs(startTime - endTime) / stepTime;
 
 		if (funcs.empty() && initSucess) {
 			useAutoFuncs = true;
@@ -464,12 +464,17 @@ int MainWindow::simulate(ViewForTab *tab)
 			int timeIndex = pSolver->getParamIndex("t");
 			
 			if (timeIndex < 0) 
-				for (const auto& symIndex : symbs)
-					autoFuncs.push_back(ModelSettings::FunctionDesc(ModelSettings::FunctionDesc::Type::points, pSolver->getSymbolName(symIndex), pSolver->getSymbolName(symIndex), "0"));
+				for (const auto& symIndex : symbs){
+					//autoFuncs.push_back(ModelSettings::FunctionDesc(ModelSettings::FunctionDesc::Type::graph, pSolver->getSymbolName(symIndex), pSolver->getSymbolName(symIndex), "eps"));
+					if(autoFuncs.size() >= 16)
+						break;
+				}
 			else 
-				for (const auto& symIndex : symbs)
+				for (const auto& symIndex : symbs){
 					autoFuncs.push_back(ModelSettings::FunctionDesc(ModelSettings::FunctionDesc::Type::graph, pSolver->getSymbolName(symIndex), pSolver->getSymbolName(symIndex), "t"));
-
+					if(autoFuncs.size() >= 16)
+						break;
+				}
 			if (autoFuncs.empty())
 				logView->appendLog("No out variables found. You must add 'out=true' attribute to a single variable or the variable declaration tag for them to be visible to the plotter", LogType::Warning);
 		}
