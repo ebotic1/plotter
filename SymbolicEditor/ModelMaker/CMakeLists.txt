@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.18)
 set(SOLUTION_NAME modelMaker) #Unijeti naziv solution-a
 
 
-
+set(CMAKE_CXX_STANDARD 20)
 #BEGIN dio koji ide u sve solutions
 project(${SOLUTION_NAME})
 set(SOURCE_ROOT ${CMAKE_CURRENT_LIST_DIR})

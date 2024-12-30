@@ -9,6 +9,8 @@ ToDo:
 Greške:
 1. Ne učitava model PF_PV_My3.xml
 2. Problem sa Limits
+3. Ne rjesava case9 i IEEE9 (IDz)
+4. Ne uzima u obzir RndGens i Stats (Emir)
 
 Poboljsanja:
 1. Kada se javi greška i ispiše se linija u logu, nemoguće naći gdje se ta linija nalazi.

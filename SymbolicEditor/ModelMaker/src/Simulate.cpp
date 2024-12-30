@@ -74,12 +74,16 @@ public:
 
         _indexOfTimeParameter = solver->getParamIndex("t");
         if (_indexOfTimeParameter >= 0)
-			_valuePtrAndName.emplace_back(solver->getParamsPtr() + _indexOfTimeParameter, "t");
+			if constexpr(isComplex)
+				_valuePtrAndName.emplace_back(&std::real(*(solver->getParamsPtr() + _indexOfTimeParameter)), "t");
+			else
+				_valuePtrAndName.emplace_back(solver->getParamsPtr() + _indexOfTimeParameter, "t");
 
 		for (const auto& index : outSymbols){
 			if constexpr(isComplex){
-				_valuePtrAndName.emplace_back((_pSymbolValues + index), addCmplxTag(solver->getSymbolName(index), false));
-				_valuePtrAndName.emplace_back((_pSymbolValues + index), addCmplxTag(solver->getSymbolName(index), true));
+				std::complex<double> comp;
+				_valuePtrAndName.emplace_back(&std::real(comp), addCmplxTag(solver->getSymbolName(index), false));
+				_valuePtrAndName.emplace_back(&std::imag(*(_pSymbolValues + index)), addCmplxTag(solver->getSymbolName(index), true));
 			}
 			else
 				_valuePtrAndName.emplace_back(_pSymbolValues + index, solver->getSymbolName(index));
@@ -158,7 +162,7 @@ public:
         {
 			int i = 0;
 			if(_indexOfTimeParameter > 0)
-            { //ovo je poprilicno lose rijesenje ali std::complex nije namjenjen za ove svrhe
+            {
 				row[i+shift] = _valuePtrAndName[i].first->real();
 				++i;
 			}
