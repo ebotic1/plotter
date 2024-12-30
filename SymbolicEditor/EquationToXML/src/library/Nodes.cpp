@@ -14,7 +14,7 @@
 #define IMPLICIT_MULTIPLY false
 
 
-#if defined(MU_WINDOWS) || defined(MU_MACOS)
+// #if defined(MU_WINDOWS) || defined(MU_MACOS)
 	template <size_t N>
 	struct ConstExprString {
 		char data[N];
@@ -27,10 +27,10 @@
 			return data;
 		}
 	};
-#else
-template <std::size_t N>
-using ConstExprString = BaseNode::ConstExprString<N>;
-#endif //MU_MACOS and MU_WINDOWS
+// #else
+// template <std::size_t N>
+// using ConstExprString = BaseNode::ConstExprString<N>;
+// #endif //MU_MACOS and MU_WINDOWS
 
 
 static bool beginsWith(const char* string, const char *what) {

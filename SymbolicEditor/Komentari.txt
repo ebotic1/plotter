@@ -1,4 +1,18 @@
-#include "Results.h"
+IDz promjene:
+SettingsView.h (za restart aplikacije na macos) kompletan fajl
+
+Simulate.cpp (uraditi merge):
+Linija 422:
+
+#ifdef USE_SCROLLVIEW_TABLE
+		nameAndType = modelName;
+		nameAndType += "-table";
+		GlobalEvents::getMainWindowPtr()->getDataDrawer()->addData(nameAndType, outDataSet, DataDraw::Type::Table);
+#endif
+
+
+Results.cpp
+Linija 3 (konstruktor):
 
 Results::Results()
 : _layout(1)
@@ -8,16 +22,7 @@ Results::Results()
 	setLayout(&_layout);
 }
 
-dp::IDataSet* Results::getDataSet()
-{
-    return _table.getDataSet();
-}
-
-//void Results::refresh()
-//{
-//    _table.reload();
-//    _table.selectRow(0, true);
-//}
+Linija 22:
 
 void Results::show(dp::IDataSet* pDS)
 {
@@ -40,3 +45,15 @@ void Results::show(dp::IDataSet* pDS)
     }
     
 }
+
+Greške:
+1. Ne rjesava case9 i IEEE9 (IDz)
+2. Ne uzima u obzir RndGens i Stats (Emir)
+
+Poboljsanja:
+1. Kada se javi greška i ispiše se linija u logu, nemoguće naći gdje se ta linija nalazi. 
+	- Dodati status bar koji će pokazivati trenutnu liniju i kolonu
+	- Dodati opciju GoTo Line
+	- Dodati mogućnost da se klikom na log sa linikom skoči na liniju u editoru
+
+2. 

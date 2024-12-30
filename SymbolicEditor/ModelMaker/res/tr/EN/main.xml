@@ -13,7 +13,7 @@
 		<Res id="RestartRequired" tr="Restart required" />
 		<Res id="RestartRequiredInfo" tr="To change application laungage a restart is required" />
 		<Res id="DoNoRestart" tr="Restart later" />
-		<Res id="Restart" tr="Kasnije" />
+		<Res id="Restart" tr="Restart" />
 		<Res id="settingsShort" tr="Settings" />
 		<Res id="startingExplanation" tr="To open a new tab press on the menu icon in the top-left corner and press &quot;New window&quot; or choose on of the following options:" />
 		<Res id="graphicalEditorLabel" tr="Graphical model editor" />

@@ -42,6 +42,31 @@ class SettingsView: public gui::View
     bool embededCurrent;
 
     double width = 270;
+    
+    bool _restartRequired = false;
+    
+protected:
+    bool onClick(gui::Dialog* pDlg, td::UINT4 dlgID) override
+    {
+        if(fontCombo.getSelectedIndex() >= 0)
+            GlobalEvents::settingsVars.font = fontCombo.getSelectedText();
+      
+
+        GlobalEvents::settingsVars.saveValues();
+        
+        int selectedLang = langCombo.getSelectedIndex();
+        if(selectedLang != currentLangIndex){
+            props->setKeyValue("Laungage", langs[selectedLang].getExtension());
+            _restartRequired = true;
+        }
+
+        if(_chBoxEmbed.getValue() != embededCurrent){
+
+            _restartRequired = true;
+        }
+        
+        return true;
+    }
 
 public:
 
@@ -163,32 +188,19 @@ public:
         });
     }
 
-    ~SettingsView(){
-      
-        if(fontCombo.getSelectedIndex() >= 0)
-            GlobalEvents::settingsVars.font = fontCombo.getSelectedText();
-      
-
-        GlobalEvents::settingsVars.saveValues();
-        bool restartRequired = false;
-        int selectedLang = langCombo.getSelectedIndex();
-        if(selectedLang != currentLangIndex){
-            props->setKeyValue("Laungage", langs[selectedLang].getExtension());
-            restartRequired = true;
-        }
-
-        if(_chBoxEmbed.getValue() != embededCurrent){
-
-            restartRequired = true;
-        }
-
-        if(restartRequired)
-            mainWindow->showYesNoQuestionAsync(tr("RestartRequired"), tr("RestartRequiredInfo"), tr("Restart"), tr("DoNoRestart"), [this] (gui::Alert::Answer answer) {
-            if (answer == gui::Alert::Answer::Yes)
-            {
-                getApplication()->restart();
-            }
+    ~SettingsView()
+    {
+        if(_restartRequired)
+        {
+//            gui::Application* pApp = gui::getApplication();
+//            gui::Window* pMainWnd = pApp->getInitialWindow();
+            gui::Alert::showYesNoQuestion(tr("RestartRequired"), tr("RestartRequiredInfo"), tr("Restart"), tr("DoNoRestart"), [this] (gui::Alert::Answer answer) {
+                if (answer == gui::Alert::Answer::Yes)
+                {
+                    getApplication()->restart();
+                }
             });
+        }
     }
     
     void setMainTB(gui::ToolBar* pTB)

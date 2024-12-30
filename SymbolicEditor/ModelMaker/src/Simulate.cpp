@@ -10,139 +10,6 @@
 #include <td/Timer.h>
 #include <dp/IDatabase.h>
 
-/*
-//double NR solver (for NL and WLS)
-inline int solveNR(sc::IDblSolver* pSolver, const td::String& modelStr)
-{
-    if (!pSolver->init(modelStr, sc::IDblSolver::SourceType::Memory))
-    {
-        std::cout << "Error! Solver Init FAILED" << std::endl;
-        std::cout << pSolver->getLastErrorStr() << std::endl;
-        return -10;
-    }
-    
-    auto solStatus = pSolver->solve();
-    if (solStatus != sc::Solution::OK)
-    {
-        std::cout << "ERROR! Cannot solve the problem" << std::endl;
-        std::cout << "SolutionStatus=" << pSolver->getSolutionStatusStr() << std::endl;
-        return -11;
-    }
-    
-    std::cout << "Problem solved in "<< pSolver->getIterationsNo() << " iterations. Precision = " << pSolver->getSolvedPrecision() << std::endl;
-    
-    
-    int nVar = pSolver->getNumberVariables();
-    int nPar = pSolver->getNumberParameters();
-    std::cout << "Problem solved in "<< pSolver->getIterationsNo() << " iterations. Precision = " << pSolver->getSolvedPrecision() << std::endl;
-
-    std::cout << "No of Variables: " << nVar << std::endl << "---------------------------" << std::endl;
-    std::cout << "SOLUTION_DATA" << std::endl << "---------------------------" << std::endl;
-
-    double* pVar = pSolver->getVariablesPtr();
-    
-    for (int i=0; i< nVar; i++, pVar++)
-    {
-        std::cout << i+1 << ". " << pSolver->getVariableName(i) <<"=" << *pVar << std::endl;
-    }
-    return 0;
-}
-
-
-//complex NR solver (for NL and WLS)
-inline int solveNR(sc::ICmplxSolver* pSolver, const td::String& modelStr)
-{
-    if (!pSolver->init(modelStr, sc::ICmplxSolver::SourceType::Memory))
-    {
-        std::cout << "Error! Solver Init FAILED" << std::endl;
-        std::cout << pSolver->getLastErrorStr() << std::endl;
-        return -10;
-    }
-    
-    auto solStatus = pSolver->solve();
-    if (solStatus != sc::Solution::OK)
-    {
-        std::cout << "ERROR! Cannot solve the problem" << std::endl;
-        std::cout << "SolutionStatus=" << pSolver->getSolutionStatusStr() << std::endl;
-        return -11;
-    }
-    
-    std::cout << "Problem solved in "<< pSolver->getIterationsNo() << " iterations. Precision = " << pSolver->getSolvedPrecision() << std::endl;
-    
-    
-    int nVar = pSolver->getNumberVariables();
-    int nPar = pSolver->getNumberParameters();
-    std::cout << "Problem solved in "<< pSolver->getIterationsNo() << " iterations. Precision = " << pSolver->getSolvedPrecision() << std::endl;
-
-    std::cout << "No of Variables: " << nVar << std::endl << "---------------------------" << std::endl;
-    std::cout << "SOLUTION_DATA" << std::endl << "---------------------------" << std::endl;
-
-    td::cmplx* pVar = pSolver->getVariablesPtr();
-    
-    for (int i=0; i< nVar; i++, pVar++)
-    {
-        std::cout << i+1 << ". " << pSolver->getVariableName(i) <<"=" << *pVar << std::endl;
-    }
-    return 0;
-}
-
-
-
-#ifdef MU_DEBUG
-#define TEST_SIMULATION
-
-#ifdef TEST_SIMULATION
-fo::fs::path getRealPath()
-{
-    fo::fs::path homePath;
-    mu::getHomePath(homePath);
-    fo::fs::path toRet(homePath / "other_bin/TestData/SymbComp/real");
-    return toRet;
-}
-
-fo::fs::path getCmplxPath()
-{
-    fo::fs::path homePath;
-    mu::getHomePath(homePath);
-    fo::fs::path toRet(homePath / "other_bin/TestData/SymbComp/cmplx");
-    return toRet;
-}
-
-td::String getRealName(const char* fn)
-{
-    fo::fs::path fnPath(getRealPath() / fn);
-    td::String toRet = fnPath.string();
-    return toRet;
-}
-
-td::String getCmplxName(const char* fn)
-{
-    fo::fs::path fnPath(getCmplxPath() / fn);
-    td::String toRet = fnPath.string();
-    return toRet;
-}
-
-td::String getRealXMLData(const char* fn)
-{
-    td::String fullName = getRealName(fn);
-    td::String strContent;
-    fo::loadBinaryFileAtOnce(fullName, strContent);
-    return strContent;
-}
-
-td::String getCmplxXMLData(const char* fn)
-{
-    td::String fullName = getCmplxName(fn);
-    td::String strContent;
-    fo::loadBinaryFileAtOnce(fullName, strContent);
-    return strContent;
-}
-
-#endif //TEST_SIMULATION
-#endif //MU_DEBUG
-
-*/
-
 using LogType = LogView::LogType;
 
 template <template <typename> class SolverTemplate, typename T>
@@ -162,6 +29,7 @@ class SolutionBuffer : public sc::ISolutionBuffer
 	const td::String& modelName;
 	std::vector<std::pair<T*, td::String>> _valuePtrAndName;
 	int _indexOfTimeParameter;
+    bool _timeDomain = false;
 
 	inline td::String addCmplxTag(const td::String& name, const bool& isComplex) {
 		if (isComplex)
@@ -191,6 +59,12 @@ public:
         
         if(!initSucess)
             return;
+        
+        auto iTime = solver->getITime();
+        if (iTime)
+            _timeDomain = true;
+        else
+            _timeDomain = false;
         
         T* _pSymbolValues = solver->getSymbolValuesPtr();
         
@@ -222,12 +96,12 @@ public:
             }
             else
             {
-				for(int i = 0; i<columnCnt; ++i){
-					if(_valuePtrAndName[i].second != _pDS->getColName(i)){
-						_pDS = nullptr;
+				int i = 0;
+				for(; i<columnCnt; ++i){
+					if(_valuePtrAndName[i].second != _pDS->getColName(i))
 						break;
-					}
 				}
+				_pDS = (i == columnCnt) ? _pDS : nullptr;
 			}
 		}
                          
@@ -235,43 +109,71 @@ public:
         {
             //create DataSet
             _pDS = dp::createConnectionlessDataSet(dp::IDataSet::Size::Medium);
-            dp::DSColumns cols(_pDS->allocBindColumns(columnCnt));
+            size_t nCols = columnCnt;
+            if (!_timeDomain)
+                nCols++;
+            dp::DSColumns cols(_pDS->allocBindColumns(nCols));
+            if (!_timeDomain)
+                cols << "eps" << td::real8;
             
 			for(int i = 0; i<columnCnt; ++i)
 				cols << _valuePtrAndName[i].second.c_str() << td::real8;
 
             _pDS->execute();
+            
+            
+            if (_timeDomain)
+            {
+                td::LUINT8 lVal(1);
+                td::Variant userInfo(lVal);
+                _pDS->setUserInfo(userInfo);
+            }
+            else
+            {
+                td::LUINT8 lVal(0);
+                td::Variant userInfo(lVal);
+                _pDS->setUserInfo(userInfo);
+            }
         }
         else
         {
             _pDS->removeAll();
         }
-        
-
 	}
 
 	void put() override
 	{
 		
 		auto& row = _pDS->getEmptyRow();
+        int shift = 0;
+        
+        if (!_timeDomain)
+        {
+            double eps = solver->getSolvedPrecision();
+            row[0] = eps;
+            shift = 1;
+        }
 
-		if constexpr(isComplex){
+		if constexpr(isComplex)
+        {
 			int i = 0;
-			if(_indexOfTimeParameter > 0){ //ovo je poprilicno lose rijesenje ali std::complex nije namijenjen za ove svrhe 
-				row[i] = _valuePtrAndName[i].first->real();
+			if(_indexOfTimeParameter > 0)
+            { //ovo je poprilicno lose rijesenje ali std::complex nije namjenjen za ove svrhe
+				row[i+shift] = _valuePtrAndName[i].first->real();
 				++i;
 			}
 
-			for(; i<_valuePtrAndName.size(); ++i){
-				row[i] = _valuePtrAndName[i].first->real();
+			for(; i<_valuePtrAndName.size(); ++i)
+            {
+				row[i+shift] = _valuePtrAndName[i].first->real();
 				++i;
-				row[i] = _valuePtrAndName[i].first->imag();
+				row[i+shift] = _valuePtrAndName[i].first->imag();
 			}
 				
 		}
 		else{
 			for(int i = 0; i<_valuePtrAndName.size(); ++i)
-				row[i] = *(_valuePtrAndName[i].first);
+				row[i+shift] = *(_valuePtrAndName[i].first);
 		}
 		_pDS->push_back();
 		
@@ -286,7 +188,8 @@ public:
 			str << "Simulation stopped with error: " << solver->getLastErrorStr();
 			str.getString(log);
 			logger->appendLog(log, LogType::Error);
-			return;
+            _results->show(_pDS); //show results in any case
+			//return;
 		}
 		else {
 			std::chrono::duration<double> d = std::chrono::duration_cast<std::chrono::duration<double>>(std::chrono::steady_clock::now() - startTime);
@@ -334,8 +237,6 @@ public:
 				itX = NameAndDataPtr.find(xAxis);
 				itY = NameAndDataPtr.find(yAxis);
 			}
-
-
 
 			paramIntX = (itX == end) ? solver->getParamIndex(funD.xAxis.c_str()) : -1;
 			paramIntY = (itY == end) ? solver->getParamIndex(funD.yAxis.c_str()) : -1;
@@ -419,10 +320,11 @@ public:
 		nameAndType += "-graph";
 		GlobalEvents::getMainWindowPtr()->getDataDrawer()->addData(nameAndType, outFuncs, DataDraw::Type::Graph);
 
-
+#ifdef USE_SCROLLVIEW_TABLE
 		nameAndType = modelName;
 		nameAndType += "-table";
 		GlobalEvents::getMainWindowPtr()->getDataDrawer()->addData(nameAndType, outDataSet, DataDraw::Type::Table);
+#endif
 
 	
 	}
@@ -477,7 +379,6 @@ int MainWindow::simulate(ViewForTab *tab)
 		}
 	}
 
-	
 
 	double startTime, stepTime, endTime;
 	unsigned int maxIter;
@@ -511,6 +412,7 @@ int MainWindow::simulate(ViewForTab *tab)
 			switch (equationType) {
 			case EquationTypes::NR:
                 pSolver = sc::createDblNRSolver(maxIter);
+                pSolver->setReportResultsPerNRIteration(sc::ReportRate::InitialAndIterationsAndFinal);
 				break;
 			case EquationTypes::ODE:
 				pSolver = sc::createDblODESolver();
@@ -520,6 +422,7 @@ int MainWindow::simulate(ViewForTab *tab)
 				break;
 			case EquationTypes::WLS:
                 pSolver = sc::createDblWLSSolver(maxIter);
+                pSolver->setReportResultsPerNRIteration(sc::ReportRate::InitialAndIterationsAndFinal);
 				break;
 			}
             initSucess = pSolver->init(modelStr, sc::IDblSolver::SourceType::Memory);
@@ -530,6 +433,7 @@ int MainWindow::simulate(ViewForTab *tab)
 			switch (equationType){
             case EquationTypes::NR:
                 pSolver = sc::createCmplxNRSolver(maxIter);
+                pSolver->setReportResultsPerNRIteration(sc::ReportRate::InitialAndIterationsAndFinal);
 				break;
 			case EquationTypes::ODE:
                     logView->appendLog("Complex ODE solver will be implemented in the future", LogType::Error);
@@ -542,6 +446,7 @@ int MainWindow::simulate(ViewForTab *tab)
                 return -1;
 			case EquationTypes::WLS:
                 pSolver = sc::createCmplxWLSSolver(maxIter);
+                pSolver->setReportResultsPerNRIteration(sc::ReportRate::InitialAndIterationsAndFinal);
 				break;
 			}
 			initSucess = pSolver->init(modelStr, sc::ICmplxSolver::SourceType::Memory);
@@ -591,10 +496,47 @@ int MainWindow::simulate(ViewForTab *tab)
             }
 			if(equationType == EquationTypes::NR || equationType == EquationTypes::WLS)
             {
-				pSolver->solve();
-				buffer.put();
-				err = pSolver->getLastErrorStr();
-				buffer.finalize(err.isNull() ? sc::ISolutionBuffer::Status::SuccessfullyCompleted : sc::ISolutionBuffer::Status::Error);
+                pSolver->setConsumer(&buffer);
+				auto sol = pSolver->solve();
+                
+                switch (sol)
+                {
+                    case sc::Solution::OK:
+                    {
+                        int noOfIters = pSolver->getIterationsNo();
+                        double eps = pSolver->getSolvedPrecision();
+                        strTmp.format("Solver in %d iterations with precision eps %g", noOfIters, eps);
+                        logView->appendLog(strTmp, LogType::Info);
+                    }
+                        break;
+                    case sc::Solution::FactorizationError:
+                        logView->appendLog("Factorization error!", LogType::Error);
+                        break;
+                    case sc::Solution::SolutionError:
+                        logView->appendLog("Solution error!", LogType::Error);
+                        break;
+                    case sc::Solution::Oscillation:
+                        logView->appendLog("Osclillation detected!", LogType::Error);
+                        break;
+                    case sc::Solution::MaximumIteration:
+                        logView->appendLog("MaximumIteration error!", LogType::Error);
+                        break;
+                    case sc::Solution::SubmodelFailed:
+                        logView->appendLog("Solving Submodel Failed!", LogType::Error);
+                        break;
+                }
+                
+                if (sol != sc::Solution::OK)
+                {
+                    
+                    err = pSolver->getLastErrorStr();
+                    if (err.length() > 0)
+                    {
+                        logView->appendLog(err, LogType::Error);
+                    }
+                }
+
+//				buffer.finalize(err.isNull() ? sc::ISolutionBuffer::Status::SuccessfullyCompleted : sc::ISolutionBuffer::Status::Error);
 			}
 			return 0;
 		}

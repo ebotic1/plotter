@@ -2,6 +2,7 @@
 <Groups>		
 	<Group subFolder="NL/real">
 		<Res path="$MyBin/TestData/SymbComp/real/NL.xml"/>
+		<Res path="$MyBin/TestData/SymbComp/real/Pipes.xml"/>
 		<Res path="$MyBin/TestData/SymbComp/real/PF_My3.xml" destinationName="PowerFlow3Nodes.xml"/>
 		<Res path="$MyBin/TestData/SymbComp/real/FnLimit.xml" destinationName="LimitFn_2Eqs.xml"/>
 		<Res path="$MyBin/TestData/SymbComp/real/FnLimit3.xml" destinationName="LimitFn_3Eqs.xml"/>
