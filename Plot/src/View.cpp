@@ -69,7 +69,8 @@ View::View(gui::Font *fontAxis, gui::Font *fontLegend, td::ColorID backgroundCol
 }
 
 static inline td::ColorID invertColor(const td::ColorID &color){
-    return color; //Implementirati IDz
+    static_assert(false && "Napisati implementaciju");
+    return color; //vratiti invertovanu boju
 }
 
 void gui::plot::View::setColorsAndPatternStack()
