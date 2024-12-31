@@ -1,0 +1,21 @@
+start(0.000)end(25.000)step(0.0030)maxIter(500)preProc(import NF_filter.xml 
+//put je relativan u odnosu na ovaj fajl
+function amplituda vs 0
+// horizontalna linija. Dakle max amplituda sinusuide
+function 0 vs wc_time
+// vertiakla linija koja oznacava vrijeme kad je omega jednaka kriticnoj omegi za niskopropusni filter
+function output vs t
+function 0 vs 0
+// sad ce se kreirati novi graf
+function w vs t
+function input vs t)
+Model [name=sin_gen]:
+	Vars:
+		[out=true] w = 100 //omega
+	Params:
+		wc = 100 //cut off omega na NF filter
+		wc_time = wc / 10 //vrijeme kad w dosegne wc
+		amplituda = 10
+	NLE:
+		input = amplituda * sin(w*t)
+		w = t*10
