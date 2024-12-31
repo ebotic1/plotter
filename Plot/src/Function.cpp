@@ -93,7 +93,7 @@ gui::Point Function::findIntersection(const gui::Point& p1, const gui::Point& p2
 
 }
 
-Function::Function(gui::CoordType* x, gui::CoordType* y, size_t length, td::ColorID color, const td::String& name, double lineWidth, td::LinePattern pattern): color(color), pattern(pattern), length(length), debljina(lineWidth)
+Function::Function(gui::CoordType* x, gui::CoordType* y, size_t length, td::ColorID color, const td::String& name, double lineWidth, LinePattern pattern): color(color), pattern(pattern), length(length), debljina(lineWidth)
 {
 	lines = new std::deque<gui::Shape>();
 	this->name = new td::String(name);
@@ -101,7 +101,7 @@ Function::Function(gui::CoordType* x, gui::CoordType* y, size_t length, td::Colo
 }
 
 
-Function::Function(gui::Point* points, size_t length, td::ColorID color, const td::String& name, double lineWidth, td::LinePattern pattern) : color(color), pattern(pattern), length(length), debljina(lineWidth)
+Function::Function(gui::Point* points, size_t length, td::ColorID color, const td::String& name, double lineWidth, LinePattern pattern) : color(color), pattern(pattern), length(length), debljina(lineWidth)
 {
 	lines = new std::deque<gui::Shape>();
 	this->name = new td::String(name);
@@ -120,6 +120,8 @@ Function& Function::operator=(Function&& f) noexcept
 {
     //IDz: cijela konstrukcija sa pointerima je urađena samo zbog ovoga???
     //manja segmentacija memorije bi bila da su funkcije dinamički alocirane a ne svaki element funkcije
+	//EB: ovo sam bas davno pisao ne sjecam se tacno. Move pointeri su bili pokvareni sjecam se da je to bio dio razloga zasto je ovako uradeno
+	//drugacije bi sad uradio
     
 	memcpy(this, &f, sizeof(Function));
     f.name = nullptr;
@@ -157,7 +159,7 @@ void Function::setPoints(gui::CoordType* x, gui::CoordType* y, size_t length){
 
 }
 
-void Function::setPattern(td::LinePattern pattern){
+void Function::setPattern(LinePattern pattern){
 	this->pattern = pattern;
 	reDraw = true;
 }
@@ -224,7 +226,7 @@ void Function::increaseScaleY(const gui::CoordType& scale) {
 void Function::addToLines(std::vector<gui::Point>& tacke){
 	if (!tacke.empty()) {
 		lines->emplace_back();
-		lines->back().createPolyLine(tacke.data(), tacke.size(), debljina, pattern);
+		lines->back().createPolyLine(tacke.data(), tacke.size(), debljina, (td::LinePattern)pattern);
 		tacke.clear();
 	}
 }
@@ -262,7 +264,7 @@ void Function::draw(const gui::Rect& frame){
 
 	lines->clear();
 
-	if (pattern == td::LinePattern::NA) {
+	if ((int)pattern >= (int)td::LinePattern::NA) {
 		gui::Shape dot;
 		std::vector<gui::Circle> dots;
 		dots.reserve(length);
@@ -277,7 +279,7 @@ void Function::draw(const gui::Rect& frame){
 
 	if (frame.isZero()) {
 		lines->emplace_back();
-		lines->back().createPolyLine(tacke, length, debljina, pattern);
+		lines->back().createPolyLine(tacke, length, debljina, (td::LinePattern)pattern);
 		reDraw = false;
 		draw(frame);
 		return;

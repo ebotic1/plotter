@@ -9,28 +9,22 @@
 #include <xml/DOMParser.h> 
 #include <xml/SAXParser.h> 
 
-
 #define INDENT_CHAR "\t"
 #define IMPLICIT_MULTIPLY false
 
 
-// #if defined(MU_WINDOWS) || defined(MU_MACOS)
-	template <size_t N>
-	struct ConstExprString {
-		char data[N];
-		constexpr ConstExprString(const char(&str)[N]) {
-			for (std::size_t i = 0; i < N; ++i)
-				data[i] = str[i];
-		}
+template <size_t N>
+struct ConstExprString {
+	char data[N];
+	constexpr ConstExprString(const char(&str)[N]) {
+		for (std::size_t i = 0; i < N; ++i)
+			data[i] = str[i];
+	}
+	constexpr const char*get() const {
+		return data;
+	}
+};
 
-		constexpr const char*get() const {
-			return data;
-		}
-	};
-// #else
-// template <std::size_t N>
-// using ConstExprString = BaseNode::ConstExprString<N>;
-// #endif //MU_MACOS and MU_WINDOWS
 
 
 static bool beginsWith(const char* string, const char *what) {
@@ -372,7 +366,8 @@ public:
 		}
 
 
-		if (compareUpperCase(cmndStart, "END")) {
+		if (compareUpperCase(cmndStart, "END") || compareUpperCase(cmndStart, "STATS:")) 
+		{
 			_done = true;
 			return false;
 		}
@@ -490,8 +485,57 @@ public:
 	}
 };
 
-//typedef singleEquation<conditionNode> Equation;
-//typedef singleEquation<conditionNodeInline> EquationCounted;
+static td::String prepend(const td::String &string, td::String toPrepend){
+	toPrepend += ".";
+	toPrepend += string;
+	return toPrepend;
+}
+
+class RndNode : public BaseNode {
+public:
+	RndNode() = default;
+	RndNode(const RndNode& node, const td::String &alias ):
+		BaseNode(node, alias){
+			auto it = _attribs.find("name");
+			if(it == _attribs.end() || alias.isNull())
+				return;
+			it->second = prepend(it->second, alias);
+		}
+
+	BaseNode* createCopy(const td::String &alias) const override {
+		return new RndNode(*this, alias);
+	}
+
+	virtual bool nodeAction(const char* cmndStart, const char* cmndEnd, BaseNode*& newChild) override {
+
+		if(_done)
+			return false;
+
+		_attribs["name"] = getStringFromPtr(cmndStart, cmndEnd);
+
+		_done = true;
+		return true;
+	}
+
+
+	bool prettyPrint(cnt::StringBuilder<>& str, td::String& indent) const override{
+		auto it = _attribs.find("name");
+		if(it != _attribs.end())
+			str << it->second;
+		prettyPrintAttribs<"name">(str, this);
+		return false;
+	}
+
+
+	inline const char* getName() const override {
+		return "RndGen";
+	}
+};
+
+
+
+
+
 typedef containerNode<"Vars", variableNode<"Var">> varsNode;
 typedef containerNode<"Params", variableNode<"Param">> paramsNode;
 typedef containerNode<"NLEqs", EquationCounted> NLEquationsNode;
@@ -504,6 +548,62 @@ typedef containerNode<"Limits", Equation> LimitNode;
 typedef containerNode<"ECs", EquationCounted> ECsNode;
 typedef containerNode<"TFs", EquationCounted> TFsNode;
 typedef containerNode<"Expressions", SingleExpression> ExpressionsNode;
+typedef containerNode<"RndGens", RndNode> RndGensNode;
+
+
+class StatsNode : public BaseNode {
+public:
+	StatsNode() = default;
+	StatsNode(const StatsNode& node, const td::String &alias ):
+		BaseNode(node, alias){
+			auto it = _attribs.find("name");
+			if(it == _attribs.end() || alias.isNull())
+				return;
+			it->second = prepend(it->second, alias);
+		}
+
+	BaseNode* createCopy(const td::String &alias) const override {
+		return new StatsNode(*this, alias);
+	}
+
+	virtual bool nodeAction(const char* cmndStart, const char* cmndEnd, BaseNode*& newChild) override {
+
+		if(_done)
+			return false;
+
+		cnt::PushBackVector<td::String> cnt;
+		constexpr int statTagLen = 6; //lenght of string "Stats:"
+		getStringFromPtr(cmndStart+statTagLen, cmndEnd).split(",", cnt, true, false);
+		if(!cnt.isEmpty()){
+			_attribs["name"] = cnt.last();
+			cnt.remove_back();
+		}
+		while(!cnt.isEmpty()){
+			auto stat = new StatsNode;
+			stat->_attribs["name"] = cnt.last();
+			stat->_done = true;
+			getParent()->addChild(stat);
+			cnt.remove_back();
+		}
+
+		_done = true;
+		return true;
+	}
+
+
+	bool prettyPrint(cnt::StringBuilder<>& str, td::String& indent) const override{
+		auto it = _attribs.find("name");
+		if(it != _attribs.end())
+			str << "\n" << indent << "Stats: " << it->second;
+		//prettyPrintAttribs<"name">(str, this);
+		return true;
+	}
+
+
+	inline const char* getName() const override {
+		return "Stats";
+	}
+};
 
 
 class initNode : public BaseNode {
@@ -601,6 +701,13 @@ bool ModelNode::nodeAction(const char* cmndStart, const char* cmndEnd, BaseNode*
 		addChild(new TFsNode);
 	else if (compareUpperCase(cmndStart, "EXPRESSIONS"))
 		addChild(new ExpressionsNode);
+	else if (compareUpperCase(cmndStart, "RNDGENS"))
+		addChild(new RndGensNode);
+	else if (compareUpperCase(cmndStart, "STATS")){
+		addChild(new StatsNode);
+		newChild = nodes.back();
+		return false;
+	}
 	else
 		throw exceptionInvalidBlockName{td::String(cmndStart, cmndEnd-cmndStart), _processingLine};
 
@@ -720,7 +827,7 @@ public:
 
 	inline td::StringExt* allocStringObject(td::UINT4 len, const char* pStr)
 	{
-		return _stringPool.allocObject(len, pStr); //????????
+		return _stringPool.allocObject(len, pStr);
 	}
 
 	bool onOpenNode()
@@ -774,6 +881,12 @@ public:
 			_lastNode->addChild(new ExpressionsNode);
 		else if (name->cCompare("Expression") == 0)
 			_lastNode->addChild(new SingleExpression);
+		else if(name->cCompare("RndGens") == 0)
+			_lastNode->addChild(new RndGensNode);
+		else if(name->cCompare("RndGen") == 0)
+			_lastNode->addChild(new RndNode);
+		else if(name->cCompare("Stats") == 0)
+			_lastNode->addChild(new StatsNode);
 		else {
 			_exception.message = name->c_str();
 			_exception.line = TSAX::_nLines;

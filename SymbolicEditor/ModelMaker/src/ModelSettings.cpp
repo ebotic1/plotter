@@ -96,7 +96,7 @@ inline static void markComplex(td::String& name, bool& isComplex) {
 void ModelSettings::getFunctions(std::vector<FunctionDesc>& desc)
 {
 	desc.clear();
-	std::regex pattern(R"((?:\s|^)(!)?(function|dataset)\s+(?:([^;\n]+?)\s+of\s+)?([^\s\n;]+?)\s+(?:versus|vs)\s+([^\s\n;]+?)(?:\s+)?(?:[;\n]|$))");
+	std::regex pattern(R"((?:\s|^)(!)?(function|dataset)\s+(?:([^;\n]+?)\s+of\s+)?([^\s\n;]+?)\s+(?:versus|vs|wrt)\s+([^\s\n;]+?)(?:\s+)?(?:[;\n]|$))");
 	std::cmatch match;
 
 	const auto& cmnds = preprocesCommands.getText();
@@ -228,7 +228,7 @@ void SyntaxText::highlightText()
 	auto text = getText();
 	const char *start = text.begin();
 	static std::cmatch match;
-	static std::regex keywordPatten(R"(((?:^|\s)(import|as|!?function|!?dataset|of|versus|vs|0|init)|(.real|.imag))(?:$|\s))");
+	static std::regex keywordPatten(R"(((?:^|\s)(import|as|!?function|!?dataset|of|versus|vs|wrt|0|init)|(.real|.imag))(?:$|\s))");
 	static gui::Range rangeFound;
     removeColor(gui::Range(0, text.glyphLength()));
 	while(std::regex_search((const td::UTF8 *)start, (const td::UTF8 *) text.end(), match, keywordPatten)){

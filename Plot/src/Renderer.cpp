@@ -88,6 +88,7 @@ void Renderer::reset(){
     delete _Limits;
     _Limits = nullptr;
     _legenda.reset();
+    resetGraph();
 }
 
 
@@ -152,13 +153,13 @@ void Renderer::showLegend(bool draw)
     drawAgain(); 
 }
 
-void Renderer::addFunction(gui::CoordType *x, gui::CoordType *y, size_t length, td::ColorID color, double lineWidth, td::LinePattern pattern, td::String name)
+void Renderer::addFunction(gui::CoordType *x, gui::CoordType *y, size_t length, td::ColorID color, double lineWidth, LinePattern pattern, td::String name)
 {
     _funkcije.emplace_back(x, y, length, color, name, lineWidth, pattern);
     finishAddingFunction(_funkcije.back());
 }
 
-void Renderer::addFunction(gui::CoordType* x, gui::CoordType* y, size_t length, double lineWidth, td::LinePattern pattern, td::String name){
+void Renderer::addFunction(gui::CoordType* x, gui::CoordType* y, size_t length, double lineWidth, LinePattern pattern, td::String name){
     _funkcije.emplace_back(x, y, length, nextColor(), name, lineWidth, pattern);
     finishAddingFunction(_funkcije.back());
 }
@@ -170,6 +171,7 @@ void Renderer::addFunction(Function&& fun){
 }
 
 void Renderer::finishAddingFunction(Function& newFun) {
+    newFun.setPattern(checkDefaultPattern(newFun.getPattern()));
     _pastColors.push_back(newFun.getColor());
     updateLimits(newFun);
     if (_funkcije.size() == 1) {
@@ -343,7 +345,11 @@ void Renderer::draw(){
 
 }
 
-void Renderer::changeWidth(double width, size_t function){
+Function::LinePattern Renderer::checkDefaultPattern(const Function::LinePattern &pattern){
+    return (pattern == LinePattern::Default) ? LinePattern::Solid : pattern;
+}
+void Renderer::changeWidth(double width, size_t function)
+{
     if (checkRange(function))
         return;
 
@@ -360,7 +366,7 @@ void Renderer::changeName(const td::String& name, size_t function){
     drawAgain();
 }
 
-void Renderer::changePattern(td::LinePattern pattern, size_t function){
+void Renderer::changePattern(LinePattern pattern, size_t function){
     if (checkRange(function))
         return;
 

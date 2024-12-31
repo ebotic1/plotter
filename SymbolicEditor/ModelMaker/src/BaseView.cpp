@@ -351,7 +351,7 @@ const ModelNode& ViewForTab::getModelNode(bool &error, bool supressLogs)
 
 			log += dep.pathOrTabName;
 			logView->appendLog(log, LogType::Info, supressLogs);
-			model.addWtih(GlobalEvents::getMainWindowPtr()->getModelFromTabOrFile(dep.pathOrTabName), dep.alias, dep.type);
+			model.addWtih(GlobalEvents::getMainWindowPtr()->getModelFromTabOrFile(dep.pathOrTabName, _path.subStr(0, _path.findFromRight('/'))), dep.alias, dep.type);
 		}
 		catch (MainWindow::exceptionCantFindTab &) {
 			logView->appendLog("Cant find requested model, no tab with such name exists", LogType::Error, supressLogs);

@@ -48,6 +48,34 @@ class SolutionBuffer : public sc::ISolutionBuffer
 		return result;
 	}
 
+	std::vector<DataDraw::FunctionDesc> _outFuncs, _outDataSet;
+	using GraphType = ModelSettings::FunctionDesc::Type;
+	std::map<GraphType, int> graphCnt;
+	void drawData(GraphType tip){
+		
+		if(tip == GraphType::graph)
+		{
+			td::String nameAndType;
+			nameAndType.format("%s-graph%d", "modelName", graphCnt[tip]++);
+			GlobalEvents::getMainWindowPtr()->getDataDrawer()->addData(nameAndType, _outFuncs, DataDraw::Type::Graph);
+			_outFuncs.clear();
+		}
+
+
+		if(tip == GraphType::graph)
+		{
+			#ifdef USE_SCROLLVIEW_TABLE
+			td::String nameAndType(modelName);
+			nameAndType += "-table";
+			GlobalEvents::getMainWindowPtr()->getDataDrawer()->addData(nameAndType, _outDataSet, DataDraw::Type::Table);
+			_outDataSet.clear();
+			#endif
+		}
+		
+
+
+	}
+
 
 public:
     SolutionBuffer(const td::String &modelName, const std::shared_ptr<LogView> logger, std::shared_ptr<Results> resultTable, \
@@ -176,8 +204,8 @@ public:
 			str << "Simulation stopped with error: " << solver->getLastErrorStr();
 			str.getString(log);
 			logger->appendLog(log, LogType::Error);
-            _results->show(_pDS); //show results in any case
-			//return;
+			//_results->show(_pDS); EB: ovo ce u 99% slucajeva prouzrokovati krahiranje tako da stvarno ne moze
+			return; 
 		}
 		else {
 			std::chrono::duration<double> d = std::chrono::duration_cast<std::chrono::duration<double>>(std::chrono::steady_clock::now() - startTime);
@@ -197,7 +225,7 @@ public:
 
 		_pDS->getFPValues(names, data);
 
-		std::map<td::String, double*> NameAndDataPtr; //za lakse pretrazivanje. Moglo bi se izbaciti
+		std::map<td::String, double*> NameAndDataPtr;
 		for(int i = 0; i<_valuePtrAndName.size(); ++i){
 			if(isComplex && _valuePtrAndName[i].second.cCompare("eps") == 0)
 			{
@@ -210,14 +238,30 @@ public:
 
 		size_t size = (data.size() > 0) ? data[0].size() : 0;
 
-		std::vector<DataDraw::FunctionDesc> outFuncs, outDataSet;
+		for(int i = 0; i<functions.size(); ++i){
+			if(functions[i].xAxis.cCompare("#") == 0 || functions[i].yAxis.cCompare("#") == 0){
+				double *ptr = new double[size];
+				NameAndDataPtr["#"] = ptr;
+				for(int j = 0; j<size; ++j){
+					ptr[j] = j;
+				}
+
+				break;
+			}
+		}
+
+		
+
+		
 		decltype(NameAndDataPtr)::iterator itX, itY, end = NameAndDataPtr.end();
 		td::String xAxis, yAxis;
 		int paramIntX, paramIntY;
 
 		for(const auto &funD : functions){//zahtjevi za crtane grafova/tabela
-			if (funD.xAxis.cCompare("0") == 0 && funD.yAxis.cCompare("0") == 0)
-				continue;
+			if (funD.xAxis.cCompare("0") == 0 && funD.yAxis.cCompare("0") == 0){
+				//continue;
+				drawData(funD.type);
+			}
 
 			if constexpr (!isComplex) {
 				if (funD.Xcomplex || funD.Ycomplex)
@@ -241,17 +285,17 @@ public:
 				if constexpr (!isComplex)
                 {
 					if (funD.type == ModelSettings::FunctionDesc::Type::graph)
-						outFuncs.push_back(DataDraw::FunctionDesc(funD.name, NameAndDataPtr[funD.xAxis], NameAndDataPtr[funD.yAxis], size, funD.xAxis, funD.yAxis));
+						_outFuncs.push_back(DataDraw::FunctionDesc(funD.name, NameAndDataPtr[funD.xAxis], NameAndDataPtr[funD.yAxis], size, funD.xAxis, funD.yAxis));
 					else
-						outDataSet.push_back(DataDraw::FunctionDesc(funD.name, NameAndDataPtr[funD.xAxis], NameAndDataPtr[funD.yAxis], size, funD.xAxis, funD.yAxis));
+						_outDataSet.push_back(DataDraw::FunctionDesc(funD.name, NameAndDataPtr[funD.xAxis], NameAndDataPtr[funD.yAxis], size, funD.xAxis, funD.yAxis));
 				}
 				else
                 {
 
 					if (funD.type == ModelSettings::FunctionDesc::Type::graph)
-						outFuncs.push_back(DataDraw::FunctionDesc(funD.name, NameAndDataPtr[xAxis], NameAndDataPtr[yAxis], size, funD.xAxis, funD.yAxis));
+						_outFuncs.push_back(DataDraw::FunctionDesc(funD.name, NameAndDataPtr[xAxis], NameAndDataPtr[yAxis], size, funD.xAxis, funD.yAxis));
 					else
-						outDataSet.push_back(DataDraw::FunctionDesc(funD.name, NameAndDataPtr[xAxis], NameAndDataPtr[yAxis], size, funD.xAxis, funD.yAxis));
+						_outDataSet.push_back(DataDraw::FunctionDesc(funD.name, NameAndDataPtr[xAxis], NameAndDataPtr[yAxis], size, funD.xAxis, funD.yAxis));
 			
 				}
 				continue;
@@ -263,13 +307,13 @@ public:
 				if constexpr (!isComplex)
                 {
 					if (funD.type == ModelSettings::FunctionDesc::Type::graph)
-						outFuncs.push_back(DataDraw::FunctionDesc(funD.name, solver->getParamsPtr() + paramIntX, nullptr, 1, funD.xAxis, ""));
+						_outFuncs.push_back(DataDraw::FunctionDesc(funD.name, solver->getParamsPtr() + paramIntX, nullptr, 1, funD.xAxis, ""));
 					else
-						outDataSet.push_back(DataDraw::FunctionDesc(funD.name, nullptr, nullptr, 0, "", getCmplxString(solver->getParamsPtr()[paramIntX])));
+						_outDataSet.push_back(DataDraw::FunctionDesc(funD.name, nullptr, nullptr, 0, "", getCmplxString(solver->getParamsPtr()[paramIntX])));
 				}
 				else
                 {
-					outDataSet.push_back(DataDraw::FunctionDesc(funD.name, nullptr, nullptr, 0, "", getCmplxString(solver->getParamsPtr()[paramIntX])));
+					_outDataSet.push_back(DataDraw::FunctionDesc(funD.name, nullptr, nullptr, 0, "", getCmplxString(solver->getParamsPtr()[paramIntX])));
 				}
 				
 				continue;
@@ -281,13 +325,13 @@ public:
 				if constexpr (!isComplex)
                 {
 					if (funD.type == ModelSettings::FunctionDesc::Type::graph)
-						outFuncs.push_back(DataDraw::FunctionDesc(funD.name, solver->getParamsPtr() + paramIntY, nullptr, 1, funD.yAxis, ""));
+						_outFuncs.push_back(DataDraw::FunctionDesc(funD.name, nullptr, solver->getParamsPtr() + paramIntY, 1, funD.yAxis, ""));
 					else
-						outDataSet.push_back(DataDraw::FunctionDesc(funD.name, nullptr, nullptr, 0, "", getCmplxString(solver->getParamsPtr()[paramIntY])));
+						_outDataSet.push_back(DataDraw::FunctionDesc(funD.name, nullptr, nullptr, 0, "", getCmplxString(solver->getParamsPtr()[paramIntY])));
 				}
 				else
                 {
-					outDataSet.push_back(DataDraw::FunctionDesc(funD.name, nullptr, nullptr, 0, "", getCmplxString(solver->getParamsPtr()[paramIntY])));
+					_outDataSet.push_back(DataDraw::FunctionDesc(funD.name, nullptr, nullptr, 0, "", getCmplxString(solver->getParamsPtr()[paramIntY])));
 				}
 				
 				continue;
@@ -297,9 +341,9 @@ public:
 			if (itY != end && funD.xAxis.cCompare("0") == 0) { // jedan niz
 
 				if constexpr (!isComplex)
-					outDataSet.push_back(DataDraw::FunctionDesc(funD.name, nullptr, NameAndDataPtr[funD.yAxis], size, "", funD.yAxis));
+					_outDataSet.push_back(DataDraw::FunctionDesc(funD.name, nullptr, NameAndDataPtr[funD.yAxis], size, "", funD.yAxis));
 				else {
-					outDataSet.push_back(DataDraw::FunctionDesc(funD.name, nullptr, NameAndDataPtr[yAxis], size, "", yAxis));
+					_outDataSet.push_back(DataDraw::FunctionDesc(funD.name, nullptr, NameAndDataPtr[yAxis], size, "", yAxis));
 				}
 				continue;
 			}
@@ -311,16 +355,11 @@ public:
 
 		}
 
-		td::String nameAndType(modelName);
-		nameAndType += "-graph";
-		GlobalEvents::getMainWindowPtr()->getDataDrawer()->addData(nameAndType, outFuncs, DataDraw::Type::Graph);
+		drawData(GraphType::graph);
+		drawData(GraphType::points);
 
-#ifdef USE_SCROLLVIEW_TABLE
-		nameAndType = modelName;
-		nameAndType += "-table";
-		GlobalEvents::getMainWindowPtr()->getDataDrawer()->addData(nameAndType, outDataSet, DataDraw::Type::Table);
-#endif
-
+		if(NameAndDataPtr.contains("#"));
+			delete[] NameAndDataPtr["#"];
 	
 	}
 };
@@ -465,9 +504,8 @@ int MainWindow::simulate(ViewForTab *tab)
 			
 			if (timeIndex < 0) 
 				for (const auto& symIndex : symbs){
-					//autoFuncs.push_back(ModelSettings::FunctionDesc(ModelSettings::FunctionDesc::Type::graph, pSolver->getSymbolName(symIndex), pSolver->getSymbolName(symIndex), "eps"));
-					if(autoFuncs.size() >= 16)
-						break;
+					autoFuncs.push_back(ModelSettings::FunctionDesc(ModelSettings::FunctionDesc::Type::graph, "accuracy", "eps", "#"));
+					break;
 				}
 			else 
 				for (const auto& symIndex : symbs){
@@ -476,7 +514,7 @@ int MainWindow::simulate(ViewForTab *tab)
 						break;
 				}
 			if (autoFuncs.empty())
-				logView->appendLog("No out variables found. You must add 'out=true' attribute to a single variable or the variable declaration tag for them to be visible to the plotter", LogType::Warning);
+				logView->appendLog("No out variables found. You must add 'out=true' attribute to a single variable or the variable declaration tag for them to be visible in results", LogType::Warning);
 		}
         auto pResults = tab->getResults();
         td::Timer timer;
@@ -532,11 +570,14 @@ int MainWindow::simulate(ViewForTab *tab)
                     err = pSolver->getLastErrorStr();
                     if (err.length() > 0)
                     {
-                        logView->appendLog(err, LogType::Error);
+                        logView->appendLog(err, LogType::Error);//EB: ovo se treba izbaciti ja mislim, jer u solver.finalize() se ispisuju greske tako da jedno od dvoje dode viska. A finalize se MORA pozvati a gresja se mora ispisivati i za DAE modele, ovdje je error checking samo za NR i WLS
                     }
                 }
-
-//				buffer.finalize(err.isNull() ? sc::ISolutionBuffer::Status::SuccessfullyCompleted : sc::ISolutionBuffer::Status::Error);
+				
+				if(equationType == EquationTypes::WLS){
+					buffer.put();
+					buffer.finalize(err.isNull() ? sc::ISolutionBuffer::Status::SuccessfullyCompleted : sc::ISolutionBuffer::Status::Error);
+				}
 			}
 			return 0;
 		}

@@ -10,6 +10,7 @@
 #include <gui/ColorPicker.h>
 #include <gui/ComboBox.h>
 #include <gui/NumericEdit.h>
+#include <gui/LinePatternPicker.h>
 
 namespace gui
 {
@@ -45,6 +46,11 @@ class Settings : public gui::StandardTabView{
     static constexpr int _colorCnt = 16;
     gui::ColorPicker _colorPickers[_colorCnt];
     gui::Label _labelsColor[_colorCnt];
+
+    gui::Label _labelColorDefinition;
+    gui::ComboBox _combColorMode;
+    gui::LinePatternPicker _pattLines[_colorCnt];
+
     gui::GridLayout _gridColors;
 
     void measure(gui::CellInfo &c) override{
@@ -68,11 +74,12 @@ public:
     _lblOutputRes(tr("@Plot_savedImageResolution")),
     _lblHeight(tr("@Plot_height")),
     _lblWidth(tr("@Plot_width")),
+    _labelColorDefinition(tr("@Plot_colorDef")),
     _numHeight(td::int4, gui::LineEdit::Messages::Send),
     _numWidth(td::int4, gui::LineEdit::Messages::Send),
 
     _colorsView(gui::ViewScroller::Type::NoScroll, gui::ViewScroller::Type::ScrollerAlwaysVisible),
-    _gridColors(_colorCnt, 2),
+    _gridColors(_colorCnt + 1, 3),
     _vlHelper(1)
     {
         gui::GridComposer gc(_grid);
@@ -207,21 +214,38 @@ public:
         addView(&_generalView, "General");
 
         //colors:
-
+        auto props = getAppProperties();
         td::String lbl;
         gui::GridComposer colorComp(_gridColors);
 
-        auto props = getAppProperties();
+        colorComp.appendRow(_labelColorDefinition);
+
+        _combColorMode.addItems(std::vector<td::String>{tr("@Plot_allMode"), tr("@Plot_darkMode"), tr("@Plot_whiteMode")});
+        colorComp.appendCol(_combColorMode, -1);
+        _combColorMode.selectIndex(props->getValue<int>("@Plot_DefaultColorsMode", 0));
+
+        _combColorMode.onChangedSelection([this](){
+             getAppProperties()->setValue<int>("@Plot_DefaultColorsMode", _combColorMode.getSelectedIndex());
+        });
+
 
         for(int i = 0; i<_colorCnt; ++i){
-            lbl.format("Default color %d:", i+1);
+            lbl.format("Properties for line %d:", i+1);
             _labelsColor[i].setTitle(lbl);
-            colorComp.appendRow(_labelsColor[i]) << _colorPickers[i];
+            colorComp.appendRow(_labelsColor[i]) << _colorPickers[i] << _pattLines[i];
+
             lbl.format("@Plotter_defaultColor%d", i);
             _colorPickers[i].setValue((td::ColorID)props->getValue<int>(lbl, 0));
             _colorPickers[i].onChangedValue([this, i, lbl](){
                 getAppProperties()->setValue<int>(lbl , (int)_colorPickers[i].getValue());
             });
+
+            lbl.format("@Plotter_defaultPattern%d", i);
+            _pattLines[i].setValue((td::LinePattern)props->getValue<int>(lbl, 0));
+            _pattLines[i].onChangedValue([this, i, lbl](){
+                getAppProperties()->setValue<int>(lbl , (int)_pattLines[i].getValue());
+            });
+
         }
 
         _helperView.setLayout(&_gridColors);
@@ -230,7 +254,7 @@ public:
         _vlHelper << _colorsView;
         _helperView2.setLayout(&_vlHelper);
 
-        addView(&_helperView2, "Default line colors");
+        addView(&_helperView2, tr("@Plot_defLineProps"));
         gui::Size sz = {300,100};
         _colorsView.setSize(sz);
 

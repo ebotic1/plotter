@@ -81,7 +81,7 @@ public:
     int simulate(ViewForTab* tab);
     bool openFile(const td::String& path);
     void onInitialAppearance() override;
-    const ModelNode &getModelFromTabOrFile(const td::String &modelNameOrPath);
+    const ModelNode &getModelFromTabOrFile(const td::String &modelNameOrPath, const td::String &startingPath = td::String());
     DataDraw* getDataDrawer(bool openWindow = true);
 
     bool prepareForClose();

@@ -494,49 +494,55 @@ DataDraw* MainWindow::getDataDrawer(bool openWindow)
 }
 
 
-const ModelNode &MainWindow::getModelFromTabOrFile(const td::String &modelNameOrPath)
+const ModelNode &MainWindow::getModelFromTabOrFile(const td::String &modelNameOrPathRelative, const td::String &startingPath)
 {
     bool success;
-    if(modelNameOrPath.endsWith(".xml")){//file
-        std::filesystem::path file(modelNameOrPath.c_str());
+    const char *debug1 = modelNameOrPathRelative.c_str();
+    const char *debug2 = startingPath.c_str();
+    if(modelNameOrPathRelative.endsWith(".xml")){//file
+        td::String path = startingPath;
+        path += modelNameOrPathRelative.beginsWith("/") ? modelNameOrPathRelative.subStr(1,-1) : modelNameOrPathRelative;;
+
+        std::filesystem::path file(path.c_str());
         if(!std::filesystem::exists(file))
-            throw exceptionCantAccessFile{modelNameOrPath};
+            throw exceptionCantAccessFile{path};
         
         auto time = std::filesystem::last_write_time(file).time_since_epoch();
         for(auto &m: _loadedModels){
-            if(m.path == modelNameOrPath)
+            if(m.path == path)
             {
                 if(time == m.timeModified)
                     return m.model;
                 else
                 {
-                    success = m.model.readFromFile(modelNameOrPath);
+                    success = m.model.readFromFile(path);
                     if(!success)
-                        throw exceptionCantAccessFile {modelNameOrPath};
+                        throw exceptionCantAccessFile {path};
                     m.timeModified = time;
                     return m.model;
                 }
             }
         }
 
-        _loadedModels.emplace_back(modelNameOrPath);
-        success = _loadedModels.back().model.readFromFile(modelNameOrPath);
+        _loadedModels.emplace_back(path);
+        success = _loadedModels.back().model.readFromFile(path);
         if(!success)
-            throw exceptionCantAccessFile {modelNameOrPath};
+            throw exceptionCantAccessFile {path};
         _loadedModels.back().timeModified = time;
         return _loadedModels.back().model;
     }
     else
     { //tab
+        const td::String &tabName = modelNameOrPathRelative;
         ViewForTab* tab;
         for (int i = 0; i < _tabView.getNumberOfViews(); ++i){
             tab = dynamic_cast<ViewForTab*>(_tabView.getView(i));
-            if(tab != nullptr && tab->getName() == modelNameOrPath){
+            if(tab != nullptr && tab->getName() == tabName){
                 success = true;
                 return tab->getModelNode(success);
             }        
         }
-        throw exceptionCantFindTab {modelNameOrPath};
+        throw exceptionCantFindTab {tabName};
     }
 
     static ModelNode m; // should never run

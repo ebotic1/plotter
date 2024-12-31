@@ -7,13 +7,13 @@
 #define BACK_COMMENT_CHAR "`"
 #define INDENT_CHAR "\t"
 
-const std::unordered_set<td::String> BaseNode::attributeKeywords{"type", "domain", "name", "eps", "dT", "signal", "out", "desc", "method", "w", "conj", "limit", "setFlag"};
+const std::unordered_set<td::String> BaseNode::attributeKeywords{"type", "domain", "name", "eps", "dT", "signal", "out", "desc", "method", "w", "conj", "limit", "setFlag", "dev", "mean", "width"};
 const std::unordered_set<td::String> BaseNode::functionKeywords{ "abs","acos","asin","atg","cos","exp","sqrt","ln","log",\
 "lim", "int", "sin","tg", "sqr", "atan2", "sign", "sinh", "cosh", "tgh", "asnh", "acsh", "atgh", "disc","conj", "real", "imag" };
 
 const std::unordered_set<td::String> BaseNode::constantsKeywords{"pi", "e", "true", "false", "LowLimit", "HighLimit"};
 const std::unordered_set<td::String> BaseNode::syntaxKeywords{"base", "if", "else", "end", "Model", "Vars", "Var", "Params", "Param", "Params", "NLEqs", "NLE", \
-"Group", "ODEqs", "ODE", "Init", "PreProc", "PostProc", "MeasEqs", "Limits", "EC", "ECs", "TFs", "TF", "Expressions"};
+"RndGens", "Group", "ODEqs", "ODE", "Init", "PreProc", "PostProc", "MeasEqs", "Limits", "EC", "ECs", "TFs", "TF", "Expressions"};
 
 int BaseNode::_processingLine = 0;
 
@@ -144,6 +144,7 @@ void BaseNode::prettyPrintAttribs(cnt::StringBuilder<>& str, const BaseNode* nod
 template void BaseNode::prettyPrintAttribs<"fx">(cnt::StringBuilder<>&, const BaseNode* nodeAtribs);
 template void BaseNode::prettyPrintAttribs<"fx", "cond">(cnt::StringBuilder<>&, const BaseNode* nodeAtribs);
 template void BaseNode::prettyPrintAttribs<"name", "val">(cnt::StringBuilder<>&, const BaseNode* nodeAtribs);
+template void BaseNode::prettyPrintAttribs<"name">(cnt::StringBuilder<>&, const BaseNode* nodeAtribs);
 
 
 void BaseNode::prettyPrint(td::String& text) const
