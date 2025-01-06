@@ -153,13 +153,13 @@ void Renderer::showLegend(bool draw)
     drawAgain(); 
 }
 
-void Renderer::addFunction(gui::CoordType *x, gui::CoordType *y, size_t length, td::ColorID color, double lineWidth, LinePattern pattern, td::String name)
+void Renderer::addFunction(gui::CoordType *x, gui::CoordType *y, size_t length, td::ColorID color, double lineWidth, Function::Pattern pattern, td::String name)
 {
     _funkcije.emplace_back(x, y, length, color, name, lineWidth, pattern);
     finishAddingFunction(_funkcije.back());
 }
 
-void Renderer::addFunction(gui::CoordType* x, gui::CoordType* y, size_t length, double lineWidth, LinePattern pattern, td::String name){
+void Renderer::addFunction(gui::CoordType* x, gui::CoordType* y, size_t length, double lineWidth, Function::Pattern pattern, td::String name){
     _funkcije.emplace_back(x, y, length, nextColor(), name, lineWidth, pattern);
     finishAddingFunction(_funkcije.back());
 }
@@ -345,8 +345,23 @@ void Renderer::draw(){
 
 }
 
-Function::LinePattern Renderer::checkDefaultPattern(const Function::LinePattern &pattern){
-    return (pattern == LinePattern::Default) ? LinePattern::Solid : pattern;
+Function::Pattern Renderer::checkDefaultPattern(const Function::Pattern &pattern){
+    if(pattern.pattern != Pattern::LinePattern::DefaultDot && pattern.pattern != Pattern::LinePattern::DefaultLine)
+        return pattern;
+    while(_defaultColors.size() > _defaultPatterns.size())
+        _defaultPatterns.pop();
+
+    if(_defaultPatterns.empty())
+        return (pattern.pattern == Pattern::LinePattern::DefaultLine) ? Pattern(td::LinePattern::Solid) : Pattern(td::DotPattern::X);
+    auto p = _defaultPatterns.front();
+    _defaultPatterns.pop();
+
+    if(pattern.pattern != Pattern::LinePattern::DefaultDot)
+        return Pattern(td::DotPattern(p.second));
+    else    
+        return Pattern(td::LinePattern(p.first));
+    
+
 }
 void Renderer::changeWidth(double width, size_t function)
 {
@@ -366,7 +381,7 @@ void Renderer::changeName(const td::String& name, size_t function){
     drawAgain();
 }
 
-void Renderer::changePattern(LinePattern pattern, size_t function){
+void Renderer::changePattern(Pattern pattern, size_t function){
     if (checkRange(function))
         return;
 

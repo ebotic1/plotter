@@ -69,7 +69,7 @@ View::View(gui::Font *fontAxis, gui::Font *fontLegend, td::ColorID backgroundCol
 }
 
 static inline td::ColorID invertColor(const td::ColorID &color){
-    static_assert(false && "Napisati implementaciju");
+    //static_assert(false && "Napisati implementaciju");
     return color; //vratiti invertovanu boju
 }
 
@@ -89,6 +89,8 @@ void gui::plot::View::setColorsAndPatternStack()
     int colorMode = props->getValue<int>("@Plot_DefaultColorsMode", 0);
     bool darkMode = getApplication()->isDarkMode();
        
+    int tempPat;
+
     for(int i = 0; i<16; ind+=23, ++i){
         keyVal.format("@Plotter_defaultColor%d", i);
         color = (td::ColorID)props->getValue<int>(keyVal, ind % 137);
@@ -107,25 +109,15 @@ void gui::plot::View::setColorsAndPatternStack()
         }
 
         keyVal.format("@Plotter_defaultPattern%d", i);
-        _defaultPatterns.emplace((LinePattern)props->getValue<int>(keyVal, (int)LinePattern::Solid));
+        tempPat = props->getValue<int>(keyVal, (int)td::LinePattern::Solid );
+        keyVal.format("@Plotter_defaultDotPattern%d", i);
+
+        _defaultPatterns.emplace((td::LinePattern)tempPat, (td::DotPattern)props->getValue<int>(keyVal, (int)td::DotPattern::X ));
 
     }
 
 }
 
-Function::LinePattern gui::plot::View::checkDefaultPattern(const Function::LinePattern &pattern)
-{
-    if(pattern != LinePattern::Default)
-        return pattern;
-    while(_defaultColors.size() > _defaultPatterns.size())
-        _defaultPatterns.pop();
-
-    if(_defaultPatterns.empty())
-        return Renderer::checkDefaultPattern(pattern);
-    auto p = _defaultPatterns.front();
-    _defaultPatterns.pop();
-    return p;
-}
 
 void View::resetGraph()
 {
@@ -527,26 +519,13 @@ void View::saveMenu()
 
 }
 
-static td::String PatternNames[] = {"Solid", "Dash", "Dot", "DashDot", "DashEq", "Circles"};
-static td::String toString(const gui::plot::Renderer::LinePattern &pattern)
+static td::String toString(const Function::Pattern &pattern)
 {
-    //enum class LinePattern : unsigned char {Solid=0, Dash, Dot, DashDot, DashEq, Circle, Default};
-    constexpr size_t num_elements = sizeof(PatternNames) / sizeof(PatternNames[0]);
-
-    if((int)pattern > num_elements)
-        return "Default";
-    else
-        return PatternNames[(int)pattern];
+    return pattern.toString();
 }
 
-static gui::plot::Renderer::LinePattern toLinePattern(const char *pattern){
-    using LinePattern = gui::plot::Renderer::LinePattern;
-    constexpr size_t num_elements = sizeof(PatternNames) / sizeof(PatternNames[0]);
-
-    for(int i = 0; i<num_elements; ++i)
-        if(PatternNames[i].cCompareNoCase(pattern))
-            return (LinePattern)i;
-    return LinePattern::Default;
+static gui::plot::Renderer::Pattern toLinePattern(const char *pattern){
+    return Function::Pattern::toLinePattern(pattern);
 }
 
 bool View::saveXML(const td::String& path){
@@ -812,7 +791,7 @@ void View::readTXT(const td::String& path){
             size_t bigger = (x.size() > y.size()) ? y.size() : x.size();
             if (bigger == 0)
                 continue;
-            this->addFunction(x.data(), y.data(), bigger, 2, LinePattern::Default, name.c_str());
+            this->addFunction(x.data(), y.data(), bigger, 2, Pattern(), name.c_str());
         }
 
     }
@@ -944,7 +923,7 @@ void View::readXML(const td::String& path, bool onlyData){
             td::String name = "line";
             double width = 2;
             size_t points = 0;
-            LinePattern pattern = LinePattern::Default;
+            Pattern pattern;
             for (auto & att : funs->attribs) {
                 if (att.getName().cCompareNoCase("name") == 0)
                     name = att.getValue();

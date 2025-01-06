@@ -10,6 +10,7 @@
 #include <gui/ColorPicker.h>
 #include <gui/ComboBox.h>
 #include <gui/NumericEdit.h>
+#include <gui/DotPatternPicker.h>
 #include <gui/LinePatternPicker.h>
 
 namespace gui
@@ -50,6 +51,7 @@ class Settings : public gui::StandardTabView{
     gui::Label _labelColorDefinition;
     gui::ComboBox _combColorMode;
     gui::LinePatternPicker _pattLines[_colorCnt];
+    gui::DotPatternPicker _pattDots[_colorCnt];
 
     gui::GridLayout _gridColors;
 
@@ -79,7 +81,7 @@ public:
     _numWidth(td::int4, gui::LineEdit::Messages::Send),
 
     _colorsView(gui::ViewScroller::Type::NoScroll, gui::ViewScroller::Type::ScrollerAlwaysVisible),
-    _gridColors(_colorCnt + 1, 3),
+    _gridColors(_colorCnt + 1, 4),
     _vlHelper(1)
     {
         gui::GridComposer gc(_grid);
@@ -232,7 +234,7 @@ public:
         for(int i = 0; i<_colorCnt; ++i){
             lbl.format("Properties for line %d:", i+1);
             _labelsColor[i].setTitle(lbl);
-            colorComp.appendRow(_labelsColor[i]) << _colorPickers[i] << _pattLines[i];
+            colorComp.appendRow(_labelsColor[i]) << _colorPickers[i] << _pattLines[i] << _pattDots[i];
 
             lbl.format("@Plotter_defaultColor%d", i);
             _colorPickers[i].setValue((td::ColorID)props->getValue<int>(lbl, 0));
@@ -244,6 +246,12 @@ public:
             _pattLines[i].setValue((td::LinePattern)props->getValue<int>(lbl, 0));
             _pattLines[i].onChangedValue([this, i, lbl](){
                 getAppProperties()->setValue<int>(lbl , (int)_pattLines[i].getValue());
+            });
+
+            lbl.format("@Plotter_defaultDotPattern%d", i);
+            _pattDots[i].setValue((td::DotPattern)props->getValue<int>(lbl, 0));
+            _pattDots[i].onChangedValue([this, i, lbl](){
+                getAppProperties()->setValue<int>(lbl , (int)_pattDots[i].getValue());
             });
 
         }

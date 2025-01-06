@@ -7,7 +7,12 @@ namespace plot
 
 //IDz: zasto ovakav dizajn sa hrpom C koda?? memcpy, pointers,...??
 //IDz: Budući da se unaprijed zna koliko ima funkcija u graph-u, sve je moglo da se implementira bez pointera
-//IDz: 
+//EB: Ne zna se unaprijed broj funkcija, funkcije se mogu brisati i dodavati. 
+// Davno sam ovo pisao mozda sam nesto experimentisao, ne sjecam se. Bilo je problema sa nekim natID klasama
+// A isto tako sa obzirom da se ne koristi GPU gledao sam da sve operacije budu sto efikasnije.
+// Tacke svakako trebaju da budu pointeri jer je to najgeneralnije. Pointer na tacke mogu dobiti i iz vektora i iz bilo cega drugog sto drzi niz u jednom bloku memorije
+// ovo se svakako treba implementirati da radi na GPU
+// Dobra stvar je sto sam ovo razdvojio od plottera tako da samo se ovdje trebaju uvesti MVP matrice i ostalo a logika iza plottera ostaje ista.
 
 
 gui::Point Function::findIntersection(const gui::Point& p1, const gui::Point& p2, const gui::Rect& r) // q1 i q2 su ravni rect sa tackama koji prikazuju dole, desno
@@ -93,7 +98,7 @@ gui::Point Function::findIntersection(const gui::Point& p1, const gui::Point& p2
 
 }
 
-Function::Function(gui::CoordType* x, gui::CoordType* y, size_t length, td::ColorID color, const td::String& name, double lineWidth, LinePattern pattern): color(color), pattern(pattern), length(length), debljina(lineWidth)
+Function::Function(gui::CoordType* x, gui::CoordType* y, size_t length, td::ColorID color, const td::String& name, double lineWidth, Pattern pattern): color(color), _pattern(pattern), length(length), debljina(lineWidth)
 {
 	lines = new std::deque<gui::Shape>();
 	this->name = new td::String(name);
@@ -101,7 +106,7 @@ Function::Function(gui::CoordType* x, gui::CoordType* y, size_t length, td::Colo
 }
 
 
-Function::Function(gui::Point* points, size_t length, td::ColorID color, const td::String& name, double lineWidth, LinePattern pattern) : color(color), pattern(pattern), length(length), debljina(lineWidth)
+Function::Function(gui::Point* points, size_t length, td::ColorID color, const td::String& name, double lineWidth, Pattern pattern) : color(color), _pattern(pattern), length(length), debljina(lineWidth)
 {
 	lines = new std::deque<gui::Shape>();
 	this->name = new td::String(name);
@@ -118,11 +123,6 @@ Function::Function(Function&& f) noexcept
 
 Function& Function::operator=(Function&& f) noexcept
 {
-    //IDz: cijela konstrukcija sa pointerima je urađena samo zbog ovoga???
-    //manja segmentacija memorije bi bila da su funkcije dinamički alocirane a ne svaki element funkcije
-	//EB: ovo sam bas davno pisao ne sjecam se tacno. Move pointeri su bili pokvareni sjecam se da je to bio dio razloga zasto je ovako uradeno
-	//drugacije bi sad uradio
-    
 	memcpy(this, &f, sizeof(Function));
     f.name = nullptr;
 	f.tacke = nullptr;
@@ -159,8 +159,8 @@ void Function::setPoints(gui::CoordType* x, gui::CoordType* y, size_t length){
 
 }
 
-void Function::setPattern(LinePattern pattern){
-	this->pattern = pattern;
+void Function::setPattern(Pattern pattern){
+	this->_pattern = pattern;
 	reDraw = true;
 }
 
@@ -226,7 +226,7 @@ void Function::increaseScaleY(const gui::CoordType& scale) {
 void Function::addToLines(std::vector<gui::Point>& tacke){
 	if (!tacke.empty()) {
 		lines->emplace_back();
-		lines->back().createPolyLine(tacke.data(), tacke.size(), debljina, (td::LinePattern)pattern);
+		lines->back().createPolyLine(tacke.data(), tacke.size(), debljina, (td::LinePattern)_pattern.pattern);
 		tacke.clear();
 	}
 }
@@ -264,7 +264,8 @@ void Function::draw(const gui::Rect& frame){
 
 	lines->clear();
 
-	if ((int)pattern >= (int)td::LinePattern::NA) {
+	if ((int)_pattern.pattern > (int)Pattern::LinePattern::DefaultLine) {
+		const td::DotPattern pattern = (td::DotPattern)_pattern.pattern;
 		gui::Shape dot;
 		std::vector<gui::Circle> dots;
 		dots.reserve(length);
@@ -272,14 +273,21 @@ void Function::draw(const gui::Rect& frame){
 			if (frame.contains(tacke[i]))
 				dots.emplace_back(tacke[i], 1);
 
-		dot.createCircles(dots.data(), dots.size(), debljina);
-		dot.drawFillAndWire(color, color);
+		if(pattern == td::DotPattern::FilledCircle){
+			dot.createCircles(dots.data(), dots.size(), debljina);
+			dot.drawFillAndWire(color, color);
+		}else{
+			dot.createCircles(dots.data(), dots.size(), debljina);
+			dot.drawWire(color);
+		}
+
+
 		return;
 	}
 
 	if (frame.isZero()) {
 		lines->emplace_back();
-		lines->back().createPolyLine(tacke, length, debljina, (td::LinePattern)pattern);
+		lines->back().createPolyLine(tacke, length, debljina, (td::LinePattern)_pattern.pattern);
 		reDraw = false;
 		draw(frame);
 		return;

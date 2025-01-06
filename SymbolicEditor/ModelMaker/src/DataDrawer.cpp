@@ -70,7 +70,7 @@ void DataDraw::addData(const td::String& name, const std::vector<FunctionDesc>& 
                 xname = f.xname;
                 if (ynameCnt++ == 0)
                     yname = f.yname;
-                g->addFunction(f.x, f.y, f.size, 2, gui::plot::View::LinePattern::Default, f.name);
+                g->addFunction(f.x, f.y, f.size, 2, td::DotPattern::FilledCircle, f.name);
                 if (f.xname != xname)
                     xname.clean();
             }
