@@ -7,6 +7,7 @@
 #include <xml/Writer.h>
 #include <fstream>
 #include <xml/DOMParser.h>
+#include "AnnotationDialog.h"
 
 namespace gui
 {
@@ -491,15 +492,10 @@ void View::showHelp(){
 }
 
 void View::showInformation(){
-      /*gui::Panel::show<Settings>(this, tr("@Plot_settings"), (td::UINT4)9859, \ primjer
+      gui::Panel::show<annotDiag>(this, "Annotations", (td::UINT4)9858,\
             {{gui::Dialog::Button::ID::OK, tr("@Plot_zatvori") , gui::Button::Type::Normal}}, \
-            [](gui::Dialog *ptr){}, this);
-       */
-    /*
-    auto d = new annotDiag(this, verticals, horizontals);
-    d->setResizable(false);
-    d->open();
-    */
+            [](gui::Dialog *ptr){}, this, verticals, horizontals);
+    
 }
 
 void View::saveMenu()
