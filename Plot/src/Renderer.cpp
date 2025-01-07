@@ -356,7 +356,7 @@ Function::Pattern Renderer::checkDefaultPattern(const Function::Pattern &pattern
     auto p = _defaultPatterns.front();
     _defaultPatterns.pop();
 
-    if(pattern.pattern != Pattern::LinePattern::DefaultDot)
+    if(pattern.pattern == Pattern::LinePattern::DefaultDot)
         return Pattern(td::DotPattern(p.second));
     else    
         return Pattern(td::LinePattern(p.first));

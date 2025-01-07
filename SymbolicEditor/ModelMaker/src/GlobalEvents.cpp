@@ -17,15 +17,10 @@ void SettingsVars::loadSettingsVars(gui::Application* app)
     }
     auto &props = *this->app->getProperties();
 
-    //IDz: Ne praviti novi tr (koristiti gui::tr
     colorNames = { gui::tr("constants"), gui::tr("functions"), gui::tr("attributes"),  gui::tr("keywords"), gui::tr("variables"), gui::tr("paramaters"), gui::tr("comments"), gui::tr("importColor"), gui::tr("textColor")};
     
     assert((colorNames.size() ==  colorCnt) && "SettingsVars u globalEvents.h mora imati ispravno podešenu vrijednost colorCnt");
-    
-    //IDz: Ne ovako!!
-//    if(colorNames.size() != colorCnt)
-//        assert("SettingsVars u globalEvents.h mora imati ispravno podešenu vrijednost colorCnt");
-    
+
 
     colorsLight[0] = td::ColorID(props.getValue<int>("constantsColorsLight", (int)td::ColorID::Red));
     colorsLight[1] = td::ColorID(props.getValue<int>("functionColorsLight", (int)td::ColorID::DeepSkyBlue));
@@ -57,6 +52,7 @@ void SettingsVars::loadSettingsVars(gui::Application* app)
     embedPlot = (props.getValue<int>("embedPlot", 1) == 1);
     restoreTabs = (props.getValue<int>("restoreTabs", 1) == 1);
     warnBeforeClose = (props.getValue<int>("warnBeforeClosing", 1) == 1);
+    autoPlotFuncs = (props.getValue<int>("autoPlotFuncs", 1) == 1);
 
 }
 
@@ -124,4 +120,5 @@ void SettingsVars::saveValues()
     props.setValue<int>("embedPlot", (int)(embedPlot ? 1 : 0));
     props.setValue<int>("restoreTabs", (int)(restoreTabs ? 1 : 0));
     props.setValue<int>("warnBeforeClosing", (int)(warnBeforeClose ? 1 : 0));
+    props.setValue<int>("autoPlotFuncs", (int)(autoPlotFuncs ? 1 : 0));
 }

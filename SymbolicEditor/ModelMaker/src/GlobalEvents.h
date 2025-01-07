@@ -26,7 +26,7 @@ struct SettingsVars
 
 	double textSize;
 	td::String font;
-	bool embedPlot, restoreTabs, warnBeforeClose;
+	bool embedPlot, restoreTabs, warnBeforeClose, autoPlotFuncs;
 #ifdef MU_MACOS
     td::BYTE tabStopSizeInChars = 2;
 #else

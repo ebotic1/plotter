@@ -10,6 +10,7 @@
 #include <td/Timer.h>
 #include <dp/IDatabase.h>
 #include <complex>
+#include "GlobalEvents.h"
 
 using LogType = LogView::LogType;
 
@@ -495,7 +496,7 @@ int MainWindow::simulate(ViewForTab *tab)
 		std::vector<ModelSettings::FunctionDesc> autoFuncs;
 		//int size = (equationType == EquationTypes::NR || equationType == EquationTypes::WLS) ? 1 : 1 + std::abs(startTime - endTime) / stepTime;
 
-		if (funcs.empty() && initSucess) {
+		if (funcs.empty() && initSucess && GlobalEvents::settingsVars.autoPlotFuncs) {
 			useAutoFuncs = true;
 			cnt::SafeFullVector<td::INT4> symbs;
 

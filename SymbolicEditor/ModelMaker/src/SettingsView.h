@@ -34,7 +34,7 @@ class SettingsView: public gui::View
 
     gui::CheckBox _chbToolbarIconsAndLabels;
 
-    gui::CheckBox _chBoxEmbed, _chBoxRestoreTabs, _chBoxConfirmClose;
+    gui::CheckBox _chBoxEmbed, _chBoxRestoreTabs, _chBoxConfirmClose, _chBoxDrawFuncsAuto;
 
     gui::Label _lblFont;
     gui::ComboBox fontCombo;
@@ -75,7 +75,7 @@ public:
         _lblLang(tr("Laungage: ")),
         layout(2,2),
         props(getAppProperties()),
-        _vl(5),
+        _vl(6),
         _tabViewLayout(1),
         _colorsGrid(colorsCnt, 2)
     , _chbToolbarIconsAndLabels(tr("chbTBIcsAndLbls"))
@@ -85,7 +85,8 @@ public:
         embededCurrent(GlobalEvents::settingsVars.embedPlot),
         langs(getSupportedLanguages()),
         _lblFont(tr("fontLabel")),
-        _settingsImg(":settings")
+        _settingsImg(":settings"),
+        _chBoxDrawFuncsAuto(tr("drawFunctionsAutomatically"))
     {
         bool showLabels = props->getTBLabelVisibility(mu::IAppProperties::ToolBarType::Main, true);
         _chbToolbarIconsAndLabels.setChecked(showLabels);
@@ -132,7 +133,10 @@ public:
         gc.appendRow(_lblLang) << langCombo;
         gc.appendRow(_lblFont) << fontCombo;
 
-        _vl << layout << _chbToolbarIconsAndLabels << _chBoxEmbed << _chBoxRestoreTabs << _chBoxConfirmClose;
+        _vl << layout << _chBoxDrawFuncsAuto << _chbToolbarIconsAndLabels << _chBoxEmbed << _chBoxRestoreTabs << _chBoxConfirmClose;
+
+        _chBoxDrawFuncsAuto.setChecked(settings.autoPlotFuncs, true);
+        _chBoxDrawFuncsAuto.onClick([this, &settings](){settings.autoPlotFuncs = _chBoxDrawFuncsAuto.isChecked();});
 
         setSizeLimits(width, gui::Control::Limit::Fixed);
 
