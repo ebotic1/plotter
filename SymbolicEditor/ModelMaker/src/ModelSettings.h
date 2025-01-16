@@ -8,6 +8,8 @@
 #include <gui/Label.h>
 #include <gui/NumericEdit.h>
 #include "../../EquationToXML/inc/nodes.h"
+#include <gui/CheckBox.h>
+#include <map>
 
 class ModelSettings;
 
@@ -26,30 +28,44 @@ class ModelSettings : public gui::View {
 	gui::Label _lblStart, _lblEnd, _lblStep, _lblMaxIter, _lblPreproc;
 	SyntaxText preprocesCommands;
 	gui::NumericEdit startTime, endTime, stepTime, maxIter;
+	gui::CheckBox _chBoxUseAtoFuncs;
 
 	gui::View paramaterView;
 	unsigned int version = 1;
 	friend class SyntaxText;
 
 public:
-	struct FunctionDesc {
-		enum class Type{graph, points} type;
-		td::String name, yAxis, xAxis;
-		bool Ycomplex = false, Xcomplex = false;
-		FunctionDesc(const Type& type, const td::String& name, const td::String& yAxis, const td::String& xAxis);
+	struct PlotDesc {
+		enum class Type{graph, scatter, table} type = Type::graph;
+		td::String title, xAxis;
+		bool xComplex = false;
+		
+		struct FunctionDesc{
+			bool complex = false;
+			td::String name;
+			std::map<td::String, td::String> attribs;
+			FunctionDesc(const td::String &name = ""): name(name){}
+		};
+		std::vector<FunctionDesc> yAxis;
+		PlotDesc(const td::String &title, const td::String &xName);
+		PlotDesc(){};
 	};
 	struct DependencyDesc {
 		td::String pathOrTabName, alias;
 		ModelNode::addType type;
 		DependencyDesc(const char* path, int str1Size, const char* alias, int str2Size, ModelNode::addType);
 	};
+	struct SimulationSettings {
+		double startTime, endTime, stepTime, maxIterations;
+		bool useAutoFuncs;
+	} _settings;
 
 public:
 	ModelSettings();
 	void showTimes(bool show);
 	void getDependencies(std::vector<DependencyDesc> &);
-	void getFunctions(std::vector<FunctionDesc>&);
-	void getStartStopTime(double& startTime, double& endTime, double& stepTime, unsigned int& maxIterations);
+	void getFunctions(std::vector<PlotDesc>&);
+	SimulationSettings getSimulationSettings();
 	unsigned int getVersion() const;
 
 	void loadFromString(const td::String &settingsString);

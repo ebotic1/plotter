@@ -11,7 +11,7 @@
 #include <map>
 
 #include <gui/plot/View.h>
-
+#include "ModelSettings.h"
 
 class DataDraw : public gui::View 
 {
@@ -19,22 +19,31 @@ class DataDraw : public gui::View
 	gui::HorizontalLayout _hl;
 	gui::Image imgGraph, imgTable;
 	bool _tabViewOwnership;
-	std::map<gui::BaseView *, td::String> _graphNames;
 
 
 public:
-	struct FunctionDesc {
-		td::String name, xname, yname;
-		double* x, * y;
-		unsigned int size;
-		FunctionDesc(const td::String& name, double* x, double* y, unsigned int size, const td::String& xname, const td::String& yname);
+
+	struct PlotDesc {
+		ModelSettings::PlotDesc::Type type;
+		td::String xName;
+		double* x;
+		
+		struct FunctionDesc{
+			unsigned int size;
+			double *y;
+			td::String name;
+			std::map<td::String, td::String> attribs;
+			FunctionDesc(const ModelSettings::PlotDesc::FunctionDesc &&fun, unsigned int size, double *data);
+		};
+		std::vector<FunctionDesc> yAxis;
 	};
 
-	enum class Type{Table, Graph};
+	
 
 	DataDraw(gui::TabView* tabView = nullptr);
 	void measure(gui::CellInfo& cell) override;
-	void addData(const td::String &name, const std::vector<FunctionDesc>& functions, Type tip);
+	void addData(const td::String &tabName, const std::vector<PlotDesc>& functions);
+	void addData(const td::String &tabName, const PlotDesc& functions);
 	void removeTabs();
 	~DataDraw();
 };

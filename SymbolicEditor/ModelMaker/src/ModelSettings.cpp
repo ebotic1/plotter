@@ -15,21 +15,25 @@ static void setUpLineEditSize(gui::NumericEdit& edit, const td::Variant &startVa
 }
 
 
-ModelSettings::FunctionDesc::FunctionDesc(const Type& type, const td::String& name, const td::String& yAxis, const td::String& xAxis)
-	: type(type), name(name), xAxis(xAxis), yAxis(yAxis), Ycomplex(false), Xcomplex(false)
+ModelSettings::PlotDesc::PlotDesc(const td::String &name, const td::String &xName):
+	title(name),
+	xAxis(xName)
 {
 }
 
+
 ModelSettings::ModelSettings() :
-	_gridLayout(3,7),
+	_gridLayout(4,7),
 	_lblStart(tr("startTime")), _lblEnd(tr("endTime")), _lblStep(tr("stepTime")),
 	_lblMaxIter(tr("maxIter")), _lblPreproc(tr("preproc")),
 	startTime(timeTypeTD, gui::LineEdit::Messages::Send),
 	endTime(timeTypeTD, gui::LineEdit::Messages::Send),
 	stepTime(stepTypeTD, gui::LineEdit::Messages::Send),
 	maxIter(td::DataType::uint4, gui::LineEdit::Messages::Send),
-	preprocesCommands(this)
+	preprocesCommands(this),
+	_chBoxUseAtoFuncs(tr("useDefaultFuncs"))
 {
+	_chBoxUseAtoFuncs.setChecked(GlobalEvents::settingsVars.autoPlotFuncs);
 
 	setUpLineEditSize(startTime,  td::Variant(timeType(0.0)));
 	setUpLineEditSize(endTime,  td::Variant(timeType(10.0)));
@@ -40,18 +44,11 @@ ModelSettings::ModelSettings() :
 
 	gui::GridComposer grid(_gridLayout);
 	grid.appendRow(_lblStart) << startTime << _lblStep << stepTime << _lblEnd << endTime;
-    grid.appendSpacer(10, 6); //da "stisne" edit polja
-//	grid.appendRow(_lblEnd) << endTime;
-//	grid.appendRow(_lblStep) << stepTime;
+    grid.appendSpacer(10, 6);
 	grid.appendRow(_lblMaxIter) << maxIter;
-//	grid.startNewRowWithSpace(1,10);
-//	grid.appendEmptyCols(1);
+	grid.appendRow(_chBoxUseAtoFuncs);
     grid.appendRow(_lblPreproc, td::HAlignment::Left, td::VAlignment::Top);
     grid.appendCol(preprocesCommands, 0, td::HAlignment::Left, 0);
-//	grid.appendEmptyCols(1);
-//	_gridLayout.insert(4,0,preprocesCommands, -1);
-
-//	preprocesCommands.setSizeLimits(0, gui::Control::Limit::None, 100, gui::Control::Limit::Fixed);
 
 	setLayout(&_gridLayout);
 }
@@ -93,48 +90,80 @@ inline static void markComplex(td::String& name, bool& isComplex) {
 }
 
 
-void ModelSettings::getFunctions(std::vector<FunctionDesc>& desc)
+void ModelSettings::getFunctions(std::vector<PlotDesc>& desc)
 {
 	desc.clear();
-	std::regex pattern(R"((?:\s|^)(!)?(function|dataset)\s+(?:([^;\n]+?)\s+of\s+)?([^\s\n;]+?)\s+(?:versus|vs|wrt)\s+([^\s\n;]+?)(?:\s+)?(?:[;\n]|$))");
-	std::cmatch match;
+	std::regex pattern(R"((?:\s|^)(!)?(line|scatter)\s+(?:([^;\n]+?)\s+of\s+)?([^\n;]+?)\s+(?:versus|vs|wrt)\s+([^\s\n;]+?)(?:\s+)?(?:[;\n]|$))");
+	std::regex patternYAxis(R"((?:(?:^|,|\s)+)([^,\[\]]+)(?:\s*\[(.+?)\])?)");
+	std::regex patternAttrib(R"((?:(?:^|,|\s)+)([^,=\]]+)(?:\s*=\s*([^,\]]+)\s*)?)");
+	std::cmatch match, match2, match3;
 
 	const auto& cmnds = preprocesCommands.getText();
 	auto start = cmnds.begin();
 	while (std::regex_search(start, cmnds.end(), match, pattern)){
-		if(!match[1].matched){
-			desc.emplace_back(FunctionDesc::Type::graph, match[3].matched ? td::String(match[3].first, match[3].length()) : td::String(match[4].first, match[4].length()),\
-			td::String(match[4].first, match[4].length()),\
-			td::String(match[5].first, match[5].length()));
+		if(match[1].matched){
+			start = match.suffix().first;
+			continue;;
+		}
 
-			if (match[2].length() != 8) //duzina rijeci "funkcija" je 8, malo nerobusno ali dobro je
-				desc.back().type = FunctionDesc::Type::points;
+		desc.resize(desc.size() + 1);
+		auto &funs = desc.back();
+	
+		td::String plotType(match[2].first, match[2].length());
+		if(plotType.cCompare("scatter") == 0)
+			funs.type = PlotDesc::Type::scatter;
+		else
+			funs.type = PlotDesc::Type::graph;
+
+		if(match[3].matched)
+			funs.title = match[3].first;
+
+		funs.xAxis.fromKnownString(match[5].first, match[5].length());
+
+		markComplex(funs.xAxis, funs.xComplex);
+
+
+
+		auto startXAxis = match[4].first;
+		while (std::regex_search(startXAxis, match[4].first + match[4].length(), match2, patternYAxis)){
+			funs.yAxis.resize(funs.yAxis.size() + 1);
+			funs.yAxis.back().name = td::String(match2[1].first, match2[1].length()).trim();
+			markComplex(funs.yAxis.back().name, funs.yAxis.back().complex);
+
+			if(match2[2].matched){
+				auto startAttrib = match2[2].first;
+				while (std::regex_search(startAttrib, match2.suffix().first, match3, patternAttrib)){
+					funs.yAxis.back().attribs[td::String(match3[1].first, match3[1].length()).trim()] = td::String(match3[2].first, match3[2].matched ? match3[2].length() : 0).trim();
+					//const char *debug = funs.yAxis.back().attribs.begin()->first.c_str();
+					startAttrib = match3.suffix().first;
+				}
+			}
+
+			startXAxis = match2.suffix().first;
 		}
 		start = match.suffix().first;
 	}
-	for (auto& d : desc) {
-		if (d.name.cCompare("0") == 0)
-			d.name = d.xAxis;
-		markComplex(d.xAxis, d.Xcomplex);
-		markComplex(d.yAxis, d.Ycomplex);
-	}
+
 }
 
-void ModelSettings::getStartStopTime(double& startTime, double& endTime, double& stepTime, unsigned int &maxIterations)
+ModelSettings::SimulationSettings ModelSettings::getSimulationSettings()
 {
 	td::Variant temp;
 	this->startTime.getValue(temp);
-	startTime = temp.dec3Val().getAsFloat();
+	_settings.startTime = temp.dec3Val().getAsFloat();
 
 	this->endTime.getValue(temp);
-	endTime = temp.dec3Val().getAsFloat();
+	_settings.endTime = temp.dec3Val().getAsFloat();
 
 	this->stepTime.getValue(temp);
-	stepTime = temp.dec4Val().getAsFloat();
+	_settings.stepTime = temp.dec4Val().getAsFloat();
 
 	this->maxIter.getValue(temp);
-	maxIterations = temp.u4Val();
+	_settings.maxIterations = temp.u4Val();
 
+	_settings.useAutoFuncs = _chBoxUseAtoFuncs.isChecked();
+
+	return _settings;
 }
 
 unsigned int ModelSettings::getVersion() const
@@ -175,6 +204,9 @@ void ModelSettings::loadFromString(const td::String &settingsString)
 	if(getVal("maxIter", retVal))
 		maxIter.setValue((td::UINT4)retVal.toInt());
 
+	if(getVal("autoFuncs", retVal))
+		_chBoxUseAtoFuncs.setChecked(retVal.cCompareNoCase("true") == 0);
+
 	if(getVal("preProc", retVal))
 		preprocesCommands.setText(retVal);
 	
@@ -192,6 +224,7 @@ const td::String ModelSettings::getString()
 	<< ")end(" << endTime.getValue()\
 	<< ")step(" << stepTime.getValue()\
 	<< ")maxIter(" << maxIter.getValue()\
+	<< ")autoFuncs(" << _chBoxUseAtoFuncs.isChecked()\
 	<< ")preProc(" << preprocesCommands.getText()\
 	<< ")";
 	td::String str;
@@ -228,7 +261,7 @@ void SyntaxText::highlightText()
 	auto text = getText();
 	const char *start = text.begin();
 	static std::cmatch match;
-	static std::regex keywordPatten(R"(((?:^|\s)(import|as|!?function|!?dataset|of|versus|vs|wrt|0|init)|(.real|.imag))(?:$|\s))");
+	static std::regex keywordPatten(R"(((?:^|\s)(import|as|!?line|!?scatter|of|versus|vs|wrt|0|init)|(.real|.imag))(?:$|\s))");
 	static gui::Range rangeFound;
     removeColor(gui::Range(0, text.glyphLength()));
 	while(std::regex_search((const td::UTF8 *)start, (const td::UTF8 *) text.end(), match, keywordPatten)){

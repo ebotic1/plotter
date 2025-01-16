@@ -14,7 +14,7 @@
 #include "DataDrawer.h"
 
 
-
+/*
 
 
 class NumberColumn : public gui::Canvas{
@@ -254,3 +254,4 @@ public:
 
 	}
 };
+*/

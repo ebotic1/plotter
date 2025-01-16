@@ -106,6 +106,7 @@
 		<Res id="newTFBlock" tr="New TF block" />
 		<Res id="OpenTxtModel" tr="Open text model" />
 		<Res id="OpenTFModel" tr="Open graphical model" />
-		<Res id="drawFunctionsAutomatically" tr="Create default plot after simulation" />
+		<Res id="drawFunctionsAutomatically" tr="New models start with default functions enabled" />
+		<Res id="useDefaultFuncs" tr="Draw default plot" />
 	</Translations>
 </DevRes>

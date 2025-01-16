@@ -43,6 +43,7 @@ void Renderer::setUpDrawingWindow(){
     drawingWindow.point.x = 0;
 
     const auto &margins = _drawNumbersOutside ? _margins : _marginsZero;
+    _yAxisNameIsNotNull = (yAxisName.toString().length() > 0) ? true : false;
 
     if (_drawMargins) {
         drawingWindow.point.y = margins.marginTop;
@@ -592,6 +593,7 @@ void Renderer::drawAxis(){
         tr.appendToContext();
         this->xAxisName.draw(r, _font, _axisColor, td::TextAlignment::Center, td::VAlignment::Bottom);
         tr.restoreContext();
+        if(_yAxisNameIsNotNull){
         tr.saveContext();
 
         r.setWidth(drawingWindow.size.height);
@@ -603,6 +605,7 @@ void Renderer::drawAxis(){
         tr.appendToContext();
         this->yAxisName.draw(r, _font, _axisColor, td::TextAlignment::Center, td::VAlignment::Bottom);
         tr.restoreContext();
+        }
         
     }
 

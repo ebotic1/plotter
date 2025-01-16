@@ -75,7 +75,7 @@ private:
 	std::shared_ptr<LogView> logView;
 	ModelSettings settings;
     std::shared_ptr<Results> _results;
-	std::vector<ModelSettings::FunctionDesc> funcionsDesc;
+	std::vector<ModelSettings::PlotDesc> funcionsDesc;
 	std::vector<ModelSettings::DependencyDesc> depenends;
 
 	gui::SplitterLayout tabAndLogSplitter;
@@ -107,12 +107,12 @@ public:
 	void save();
 	void saveAs();
 	void exportToXML(td::String path);
-	void getTimes(double& startTime, double& endTime, double& stepTime, unsigned int& maxIterations);
+	ModelSettings::SimulationSettings getSimulationSettings();
 	void setPath(const td::String &path);
 	const td::String& getPath();
 	bool promptSaveIfNecessary(bool exitProgram);
 	const ModelNode& getModelNode(bool &error, bool supressLogs = false);
-	const std::vector<ModelSettings::FunctionDesc>& getFunctions();
+	const std::vector<ModelSettings::PlotDesc>& getPlots();
 	
     bool isModified() const
     {

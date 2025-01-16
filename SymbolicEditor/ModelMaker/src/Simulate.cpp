@@ -10,7 +10,7 @@
 #include <td/Timer.h>
 #include <dp/IDatabase.h>
 #include <complex>
-#include "GlobalEvents.h"
+#include "ModelSettings.h"
 
 using LogType = LogView::LogType;
 
@@ -19,7 +19,7 @@ class SolutionBuffer : public sc::ISolutionBuffer
 {
 	static constexpr bool isComplex = std::is_same<T, td::cmplx>::value;
 
-	const std::vector<ModelSettings::FunctionDesc> &functions;
+	const std::vector<ModelSettings::PlotDesc> &functions;
 	const std::shared_ptr<LogView> logger;
 	std::shared_ptr<Results> _results;
     SolverTemplate<T> *solver;
@@ -49,38 +49,10 @@ class SolutionBuffer : public sc::ISolutionBuffer
 		return result;
 	}
 
-	std::vector<DataDraw::FunctionDesc> _outFuncs, _outDataSet;
-	using GraphType = ModelSettings::FunctionDesc::Type;
-	std::map<GraphType, int> graphCnt;
-	void drawData(GraphType tip){
-		
-		if(tip == GraphType::graph)
-		{
-			td::String nameAndType;
-			nameAndType.format("%s-graph%d", "modelName", graphCnt[tip]++);
-			GlobalEvents::getMainWindowPtr()->getDataDrawer()->addData(nameAndType, _outFuncs, DataDraw::Type::Graph);
-			_outFuncs.clear();
-		}
-
-
-		if(tip == GraphType::graph)
-		{
-			#ifdef USE_SCROLLVIEW_TABLE
-			td::String nameAndType(modelName);
-			nameAndType += "-table";
-			GlobalEvents::getMainWindowPtr()->getDataDrawer()->addData(nameAndType, _outDataSet, DataDraw::Type::Table);
-			_outDataSet.clear();
-			#endif
-		}
-		
-
-
-	}
-
 
 public:
     SolutionBuffer(const td::String &modelName, const std::shared_ptr<LogView> logger, std::shared_ptr<Results> resultTable, \
-	const std::vector<ModelSettings::FunctionDesc> &functions, SolverTemplate<T>* solver, bool initSucess)
+	const std::vector<ModelSettings::PlotDesc> &functions, SolverTemplate<T>* solver, bool initSucess)
     : functions(functions)
     , logger(logger)
     , solver(solver)
@@ -240,9 +212,12 @@ public:
 		size_t size = (data.size() > 0) ? data[0].size() : 0;
 
 		for(int i = 0; i<functions.size(); ++i){
-			if(functions[i].xAxis.cCompare("#") == 0 || functions[i].yAxis.cCompare("#") == 0){
+			if(/*provjeriti da li se # ikad koristi u funkcijama*/ true){
 				double *ptr = new double[size];
-				NameAndDataPtr["#"] = ptr;
+				if constexpr (isComplex)
+					NameAndDataPtr["#.real"] = ptr;
+				else
+					NameAndDataPtr["#"] = ptr;
 				for(int j = 0; j<size; ++j){
 					ptr[j] = j;
 				}
@@ -256,108 +231,89 @@ public:
 		
 		decltype(NameAndDataPtr)::iterator itX, itY, end = NameAndDataPtr.end();
 		td::String xAxis, yAxis;
-		int paramIntX, paramIntY;
+		int paramIntY;
+		int dataSize;
+		int cnt = 0;
 
-		for(const auto &funD : functions){//zahtjevi za crtane grafova/tabela
-			if (funD.xAxis.cCompare("0") == 0 && funD.yAxis.cCompare("0") == 0){
-				//continue;
-				drawData(funD.type);
-			}
+		for(const ModelSettings::PlotDesc &funD : functions){//zahtjevi za crtane grafova/tabela
+			++cnt;
+			DataDraw::PlotDesc plot;
+			plot.type = funD.type;
 
 			if constexpr (!isComplex) {
-				if (funD.Xcomplex || funD.Ycomplex)
+				if (funD.xComplex)
 					continue;
-				itX = NameAndDataPtr.find(funD.xAxis);
-				itY = NameAndDataPtr.find(funD.yAxis);
+				plot.xName = funD.xAxis;
 			}
 			else {
-				xAxis = addCmplxTag(funD.xAxis, funD.Xcomplex);
-				yAxis = addCmplxTag(funD.yAxis, funD.Ycomplex);
-
-				itX = NameAndDataPtr.find(xAxis);
-				itY = NameAndDataPtr.find(yAxis);
+				plot.xName = addCmplxTag(funD.xAxis, funD.xComplex);
 			}
 
-			paramIntX = (itX == end) ? solver->getParamIndex(funD.xAxis.c_str()) : -1;
-			paramIntY = (itY == end) ? solver->getParamIndex(funD.yAxis.c_str()) : -1;
+			itX = NameAndDataPtr.find(plot.xName);
+			plot.xName = funD.xAxis;
 
-			if (itX != end && itY != end)
-            { //dva niza
-				if constexpr (!isComplex)
-                {
-					if (funD.type == ModelSettings::FunctionDesc::Type::graph)
-						_outFuncs.push_back(DataDraw::FunctionDesc(funD.name, NameAndDataPtr[funD.xAxis], NameAndDataPtr[funD.yAxis], size, funD.xAxis, funD.yAxis));
-					else
-						_outDataSet.push_back(DataDraw::FunctionDesc(funD.name, NameAndDataPtr[funD.xAxis], NameAndDataPtr[funD.yAxis], size, funD.xAxis, funD.yAxis));
-				}
-				else
-                {
+			if(itX != end){
+				plot.x = itX->second;
+				for(const ModelSettings::PlotDesc::FunctionDesc &yFuns: funD.yAxis){
+					if(yFuns.name.getFirstNonWhiteSpacePosition() == -1)
+						continue;
+					paramIntY = solver->getParamIndex(yFuns.name.c_str());
 
-					if (funD.type == ModelSettings::FunctionDesc::Type::graph)
-						_outFuncs.push_back(DataDraw::FunctionDesc(funD.name, NameAndDataPtr[xAxis], NameAndDataPtr[yAxis], size, funD.xAxis, funD.yAxis));
-					else
-						_outDataSet.push_back(DataDraw::FunctionDesc(funD.name, NameAndDataPtr[xAxis], NameAndDataPtr[yAxis], size, funD.xAxis, funD.yAxis));
-			
+					if constexpr(!isComplex){
+						if(yFuns.complex)
+							continue;
+						itY = NameAndDataPtr.find(yFuns.name);
+					}
+					else{
+						yAxis = addCmplxTag(yFuns.name, yFuns.complex);
+						itY = NameAndDataPtr.find(yAxis);
+					}
+
+					
+					double *data = nullptr;
+					unsigned int dataSize = 0;
+
+
+					if(itY != end){
+						dataSize = size;
+						data = itY->second;
+						if(dataSize < 2)
+							continue;
+					}
+					else if(paramIntY >= 0){
+						dataSize = 1;
+						if constexpr(!isComplex)
+							data = solver->getParamsPtr() + paramIntY;
+						else{
+							data = (yFuns.complex) ? reinterpret_cast<T::value_type(&)[2]>(*(solver->getParamsPtr() + paramIntY)) + 1: reinterpret_cast<T::value_type(&)[2]>(*(solver->getParamsPtr() + paramIntY));
+
+						}
+					}
+					else{
+						td::String log("Discarding plot ");
+						log += yFuns.name;
+						logger->appendLog(log, LogType::Warning);
+						continue;
+					}
+					
+					//if(paramIntY >= 0 || itY != end)
+						plot.yAxis.emplace_back(std::move(yFuns), dataSize, data);
+					
 				}
+				td::String nameAndType;
+				nameAndType.format("%s-%d", modelName.c_str(), cnt);
+				GlobalEvents::getMainWindowPtr()->getDataDrawer()->addData(nameAndType, plot);
 				continue;
 			}
 
-
-			if (itX == end && paramIntX >= 0 && funD.yAxis.cCompare("0") == 0)
-            { // parametar u x
-				if constexpr (!isComplex)
-                {
-					if (funD.type == ModelSettings::FunctionDesc::Type::graph)
-						_outFuncs.push_back(DataDraw::FunctionDesc(funD.name, solver->getParamsPtr() + paramIntX, nullptr, 1, funD.xAxis, ""));
-					else
-						_outDataSet.push_back(DataDraw::FunctionDesc(funD.name, nullptr, nullptr, 0, "", getCmplxString(solver->getParamsPtr()[paramIntX])));
-				}
-				else
-                {
-					_outDataSet.push_back(DataDraw::FunctionDesc(funD.name, nullptr, nullptr, 0, "", getCmplxString(solver->getParamsPtr()[paramIntX])));
-				}
-				
-				continue;
-			}
-
-
-			if (itY == end && paramIntY >= 0 && funD.xAxis.cCompare("0") == 0) { // parametar u y
-        
-				if constexpr (!isComplex)
-                {
-					if (funD.type == ModelSettings::FunctionDesc::Type::graph)
-						_outFuncs.push_back(DataDraw::FunctionDesc(funD.name, nullptr, solver->getParamsPtr() + paramIntY, 1, funD.yAxis, ""));
-					else
-						_outDataSet.push_back(DataDraw::FunctionDesc(funD.name, nullptr, nullptr, 0, "", getCmplxString(solver->getParamsPtr()[paramIntY])));
-				}
-				else
-                {
-					_outDataSet.push_back(DataDraw::FunctionDesc(funD.name, nullptr, nullptr, 0, "", getCmplxString(solver->getParamsPtr()[paramIntY])));
-				}
-				
-				continue;
-			}
-
-
-			if (itY != end && funD.xAxis.cCompare("0") == 0) { // jedan niz
-
-				if constexpr (!isComplex)
-					_outDataSet.push_back(DataDraw::FunctionDesc(funD.name, nullptr, NameAndDataPtr[funD.yAxis], size, "", funD.yAxis));
-				else {
-					_outDataSet.push_back(DataDraw::FunctionDesc(funD.name, nullptr, NameAndDataPtr[yAxis], size, "", yAxis));
-				}
-				continue;
-			}
-
-			td::String log("Discarding function/dataset ");
-			log += funD.name;
+		
+			td::String log("Discarding plot ");
+			log += funD.xAxis;
 			logger->appendLog(log, LogType::Warning);
 
 
 		}
 
-		drawData(GraphType::graph);
-		drawData(GraphType::points);
 
 		if(NameAndDataPtr.contains("#"));
 			delete[] NameAndDataPtr["#"];
@@ -415,11 +371,9 @@ int MainWindow::simulate(ViewForTab *tab)
 	}
 
 
-	double startTime, stepTime, endTime;
-	unsigned int maxIter;
-	tab->getTimes(startTime, endTime, stepTime, maxIter);
+	auto simSettings = tab->getSimulationSettings();
 
-	const auto &funcs = tab->getFunctions();
+	const auto &funcs = tab->getPlots();
 
 	td::String modelStr;
 	model.printNodeToString(modelStr);	
@@ -446,17 +400,17 @@ int MainWindow::simulate(ViewForTab *tab)
         {
 			switch (equationType) {
 			case EquationTypes::NR:
-                pSolver = sc::createDblNRSolver(maxIter);
+                pSolver = sc::createDblNRSolver(simSettings.maxIterations);
                 pSolver->setReportResultsPerNRIteration(sc::ReportRate::InitialAndIterationsAndFinal);
 				break;
 			case EquationTypes::ODE:
 				pSolver = sc::createDblODESolver();
 				break;
 			case EquationTypes::DAE:
-				pSolver = sc::createDblDAESolver(maxIter);
+				pSolver = sc::createDblDAESolver(simSettings.maxIterations);
 				break;
 			case EquationTypes::WLS:
-                pSolver = sc::createDblWLSSolver(maxIter);
+                pSolver = sc::createDblWLSSolver(simSettings.maxIterations);
                 pSolver->setReportResultsPerNRIteration(sc::ReportRate::InitialAndIterationsAndFinal);
 				break;
 			}
@@ -467,7 +421,7 @@ int MainWindow::simulate(ViewForTab *tab)
         {
 			switch (equationType){
             case EquationTypes::NR:
-                pSolver = sc::createCmplxNRSolver(maxIter);
+                pSolver = sc::createCmplxNRSolver(simSettings.maxIterations);
                 pSolver->setReportResultsPerNRIteration(sc::ReportRate::InitialAndIterationsAndFinal);
 				break;
 			case EquationTypes::ODE:
@@ -480,7 +434,7 @@ int MainWindow::simulate(ViewForTab *tab)
                 logView->appendLog("Complex DAE solver will be implemented in the future", LogType::Error);
                 return -1;
 			case EquationTypes::WLS:
-                pSolver = sc::createCmplxWLSSolver(maxIter);
+                pSolver = sc::createCmplxWLSSolver(simSettings.maxIterations);
                 pSolver->setReportResultsPerNRIteration(sc::ReportRate::InitialAndIterationsAndFinal);
 				break;
 			}
@@ -493,27 +447,32 @@ int MainWindow::simulate(ViewForTab *tab)
 
 
 		bool useAutoFuncs = false;
-		std::vector<ModelSettings::FunctionDesc> autoFuncs;
+		std::vector<ModelSettings::PlotDesc> autoFuncs;
 		//int size = (equationType == EquationTypes::NR || equationType == EquationTypes::WLS) ? 1 : 1 + std::abs(startTime - endTime) / stepTime;
 
-		if (funcs.empty() && initSucess && GlobalEvents::settingsVars.autoPlotFuncs) {
+		if (funcs.empty() && initSucess && simSettings.useAutoFuncs) {
 			useAutoFuncs = true;
 			cnt::SafeFullVector<td::INT4> symbs;
 
 			pSolver->getOutSymbols(symbs);
 			int timeIndex = pSolver->getParamIndex("t");
 			
-			if (timeIndex < 0) 
+			if (timeIndex < 0){
+				autoFuncs.emplace_back("Accuracy", "#");
 				for (const auto& symIndex : symbs){
-					autoFuncs.push_back(ModelSettings::FunctionDesc(ModelSettings::FunctionDesc::Type::graph, "accuracy", "eps", "#"));
-					break;
-				}
-			else 
-				for (const auto& symIndex : symbs){
-					autoFuncs.push_back(ModelSettings::FunctionDesc(ModelSettings::FunctionDesc::Type::graph, pSolver->getSymbolName(symIndex), pSolver->getSymbolName(symIndex), "t"));
+					autoFuncs.back().yAxis.emplace_back(pSolver->getSymbolName(symIndex));
 					if(autoFuncs.size() >= 16)
 						break;
 				}
+			}
+			else{
+				autoFuncs.emplace_back("", "t");
+				for (const auto& symIndex : symbs){
+					autoFuncs.back().yAxis.emplace_back(pSolver->getSymbolName(symIndex));
+					if(autoFuncs.size() >= 16)
+						break;
+				}
+			}
 			if (autoFuncs.empty())
 				logView->appendLog("No out variables found. You must add 'out=true' attribute to a single variable or the variable declaration tag for them to be visible in results", LogType::Warning);
 		}
@@ -531,7 +490,7 @@ int MainWindow::simulate(ViewForTab *tab)
 			if(equationType == EquationTypes::DAE || equationType == EquationTypes::ODE)
             {
                 pSolver->setOutFilter(sc::OutFilter::InitialValues);
-                pSolver->solve(startTime, stepTime, endTime, &buffer, 0);
+                pSolver->solve(simSettings.startTime, simSettings.stepTime, simSettings.endTime, &buffer, 0);
             }
 			if(equationType == EquationTypes::NR || equationType == EquationTypes::WLS)
             {

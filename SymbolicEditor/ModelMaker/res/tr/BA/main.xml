@@ -106,6 +106,7 @@
 		<Res id="newTFBlock" tr="Novi prijenosni blok" />
 		<Res id="OpenTxtModel" tr="Otvori tekstualni model" />
 		<Res id="OpenTFModel" tr="Otvori grafički model" />
-		<Res id="drawFunctionsAutomatically" tr="Automatsko crtanje grafa nakon simulacije" />
+		<Res id="drawFunctionsAutomatically" tr="Ukljuciti automatsko crtanje funkcija za nove modele" />
+		<Res id="useDefaultFuncs" tr="Generiši graf automatski" />
 	</Translations>
 </DevRes>

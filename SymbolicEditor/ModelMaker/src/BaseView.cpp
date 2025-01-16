@@ -172,7 +172,9 @@ void ViewForTab::save()
 	if (_simView->save(_path, settings.getString())) {
 		_lastSavedModel = _simView->getVersion();
 		_lastSavedSettings = settings.getVersion();
-		logView->appendLog("Model saved", LogType::Info);
+		td::String message;
+		message.format("Model saved (%s)", _path.c_str());
+		logView->appendLog(message, LogType::Info);
 	}
 	bool error;
 	getModelNode(error, true); //samo da se procesuje ime modela i varijable/parametri
@@ -195,9 +197,9 @@ void ViewForTab::exportToXML(td::String path)
 		showAlert(tr("error"), tr("modelExtractionError"));
 }
 
-void ViewForTab::getTimes(double& startTime, double& endTime, double& stepTime, unsigned int& maxIterations)
+ModelSettings::SimulationSettings ViewForTab::getSimulationSettings()
 {
-	settings.getStartStopTime(startTime, endTime, stepTime, maxIterations);
+	return settings.getSimulationSettings();
 }
 
 void ViewForTab::setPath(const td::String &path){
@@ -422,7 +424,7 @@ ViewForTab::~ViewForTab()
 	
 }
 
-const std::vector<ModelSettings::FunctionDesc> &ViewForTab::getFunctions()
+const std::vector<ModelSettings::PlotDesc> &ViewForTab::getPlots()
 {
     updateSettings();
 	return funcionsDesc;
