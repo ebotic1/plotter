@@ -81,7 +81,7 @@
 		<Res id="pidRegulator" tr="PID regulator" />
 		<Res id="newDocumentTB" tr="Novi" />
 		<Res id="newDocumentTT" tr="Novi prazan dokument" />
-		<Res id="newFromTemplate" tr="Urnek" />
+		<Res id="newFromTemplate" tr="Predlošci" />
 		<Res id="newFromTemplateTT" tr="Novi dokument koristeći postojeći mali model koji je korektan i sadrži većinu elemenata" />
 		<Res id="openTB" tr="Otvori" />
 		<Res id="openTT" tr="Otvori ranije kreiran model" />
@@ -108,5 +108,7 @@
 		<Res id="OpenTFModel" tr="Otvori grafički model" />
 		<Res id="drawFunctionsAutomatically" tr="Ukljuciti automatsko crtanje funkcija za nove modele" />
 		<Res id="useDefaultFuncs" tr="Generiši graf automatski" />
+		<Res id="NewSimpleModel" tr="Kreiraj dokument iz predloška" />
+		<Res id="ImportFromXML" tr="Uvezi iz XML" />
 	</Translations>
 </DevRes>

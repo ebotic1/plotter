@@ -7,11 +7,11 @@
 
 #include "guiEditor/contextMenu.h"
 #include "MenuBar.h"
-#include "StartingView.h"
 #include "ToolBar.h"
 #include "../../EquationToXML/inc/nodes.h"
 #include "BaseView.h"
 #include "DataDrawer.h"
+#include "StartingScreen.h"
 
 class ViewForTab;
 
@@ -43,7 +43,7 @@ private:
     DataDraw _dataDrawer;
     bool _plotEmbedded = false;
 
-    StartingView _startingView;
+    StartingScreen _startingView;
     ContextMenus _contextMenu;
 
     gui::Image _textEditorIcon, _guiEditorIcon;

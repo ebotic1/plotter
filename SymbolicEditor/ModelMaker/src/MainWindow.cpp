@@ -35,7 +35,6 @@ MainWindow::MainWindow()
     _mainMenuBar.setAsMain(this);
     setToolBar(_toolBar);
     setContextMenus(&_contextMenu);
-    //_switcherView.addView(&_startingView, true);
     _tabView.setBackgroundView(&_startingView);
     _tabView.forwardMessagesTo(this);
     
@@ -46,30 +45,12 @@ MainWindow::MainWindow()
 
     _tabView.onClosedView([this](int) {
         //IDz: add toolbar updates
-        //if (_tabView.getNumberOfViews() == 1)
-          //  showStartScreen(true);
     });
 
-    //_switcherView.addView(&_tabView);
     setCentralView(&_tabView);
 
 }
-//
-//void MainWindow::showStartScreen(bool show)
-//{
-//    if(show){
-//        if(_switcherView.getCurrentViewPos() == 0)
-//            return;
-//        //_mainMenuBar.enableModelMenu(false);
-//        _switcherView.showView(0);
-//
-//    }else{
-//        if (_switcherView.getCurrentViewPos() == 1)
-//            return;
-//        //_mainMenuBar.enableModelMenu(true);
-//        _switcherView.showView(1);
-//    }
-//}
+
 
 void MainWindow::changeTabName(const td::String &name, ViewForTab *tab)
 {
@@ -151,7 +132,7 @@ bool MainWindow::onActionItem(gui::ActionItemDescriptor& aiDesc)
 
             case MenuBar::ActionID::OpenTextModel:
             {
-                gui::OpenFileDialog::show(this, tr("openModel"), "*.modl", MenuBar::ActionID::OpenTextModel, [this](gui::FileDialog* d){
+                gui::OpenFileDialog::show(this, tr("openModel"), {{tr("TextualEditor"), "*.modl"}, {tr("GraphicalEditor"), "*.tfstate"}}, MenuBar::ActionID::OpenTextModel, [this](gui::FileDialog* d){
                     auto path = d->getFileName();
                     if(path.isNull())
                         return;
@@ -297,7 +278,6 @@ bool MainWindow::onToolbarsPopoverSelectionChange(gui::PopoverView* pPOView, td:
                 openFile(gui::getResFileName(":NR"));
                 removePath();
                 return true;
-
             case 1:
                 openFile(gui::getResFileName(":WLS"));
                 removePath();
@@ -472,6 +452,8 @@ void MainWindow::onInitialAppearance()
 
     }
 
+    onChangedSelection(&_tabView);
+
 }
 
 DataDraw* MainWindow::getDataDrawer(bool openWindow)
@@ -500,9 +482,13 @@ const ModelNode &MainWindow::getModelFromTabOrFile(const td::String &modelNameOr
     const char *debug1 = modelNameOrPathRelative.c_str();
     const char *debug2 = startingPath.c_str();
     if(modelNameOrPathRelative.endsWith(".xml")){//file
-        td::String path = startingPath;
-        path += modelNameOrPathRelative.beginsWith("/") ? modelNameOrPathRelative.subStr(1,-1) : modelNameOrPathRelative;;
-
+        td::String path;
+        if(startingPath.isNull())
+            path = modelNameOrPathRelative;
+        else{
+            path = startingPath;
+            path += modelNameOrPathRelative.beginsWith("/") ? modelNameOrPathRelative.subStr(1,-1) : modelNameOrPathRelative;
+        }
         std::filesystem::path file(path.c_str());
         if(!std::filesystem::exists(file))
             throw exceptionCantAccessFile{path};

@@ -42,19 +42,17 @@ void DataDraw::addData(const td::String &tabName, const PlotDesc &plot)
 {
     using Type = ModelSettings::PlotDesc::Type;
     gui::BaseView* tab = nullptr;
-    gui::Image *img;
-
+    gui::Image *img = nullptr;
+    
 
     for (int i = 0; i < _tabView->getNumberOfViews(); ++i){
-        auto tab = _tabView->getView(i);
-        if(tab->getTitle() == tabName){//nesto na ovaj fazon treba _tabView ne moze vratiti ime tab-a??
-            _tabView->removeView(i);
+        if(_tabView->getView(i)->gui::Frame::getTagID().getType() == td::string8 &&\
+           _tabView->getView(i)->gui::Frame::getTagID().strVal() == tabName)
+        {
+            _tabView->removeView(i); 
             break;
         }
     }
-    
-    //if(tab->getTitle() != tabName)
-    //    tab = nullptr;
 
 
 
@@ -118,7 +116,7 @@ void DataDraw::addData(const td::String &tabName, const PlotDesc &plot)
     
     if(tab != nullptr){
         _tabView->addView(tab, tabName, img, (td::BYTE) DocumentType::Graph);
-        tab->setTitle(tabName);
+        tab->setTagID(tabName);
     }
 }
 

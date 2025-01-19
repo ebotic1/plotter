@@ -3,6 +3,12 @@
 #include <gui/MenuItem.h>
 #include <cnt/Array.h>
 
+#ifdef MU_MACOS
+    #define CTRL "<Cmd>"
+#else
+    #define CTRL "<Ctrl>"
+#endif
+
 class MenuBar : public gui::MenuBar {
 	gui::SubMenu _appDropDown, _modelDropDown, _plotDropDown;
     cnt::Array<gui::MenuItem*, 4> _txtOptions; //enable/disable options
@@ -25,8 +31,8 @@ public:
 		{
 			auto &items = _modelDropDown.getItems();
             int i = 0;
-            items[i++].initAsActionItem(tr("emptyModel"), (td::BYTE) ActionID::EmptyModel, "<Cmd>n");
-            items[i++].initAsActionItem(tr("emptyModelTF"), (td::BYTE) ActionID::EmptyModelTF);
+            items[i++].initAsActionItem(tr("emptyModel"), (td::BYTE) ActionID::EmptyModel, CTRL "n");
+            items[i++].initAsActionItem(tr("emptyModelTF"), (td::BYTE) ActionID::EmptyModelTF, CTRL "<Alt>n");
             items[i].initAsSubMenu((td::BYTE)SubMenuID::NewExampleModel, tr("NewSimpleModel"), 10);
             {
                 auto &exampleItems = items[i].getItems();
@@ -42,16 +48,16 @@ public:
             }
             
             items[i++].initAsSeparator();
-            items[i++].initAsActionItem(tr("OpenTxtModel"), (td::BYTE) ActionID::OpenTextModel, "<Cmd>o");
+            items[i++].initAsActionItem(tr("OpenTxtModel"), (td::BYTE) ActionID::OpenTextModel, CTRL "o");
             items[i++].initAsActionItem(tr("OpenTFModel"), (td::BYTE) ActionID::OpenTFModel);
             items[i++].initAsSeparator();
-			items[i].initAsActionItem(tr("Save"), (td::BYTE) ActionID::Save, "<Cmd>s");
+			items[i].initAsActionItem(tr("Save"), (td::BYTE) ActionID::Save,  CTRL "s");
             _txtOptions[0] = &items[i++];
-			items[i].initAsActionItem(tr("SaveAs"), (td::BYTE) ActionID::SaveAs, "<Cmd><Alt>s");
+			items[i].initAsActionItem(tr("SaveAs"), (td::BYTE) ActionID::SaveAs, CTRL "<Alt>s");
             _txtOptions[1] = &items[i++];
             items[i++].initAsSeparator();
-            items[i++].initAsActionItem(tr("ImportFromXML"), (td::BYTE) ActionID::Import, "<Cmd>i");
-			items[i].initAsActionItem(tr("ExporttoXML"), (td::BYTE) ActionID::Export, "<Cmd>e");
+            items[i++].initAsActionItem(tr("ImportFromXML"), (td::BYTE) ActionID::Import,  CTRL "i");
+			items[i].initAsActionItem(tr("ExporttoXML"), (td::BYTE) ActionID::Export, CTRL "e");
             _txtOptions[2] = &items[i++];
             items[i++].initAsSeparator();
             items[i].initAsActionItem(tr("startToolTip"), (td::BYTE) ActionID::Simulate, "<F5>");

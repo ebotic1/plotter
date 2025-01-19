@@ -7,6 +7,7 @@
 		<Res id="tableData" path=":images/table.png" desktop="Dark"/>
 		<Res id="results" path = "Work/Common/Icons/Formula/Results.png" desktop="Light"/>
 		<Res id="graphData" path = "Work/Common/Icons/Graph/plot.png" desktop="Dark"/>
+		<Res id="logo" path = ":images/logo.png"/>
 		
 		<!-- if the desktop attribute is specified: image color will be inverted in case of different desktop color theme 
 			default desktop is "All", 

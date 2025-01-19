@@ -108,5 +108,7 @@
 		<Res id="OpenTFModel" tr="Open graphical model" />
 		<Res id="drawFunctionsAutomatically" tr="New models start with default functions enabled" />
 		<Res id="useDefaultFuncs" tr="Draw default plot" />
+		<Res id="NewSimpleModel" tr="New document from template" />
+		<Res id="ImportFromXML" tr="Import from XML" />
 	</Translations>
 </DevRes>
